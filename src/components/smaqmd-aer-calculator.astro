@@ -1,0 +1,589 @@
+---
+// smaqmd-aer-calculator — the interactive Portable Air Cleaner Air Exchange
+// Rate tool. Web replacement for the District's Excel tool, with two of the
+// bidirectional modes from the contract:
+//
+//   check    — "I have a cleaner — will it work?"   room + cleaner(s) → ACH vs target
+//   capacity — "How big a room can it cover?"       cleaner(s) + target → largest room
+//
+// The room / target / cleaner input cards are shared and shown per mode; the
+// result panel swaps to the readout that mode produces, and stays quiet (just
+// the prompt) until the inputs it needs are complete. Air cleaners are an
+// add-as-many-as-you-need list (the Excel tool capped at two; the web tool
+// isn't bound by a fixed column count). Composition only: esa-card panels,
+// esa-radio-group / esa-text-field inputs, esa-stat readouts, esa-alert-box
+// verdicts, esa-button for add/remove. Calculation lives in the client
+// <script> and mirrors the workbook's Calculations sheet
+// (ACH = flow × 60 / room volume; combined flow = sum of all cleaners).
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+const roomMethods = [
+  { label: 'Length × width × height', value: 'dimensions' },
+  { label: 'Floor area + ceiling height', value: 'area' },
+  { label: 'Room volume directly', value: 'volume' },
+];
+const unitOptions = [
+  { label: 'Air flow rate / CADR (ft³/min)', value: 'airflow' },
+  { label: 'Air changes per hour (ACH)', value: 'ach' },
+];
+---
+
+<div class="smaqmd-aer" data-aer>
+  <div class="smaqmd-aer__layout sidebar" data-side="end">
+    <!-- Results (the aside — sits right on wide screens, top when stacked) -->
+    <aside class="smaqmd-aer__results">
+      <EsaCard variant="elevated" title="Your result" headingLevel={2}>
+        <div class="stack" data-gap="lg" data-result>
+          <!-- Your room's air-exchange rate — appears once a room size is entered. -->
+          <div class="stack" data-gap="md" data-group="ach" hidden>
+            <div class="smaqmd-aer__metrics">
+              <div data-metric="ach"><EsaStat value="—" label="Air changes per hour" sub="in your room" accent /></div>
+            </div>
+            <div data-verdict="pass" hidden>
+              <EsaAlertBox variant="success" title="Meets your target">
+                This setup delivers <strong data-r="ach">—</strong> air changes per
+                hour, at or above your target of <strong data-r="target">2</strong>.
+              </EsaAlertBox>
+            </div>
+            <div data-verdict="fail" hidden>
+              <EsaAlertBox variant="warning" title="Below your target">
+                This setup delivers <strong data-r="ach">—</strong> air changes per
+                hour, short of your target of <strong data-r="target">2</strong>.
+                Consider a higher-CADR cleaner, another unit, or a smaller room.
+              </EsaAlertBox>
+            </div>
+          </div>
+
+          <!-- Largest room the cleaner(s) cover — appears as soon as a cleaner
+               rating + target exist, before (and regardless of) the room size. -->
+          <div class="stack" data-gap="sm" data-group="capacity" hidden>
+            <div class="smaqmd-aer__metrics">
+              <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
+              <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
+            </div>
+            <p class="type-caption smaqmd-aer__cap-note">
+              <span data-r="setup">Your air cleaner</span> can maintain
+              <strong data-r="target">2</strong> air changes per hour up to this size.
+            </p>
+          </div>
+
+          <!-- Prompts for the two incomplete states. -->
+          <div data-prompt="empty">
+            <EsaAlertBox variant="info">
+              Enter at least one air cleaner’s rating and your target to see what
+              your setup can do.
+            </EsaAlertBox>
+          </div>
+          <div data-prompt="addroom" hidden>
+            <EsaAlertBox variant="info">
+              Add your room size above to check whether this setup meets your target
+              in your own room.
+            </EsaAlertBox>
+          </div>
+
+          <p class="type-caption smaqmd-aer__note">
+            The California Air Resources Board (CARB) recommends at least two air
+            changes per hour for maximum health benefit.
+          </p>
+        </div>
+      </EsaCard>
+    </aside>
+
+    <!-- Inputs -->
+    <form class="smaqmd-aer__form stack" data-gap="lg" novalidate>
+      <EsaCard title="Your air cleaner(s)" headingLevel={2}>
+        <div class="stack" data-gap="lg">
+          <!-- One block per cleaner. Cleaner 1 is created on load; "Add" clones
+               the template below, "Remove" drops a block (min one stays). -->
+          <div class="stack" data-gap="lg" data-cleaners></div>
+
+          <div class="cluster" data-gap="sm">
+            <span data-add-cleaner>
+              <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
+                Add another air cleaner
+              </EsaButton>
+            </span>
+          </div>
+        </div>
+      </EsaCard>
+
+      <EsaCard title="Your target" headingLevel={2}>
+        <div class="smaqmd-aer__target">
+          <esa-text-field
+            data-field="target"
+            type="text"
+            label="Target air changes per hour"
+            value="2"
+            help-text="CARB recommends at least 2. Adjust if your program uses a different target."
+          ></esa-text-field>
+        </div>
+      </EsaCard>
+
+      <EsaCard title="Your room" headingLevel={2}>
+        <div class="stack" data-gap="md">
+          <p class="type-caption smaqmd-aer__note">
+            Optional — leave blank to just see the largest room your cleaners can
+            cover. Add it to check your own room against the target.
+          </p>
+          <esa-radio-group
+            data-field="roomMethod"
+            label="How do you want to enter your room size?"
+            value="dimensions"
+            options={JSON.stringify(roomMethods)}
+          ></esa-radio-group>
+
+          <div class="smaqmd-aer__fields grid" data-gap="md">
+            <div data-room="dimensions">
+              <esa-text-field data-field="length" type="text" label="Length (ft)" placeholder="e.g. 12"></esa-text-field>
+            </div>
+            <div data-room="dimensions">
+              <esa-text-field data-field="width" type="text" label="Width (ft)" placeholder="e.g. 10"></esa-text-field>
+            </div>
+            <div data-room="dimensions area">
+              <esa-text-field data-field="height" type="text" label="Ceiling height (ft)" placeholder="e.g. 8"></esa-text-field>
+            </div>
+            <div data-room="area">
+              <esa-text-field data-field="area" type="text" label="Floor area (ft²)" placeholder="e.g. 120"></esa-text-field>
+            </div>
+            <div data-room="volume">
+              <esa-text-field data-field="volume" type="text" label="Room volume (ft³)" placeholder="e.g. 960"></esa-text-field>
+            </div>
+          </div>
+          <p class="type-caption smaqmd-aer__hint" data-hint="height" hidden>
+            Most rooms have a ceiling of at least 7 ft 6 in — double-check if yours
+            is lower.
+          </p>
+        </div>
+      </EsaCard>
+
+      <div class="cluster" data-gap="sm">
+        <EsaButton color="ghost" appearance="outline" type="reset">Reset</EsaButton>
+      </div>
+    </form>
+  </div>
+
+  <!-- Cleaner-block template — cloned per cleaner. data-cleaner is stamped with
+       the block's id on clone so each block's fields read/write independently. -->
+  <template data-cleaner-template>
+    <div class="smaqmd-aer__cleaner stack" data-gap="md" data-cleaner-block>
+      <div class="smaqmd-aer__cleaner-head repel">
+        <p class="type-card-title smaqmd-aer__cleaner-title">Air cleaner</p>
+        <span data-remove-cleaner hidden>
+          <EsaButton color="ghost" appearance="outline" size="sm" icon="trash-2" type="button">
+            Remove
+          </EsaButton>
+        </span>
+      </div>
+      <esa-radio-group
+        data-field="unit"
+        data-cleaner
+        label="What does the manufacturer report?"
+        value="airflow"
+        options={JSON.stringify(unitOptions)}
+      ></esa-radio-group>
+
+      <div data-unit="airflow" data-cleaner>
+        <esa-text-field
+          data-field="airflow"
+          data-cleaner
+          type="text"
+          label="Air flow rate or CADR (ft³/min)"
+          help-text="Use the highest air flow, or the lowest CADR number if three are listed."
+        ></esa-text-field>
+      </div>
+
+      <div class="stack" data-gap="md" data-unit="ach" data-cleaner hidden>
+        <esa-text-field
+          data-field="ach"
+          data-cleaner
+          type="text"
+          label="Air changes per hour (per hr)"
+        ></esa-text-field>
+        <p class="type-caption smaqmd-aer__hint">
+          Enter the room size the manufacturer used for that rating. Leave the
+          height blank to assume a standard 8 ft ceiling.
+        </p>
+        <esa-radio-group
+          data-field="refMethod"
+          data-cleaner
+          label="How was that room size given?"
+          value="dimensions"
+          options={JSON.stringify(roomMethods)}
+        ></esa-radio-group>
+        <div class="smaqmd-aer__fields grid" data-gap="md">
+          <div data-refroom="dimensions">
+            <esa-text-field data-field="refLength" data-cleaner type="text" label="Length (ft)"></esa-text-field>
+          </div>
+          <div data-refroom="dimensions">
+            <esa-text-field data-field="refWidth" data-cleaner type="text" label="Width (ft)"></esa-text-field>
+          </div>
+          <div data-refroom="dimensions area">
+            <esa-text-field data-field="refHeight" data-cleaner type="text" label="Height (ft)" placeholder="8"></esa-text-field>
+          </div>
+          <div data-refroom="area">
+            <esa-text-field data-field="refArea" data-cleaner type="text" label="Floor area (ft²)"></esa-text-field>
+          </div>
+          <div data-refroom="volume">
+            <esa-text-field data-field="refVolume" data-cleaner type="text" label="Room volume (ft³)"></esa-text-field>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<style>
+  /* Layout primitives (.stack / .grid / .cluster) set `display`, which beats the
+     UA `[hidden] { display: none }`. Restore it so toggled blocks actually hide. */
+  .smaqmd-aer [hidden] {
+    display: none !important;
+  }
+  .smaqmd-aer__layout {
+    --sidebar-width: 21rem;
+    --sidebar-content-min: 60%;
+    align-items: start;
+  }
+  /* Results stay in view while the form scrolls (wide screens only). */
+  @media (min-width: 60rem) {
+    .smaqmd-aer__results {
+      position: sticky;
+      top: var(--spacing-500, 1.5rem);
+    }
+  }
+  .smaqmd-aer__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-500, 1.5rem);
+  }
+  .smaqmd-aer__fields {
+    --grid-min: 10rem;
+  }
+  .smaqmd-aer__target { max-width: 22rem; }
+  .smaqmd-aer__cleaner {
+    padding-block-start: var(--spacing-300, 0.75rem);
+    border-block-start: 1px solid var(--color-border);
+  }
+  .smaqmd-aer__cleaner:first-of-type {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+  .smaqmd-aer__cleaner-head { align-items: center; }
+  .smaqmd-aer__cleaner-title { color: var(--color-text-secondary); }
+  /* Captions/units use tertiary text (gray-11) — the quietest *valid* text step;
+     --color-text-muted maps to gray-10, which isn't a text step (11/12).
+     No hardcoded fallback: the theme owns the ramp (theme-smaqmd.css maps
+     --color-text-* → --smaqmd-gray-*), so we reference the token, not a copy. */
+  .smaqmd-aer__note { color: var(--color-text-tertiary); }
+  /* Unit sits right beside the metric value, quieter and smaller than the number. */
+  .smaqmd-aer__unit {
+    margin-inline-start: 0.2em;
+    font-size: var(--type-size-300, 1.125rem);
+    font-weight: var(--font-weight-medium, 450);
+    color: var(--color-text-tertiary);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-radio-group';
+
+  const root = document.querySelector<HTMLElement>('[data-aer]');
+  if (root) {
+    const q = (sel: string) => root.querySelector<HTMLElement>(sel);
+    const qa = (sel: string) => Array.from(root.querySelectorAll<HTMLElement>(sel));
+    const show = (el: Element | null, on: boolean) => {
+      if (el) (el as HTMLElement).hidden = !on;
+    };
+
+    // Read a control's value. Works for esa-text-field and esa-radio-group.
+    const raw = (field: string, cleaner?: string | number): string => {
+      const sel = cleaner
+        ? `[data-field="${field}"][data-cleaner="${cleaner}"]`
+        : `[data-field="${field}"]:not([data-cleaner])`;
+      const el = root.querySelector<HTMLElement & { value?: string }>(sel);
+      return (el && el.value != null ? String(el.value) : '').trim();
+    };
+    const n = (field: string, cleaner?: string | number): number => {
+      const v = parseFloat(raw(field, cleaner));
+      return Number.isFinite(v) ? v : NaN;
+    };
+
+    const roomVolume = (): number => {
+      switch (raw('roomMethod')) {
+        case 'dimensions': return n('length') * n('width') * n('height');
+        case 'area':       return n('area') * n('height');
+        case 'volume':     return n('volume');
+        default:           return NaN;
+      }
+    };
+
+    // The manufacturer's reference room volume (ft³), entered the same three ways
+    // as the user's own room: dimensions, floor area + height, or volume direct.
+    // Height defaults to a standard 8 ft ceiling when left blank (per the Excel
+    // tool) for the two methods that use it.
+    const refRoomVolume = (id: string): number => {
+      const h = Number.isFinite(n('refHeight', id)) ? n('refHeight', id) : 8;
+      switch (raw('refMethod', id)) {
+        case 'dimensions': return n('refLength', id) * n('refWidth', id) * h;
+        case 'area':       return n('refArea', id) * h;
+        case 'volume':     return n('refVolume', id);
+        default:           return NaN;
+      }
+    };
+
+    // Clean-air flow (ft³/min) for one cleaner block. Option A is the reported
+    // flow; Option B derives it from ACH × the manufacturer's reference room
+    // volume. A blank/partial cleaner contributes 0 so extra empty rows never
+    // block the result.
+    const cleanerFlow = (id: string): number => {
+      let f: number;
+      if (raw('unit', id) === 'airflow') {
+        f = n('airflow', id);
+      } else {
+        const ach = n('ach', id);
+        f = (refRoomVolume(id) * ach) / 60;
+      }
+      return Number.isFinite(f) && f > 0 ? f : 0;
+    };
+    const cleanerBlocks = () => qa('[data-cleaner-block]:not([data-removing])');
+    const combinedFlow = (): number =>
+      cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0);
+
+    const fmt = (v: number, digits = 0) =>
+      v.toLocaleString('en-US', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+
+    // Set a stat's value, with an optional unit rendered small right after the
+    // number (esa-stat has no unit slot, so the unit rides inside its value).
+    const setMetric = (name: string, text: string, unit?: string) => {
+      const el = root.querySelector(`[data-metric="${name}"] .esa-stat__value`);
+      if (!el) return;
+      el.textContent = text;
+      if (unit) {
+        const u = document.createElement('span');
+        u.className = 'smaqmd-aer__unit';
+        u.textContent = unit;
+        el.appendChild(u);
+      }
+    };
+    // Fill every [data-r="name"] readout inside the active result block.
+    const setReadout = (block: HTMLElement, name: string, text: string) =>
+      Array.from(block.querySelectorAll(`[data-r="${name}"]`)).forEach((el) => (el.textContent = text));
+    // Within a result block, show only the matching verdict.
+    const setVerdict = (block: HTMLElement, state: string) =>
+      Array.from(block.querySelectorAll<HTMLElement>('[data-verdict]')).forEach((el) =>
+        show(el, el.dataset.verdict === state),
+      );
+
+    // ---- Air-cleaner list (add / remove any number) ----
+    const cleanersHost = q('[data-cleaners]')!;
+    const template = root.querySelector<HTMLTemplateElement>('[data-cleaner-template]')!;
+    let nextId = 0;
+
+    const addCleaner = () => {
+      const frag = template.content.cloneNode(true) as DocumentFragment;
+      const block = frag.querySelector<HTMLElement>('[data-cleaner-block]')!;
+      const id = String(++nextId);
+      block.setAttribute('data-cleaner-block', id);
+      block.querySelectorAll('[data-cleaner]').forEach((el) => el.setAttribute('data-cleaner', id));
+      cleanersHost.appendChild(frag);
+      recompute();
+    };
+    const resetCleaners = () => {
+      cleanersHost.replaceChildren();
+      nextId = 0;
+      addCleaner();
+    };
+
+    // Collapse the clicked block in place so the eye tracks WHICH cleaner leaves
+    // (otherwise an instant removal + renumber reads as "the top one changed").
+    // The block is excluded from cleanerBlocks() the moment it starts collapsing,
+    // so the result updates immediately while the row animates out.
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const removeCleaner = (block: HTMLElement) => {
+      block.setAttribute('data-removing', '');
+      if (prefersReduced) {
+        block.remove();
+        recompute();
+        return;
+      }
+      const startHeight = block.offsetHeight;
+      block.style.overflow = 'hidden';
+      block.style.boxSizing = 'border-box';
+      block.style.blockSize = `${startHeight}px`;
+      block.getBoundingClientRect(); // flush the start height before transitioning
+      const duration = 180;
+      block.style.transition =
+        `block-size ${duration}ms ease, opacity ${duration}ms ease, ` +
+        `padding-block ${duration}ms ease, margin-block ${duration}ms ease, ` +
+        `border-block ${duration}ms ease`;
+      block.style.blockSize = '0';
+      block.style.opacity = '0';
+      block.style.paddingBlock = '0';
+      block.style.marginBlock = '0';
+      block.style.borderBlock = '0'; // zero the divider so it collapses fully too
+      // Finish exactly once, whichever fires first. transitionend's propertyName
+      // is unreliable for the *logical* block-size (WebKit reports it as the
+      // physical `height`), so we don't gate on it — and a timeout guarantees the
+      // block is removed even if the transition never fires.
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        block.remove();
+        recompute();
+      };
+      block.addEventListener('transitionend', (e) => {
+        const p = (e as TransitionEvent).propertyName;
+        if (p === 'block-size' || p === 'height') finish();
+      });
+      window.setTimeout(finish, duration + 60);
+      recompute(); // update the readout now, before the collapse finishes
+    };
+
+    const syncVisibility = () => {
+      // Room-entry fields that match the chosen method.
+      const method = raw('roomMethod');
+      qa('[data-room]').forEach((el) => show(el, el.dataset.room!.split(' ').includes(method)));
+
+      // Per-cleaner: renumber the title, show Remove only when >1, toggle the
+      // reported-unit sub-form.
+      const blocks = cleanerBlocks();
+      blocks.forEach((b, i) => {
+        const title = b.querySelector('.smaqmd-aer__cleaner-title');
+        if (title) title.textContent = `Air cleaner ${i + 1}`;
+        show(b.querySelector('[data-remove-cleaner]'), blocks.length > 1);
+        const id = b.dataset.cleanerBlock!;
+        const unit = raw('unit', id);
+        show(b.querySelector(`[data-unit="airflow"][data-cleaner="${id}"]`), unit === 'airflow');
+        show(b.querySelector(`[data-unit="ach"][data-cleaner="${id}"]`), unit === 'ach');
+        // Reference-room fields that match this cleaner's chosen entry method.
+        const refMethod = raw('refMethod', id);
+        b.querySelectorAll<HTMLElement>('[data-refroom]').forEach((el) =>
+          show(el, el.dataset.refroom!.split(' ').includes(refMethod)),
+        );
+      });
+
+      const h = n('height');
+      show(q('[data-hint="height"]'), Number.isFinite(h) && h > 0 && h < 7.5);
+    };
+
+    // One result panel, driven by which inputs are complete. Capacity (largest
+    // room the cleaners cover) needs only a cleaner rating + target, so it shows
+    // first; the room's own ACH is layered on once a room size is entered — the
+    // two answers are just the same equation (flow × 60 = ACH × volume) solved
+    // for different unknowns, from one shared set of inputs.
+    const recompute = () => {
+      syncVisibility();
+      const block = q('[data-result]')!;
+      const showGroup = (name: string, on: boolean) =>
+        show(block.querySelector(`[data-group="${name}"]`), on);
+      const setPrompt = (name: string | null) =>
+        Array.from(block.querySelectorAll<HTMLElement>('[data-prompt]')).forEach((el) =>
+          show(el, el.dataset.prompt === name),
+        );
+
+      const target = Number.isFinite(n('target')) && n('target') > 0 ? n('target') : 2;
+      setReadout(block, 'target', fmt(target, 2));
+
+      const flow = combinedFlow();
+      const vol = roomVolume();
+      const hasFlow = flow > 0;
+      const hasRoom = Number.isFinite(vol) && vol > 0;
+
+      // Nothing usable yet — prompt for a cleaner + target, hide both readouts.
+      if (!hasFlow) {
+        showGroup('capacity', false);
+        showGroup('ach', false);
+        setVerdict(block, 'none');
+        setPrompt('empty');
+        return;
+      }
+
+      // Capacity — always available once we have a cleaner rating + target.
+      const maxVol = (flow * 60) / target;
+      const count = cleanerBlocks().length;
+      setReadout(block, 'setup', count > 1 ? `Your ${count} air cleaners together` : 'Your air cleaner');
+      setMetric('maxvol', fmt(maxVol, 0), 'ft³');
+      setMetric('maxarea', fmt(maxVol / 8, 0), 'ft²');
+      showGroup('capacity', true);
+
+      // Room ACH + pass/fail — layered on only when a room size is entered.
+      if (hasRoom) {
+        const ach = (flow / vol) * 60;
+        setMetric('ach', fmt(ach, 1));
+        setReadout(block, 'ach', fmt(ach, 1));
+        showGroup('ach', true);
+        setVerdict(block, ach >= target ? 'pass' : 'fail');
+        setPrompt(null);
+      } else {
+        showGroup('ach', false);
+        setVerdict(block, 'none');
+        setPrompt('addroom');
+      }
+    };
+
+    // All the inputs here are non-negative quantities. They're plain text fields
+    // (no number stepper — the stepper could spin below zero), so we sanitize the
+    // entry to digits and a single decimal point: any '-' is dropped, which turns
+    // a typed/pasted "-5" into "5", and stray letters are stripped too.
+    const sanitizeNumeric = (s: string): string => {
+      let out = s.replace(/[^0-9.]/g, '');
+      const dot = out.indexOf('.');
+      if (dot !== -1) out = out.slice(0, dot + 1) + out.slice(dot + 1).replace(/\./g, '');
+      return out;
+    };
+    const onEdit = (e: Event) => {
+      const el = e.target as (HTMLElement & { value?: string }) | null;
+      if (el && el.tagName === 'ESA-TEXT-FIELD') {
+        const clean = sanitizeNumeric(el.value ?? '');
+        if (clean !== el.value) el.value = clean;
+      }
+      recompute();
+    };
+    root.addEventListener('change', onEdit);
+    root.addEventListener('input', onEdit);
+    root.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-add-cleaner]')) {
+        e.preventDefault();
+        addCleaner();
+      }
+      const rm = t.closest('[data-remove-cleaner]');
+      if (rm) {
+        e.preventDefault();
+        const block = rm.closest<HTMLElement>('[data-cleaner-block]');
+        if (block && !block.hasAttribute('data-removing')) removeCleaner(block);
+      }
+    });
+    // esa-text-field / esa-radio-group are form-associated but don't implement
+    // formResetCallback, so a native form reset leaves them populated. Restore the
+    // shared fields to their defaults by hand; the cleaner list is rebuilt fresh,
+    // which clears every per-cleaner field.
+    const resetFields = () => {
+      const set = (sel: string, v: string) => {
+        const el = root.querySelector<HTMLElement & { value?: string }>(sel);
+        if (el) el.value = v;
+      };
+      set('[data-field="roomMethod"]', 'dimensions');
+      set('[data-field="target"]', '2');
+      ['length', 'width', 'height', 'area', 'volume'].forEach((f) =>
+        set(`[data-field="${f}"]:not([data-cleaner])`, ''),
+      );
+    };
+    root.querySelector('form')?.addEventListener('reset', () =>
+      requestAnimationFrame(() => {
+        resetFields();
+        resetCleaners();
+      }),
+    );
+
+    resetCleaners(); // create cleaner 1
+    Promise.all([
+      customElements.whenDefined('esa-text-field'),
+      customElements.whenDefined('esa-radio-group'),
+    ]).then(recompute);
+  }
+</script>

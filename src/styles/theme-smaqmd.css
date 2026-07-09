@@ -1,0 +1,143 @@
+/*
+ * SMAQMD theme — a spoke of the Ecology hub (../ecology).
+ *
+ * THE CONTRACT: a [data-theme] block overrides the SEMANTIC layer (and, where
+ * needed, the component layer) ONLY. @esa/tokens defines the primitives + the
+ * default teal semantics on :root; this file re-skins to SMAQMD WITHOUT
+ * touching primitives. Because every esa-* component reads only the semantic
+ * layer, re-pointing that layer re-skins the whole kit with no forks.
+ *
+ * LOAD ORDER matters: tokens.css (:root) and a [data-theme] block have equal
+ * specificity, so source order decides. DocsLayout/BaseLayout import this file
+ * AFTER @esa/tokens so it wins.
+ *
+ * TOKEN TIERS:
+ *   - ecology tokens (--color-*, --form-*, --font-*): the durable hub vocabulary.
+ *     This file REASSIGNS the few that differ; esa-* components read only these.
+ *   - --smaqmd-* tokens: the spoke tier. Live ONLY in this file. Raw
+ *     "re-point material" (the brand color ramp, neutral ramp) feeds the ecology
+ *     tokens above; hub components never read --smaqmd-* directly.
+ *
+ * WORKED EXAMPLE: see ../ecology/../beacon-design/src/styles/theme-beacon.css for
+ * a fully-filled version of this same skeleton (true-teal + warm-gray ramps).
+ *
+ * Every section below is a FILL-IN. Replace each `/* __FILL__ *​/` marker and the
+ * placeholder values with this spoke's real values; delete any section the spoke
+ * doesn't diverge on (an un-overridden token keeps the hub default).
+ */
+
+[data-theme="smaqmd"] {
+  /* ===== (1) BRAND — re-point primary + secondary onto the spoke ramp =====
+     The hub is a Radix 1-12 scale (see the ../ecology dist tokens). Mirror its
+     step conventions onto THIS spoke's own brand ramp (section 7):
+       step 9  = solid interactive fill (the canonical brand hue)
+       step 10 = hovered/active fill
+       step 2  = subtle brand-tinted surface   step 6 = subtle brand border
+       step 8  = secondary fill                 step 11/12 = brand text (if needed)
+     If you skip this, primary stays hub grass. */
+  --color-primary:         var(--smaqmd-brand-9);   /* solid interactive fill */
+  --color-primary-hover:   var(--smaqmd-brand-10);  /* hovered solid fill */
+  --color-primary-active:  var(--smaqmd-brand-10);
+  --color-primary-subtle:  var(--smaqmd-brand-2);   /* light wash behind selected/hover */
+  --color-primary-border:  var(--smaqmd-brand-6);   /* hairline on brand surfaces */
+  --color-secondary:       var(--smaqmd-brand-8);
+  --color-secondary-hover: var(--smaqmd-brand-9);
+
+  /* ===== (2) NEUTRAL CHAIN — re-point text/border/surface onto the spoke grays =====
+     Map the whole neutral chain onto this spoke's gray ramp (section 7), mirroring
+     the hub's Radix step choices. This is what warms or cools the entire UI. */
+  --color-text-primary:   var(--smaqmd-gray-12);
+  --color-text-secondary: var(--smaqmd-gray-11);
+  --color-text-tertiary:  var(--smaqmd-gray-11);
+  /* gray-11, not gray-10: this is a *text* token, and the Radix ramp reserves
+     11/12 for text (step 10 = hovered-solid-bg, ~3.7:1 on white → fails WCAG AA).
+     --color-text-muted feeds readable text via component tokens (esa-text-field
+     help + placeholder, esa-stat sublabel), so it must clear 4.5:1. */
+  --color-text-muted:     var(--smaqmd-gray-11);
+  --color-text-link:      var(--smaqmd-brand-12); /* AA on light surfaces; brand pass can tune the link hue */
+  --color-border:         var(--smaqmd-gray-7);
+  --color-border-light:   var(--smaqmd-gray-6);
+  --color-border-strong:  var(--smaqmd-gray-8);
+  --color-background:     var(--smaqmd-gray-2);
+  --color-surface:        var(--smaqmd-gray-1);
+  --color-surface-sunken: var(--smaqmd-gray-3);
+
+  /* ===== (3) FONTS — point the type tokens at the faces loaded in <!-- TODO(spoke-init): add the brand's Google Fonts <link> tags --> =====
+     The <link> tags live in BaseLayout/DocsLayout. Set the families here so
+     components pick them up. Leave a token out to keep the hub default. */
+  --font-sans: /* __FILL__ */ 'DM Sans', system-ui, sans-serif;
+  --font-mono: /* __FILL__ */ 'Roboto Mono', ui-monospace, monospace;
+  /* Optional decorative/display voice — components reach for these explicitly. */
+  --font-display:    /* __FILL__ (or remove to inherit --font-sans) */ var(--font-sans);
+  --font-decorative: /* __FILL__ (optional serif) */ 'Besley', serif;
+
+  /* ===== (4) FEEDBACK + AI — match this spoke's success/warning/info/ai =====
+     Re-point onto hub primitives where the spoke's ramp matches, or to a literal
+     where it's standalone. */
+  --color-success:  var(--color-green-9);  /* __FILL__ Radix step 9 = solid fill */
+  --color-warning:  var(--color-orange-9); /* __FILL__ */
+  --color-info:     var(--color-blue-9);   /* __FILL__ */
+  --color-ai:       var(--color-copper-9); /* __FILL__ hub AI hue is copper */
+  --color-ai-hover: var(--color-copper-10);/* __FILL__ */
+
+  /* ===== (5) FORM SIZING + RADIUS — match this spoke's control heights =====
+     The hub defaults to xs 28 / sm 32 / md 40 / lg 48 and md/lg radius 8px.
+     Re-point if this spoke runs more compact / flatter. */
+  --form-height-xs: /* __FILL__ */ 24px;
+  --form-height-sm: /* __FILL__ */ 28px;
+  --form-height-md: /* __FILL__ */ 36px;
+  --form-height-lg: /* __FILL__ */ 44px;
+
+  --form-radius-xs: /* __FILL__ */ var(--radius-100);
+  --form-radius-sm: /* __FILL__ */ var(--radius-100);
+  --form-radius-md: /* __FILL__ */ var(--radius-100);
+  --form-radius-lg: /* __FILL__ */ var(--radius-100);
+
+  /* ===== (6) --button-on-warning — text color on a filled warning button =====
+     Set to #fff if this spoke's warning fill is dark enough for white text;
+     leave at the hub default (dark text) for a lighter amber. */
+  --button-on-warning: /* __FILL__ */ #ffffff;
+
+  /* ===== (7) RAW PRIMITIVE RAMPS — the spoke tier (--smaqmd-*) =====
+     Raw material only: feeds the semantic re-points above. Hub components never
+     read these directly. Authored on the hub's RADIX 1-12 scale so one scale runs
+     end-to-end (a 1-12 ramp can also override the component tokens keyed to
+     --color-gray-1..12, which a 50-900 ramp could not). Radix step semantics:
+       1-2 app/subtle backgrounds · 3-5 component fills · 6-8 borders
+       9 solid fill · 10 hovered fill · 11 low-contrast text · 12 high-contrast text
+
+     __FILL__ — the values below are PLACEHOLDERS (hub-neutral grays + a stand-in
+     teal). Replace the whole set with SMAQMD's real palette in the brand pass. */
+
+  /* Neutral / gray ramp — this spoke's authoritative neutrals (placeholder = hub gray). */
+  --smaqmd-gray-1:  #fcfcfc;
+  --smaqmd-gray-2:  #f9f9f9;
+  --smaqmd-gray-3:  #f0f0f0;
+  --smaqmd-gray-4:  #e8e8e8;
+  --smaqmd-gray-5:  #e0e0e0;
+  --smaqmd-gray-6:  #d9d9d9;
+  --smaqmd-gray-7:  #cecece;
+  --smaqmd-gray-8:  #bbbbbb;
+  --smaqmd-gray-9:  #8d8d8d;
+  --smaqmd-gray-10: #838383;
+  --smaqmd-gray-11: #646464;
+  --smaqmd-gray-12: #202020;
+
+  /* Brand ramp — this spoke's signature color (feeds --color-primary*/secondary*).
+     __FILL__ placeholder = a stand-in teal; swap for SMAQMD's real hue ramp. */
+  --smaqmd-brand-1:  #fafefd;
+  --smaqmd-brand-2:  #f3fbf9;
+  --smaqmd-brand-3:  #e0f8f3;
+  --smaqmd-brand-4:  #ccf3ea;
+  --smaqmd-brand-5:  #b8eae0;
+  --smaqmd-brand-6:  #a1ded2;
+  --smaqmd-brand-7:  #83cdc1;
+  --smaqmd-brand-8:  #53b9ab;
+  --smaqmd-brand-9:  #12a594;
+  --smaqmd-brand-10: #0d9b8a;
+  --smaqmd-brand-11: #008573;
+  --smaqmd-brand-12: #0d3d38;
+
+  /* Add any further spoke-only tokens below (status palettes, progress pairs,
+     citation surfaces, etc.) — see theme-beacon.css for examples. */
+}

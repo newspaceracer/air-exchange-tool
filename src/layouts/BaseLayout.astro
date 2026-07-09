@@ -1,0 +1,47 @@
+---
+// SMAQMD base layout — wires the hub tokens + the SMAQMD theme,
+// loads the brand's fonts, and sets data-theme="smaqmd" so every
+// inherited esa-* component re-skins to SMAQMD.
+import '@esa/tokens/tokens.css';
+import '@esa/tokens/component-tokens.css';
+import '@esa/tokens/type-roles.css';
+import '@esa/tokens/layouts.css';
+import '../styles/theme-smaqmd.css';
+// Runtime handoff inspector — self-gating: dormant unless the current route
+// has a bundle at public/handoff/<slug>/ (generated via `npx handoff`).
+import HandoffInspector from '@esa/handoff/HandoffInspector.astro';
+
+interface Props {
+  title?: string;
+}
+const { title = 'SMAQMD' } = Astro.props;
+---
+<!doctype html>
+<html lang="en" data-theme="smaqmd">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- TODO(spoke-init): add the brand's Google Fonts <link> tags -->
+    <title>{title}</title>
+    <style is:global>
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: var(--font-sans, system-ui, sans-serif);
+        font-weight: var(--font-weight-regular, 350);
+        color: var(--color-text-primary, #3d3d3d);
+        background: var(--color-surface, #fff);
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: var(--color-text-link, #43608a); text-decoration: none; }
+      img { display: block; max-width: 100%; }
+      button { font-family: inherit; cursor: pointer; background: none; border: 0; }
+    </style>
+  </head>
+  <body>
+    <slot />
+    <HandoffInspector />
+  </body>
+</html>

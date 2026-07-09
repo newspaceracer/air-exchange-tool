@@ -1,0 +1,32 @@
+---
+// /prototypes/air-exchange-rate — the public Portable Air Cleaner Air Exchange
+// Rate tool (Task Order #11 mock-up for District review). Core mode first:
+// "I have a device — will it give my room enough clean air?" Thin assembler —
+// the page header lego plus the one interactive calculator component.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import SmaqmdAerCalculator from '../../components/smaqmd-aer-calculator.astro';
+---
+<!-- manifest:
+  layout: center > stack(xl)
+  sections:
+    - page header -> esa-page-header
+    - calculator  -> smaqmd-aer-calculator
+-->
+<BaseLayout title="Portable Air Cleaner Air Exchange Rate Tool — SMAQMD">
+  <main class="smaqmd-page">
+    <div class="smaqmd-page__spine center stack" data-gap="xl">
+      <EsaPageHeader
+        eyebrow="Sacramento Metropolitan Air Quality Management District"
+        title="Will your air cleaner clear the air?"
+        lede="Check whether a portable air cleaner keeps your room’s air fresh enough, or see the largest room your air cleaners can cover — measured in air changes per hour against the healthy target."
+      />
+      <SmaqmdAerCalculator />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .smaqmd-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  .smaqmd-page__spine { --center-max: 68.75rem; padding-inline: var(--spacing-400); }
+</style>
