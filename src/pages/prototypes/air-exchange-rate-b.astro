@@ -1,0 +1,27 @@
+---
+// /prototypes/air-exchange-rate-b — Option B: the visual rethink of the Air
+// Exchange Rate tool. Same math, a from-the-ground-up form built around an
+// isometric room you watch resize as you enter its dimensions. Thin assembler —
+// the page header lego plus the one interactive calculator-b component.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import SmaqmdAerCalculatorB from '../../components/smaqmd-aer-calculator-b.astro';
+---
+<!-- manifest:
+  layout: full-bleed canvas (component-owned)
+  sections:
+    - page header      -> esa-page-header (slotted overlay)
+    - calculator + scene -> smaqmd-aer-calculator-b
+-->
+<BaseLayout title="Air Exchange Rate Tool (Option B) — SMAQMD">
+  <main>
+    <SmaqmdAerCalculatorB>
+      <EsaPageHeader
+        slot="header"
+        eyebrow="Sacramento Metropolitan Air Quality Management District"
+        title="See your room clear the air"
+        lede="Size your room, pick your cleaner, and watch the air-changes math play out on the block."
+      />
+    </SmaqmdAerCalculatorB>
+  </main>
+</BaseLayout>

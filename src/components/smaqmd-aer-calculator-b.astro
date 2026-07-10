@@ -1,0 +1,1168 @@
+---
+// smaqmd-aer-calculator-b — Option B of the Air Exchange Rate tool. A visual
+// rethink built on a CITY metaphor: the room is a large building on a city
+// block, the air cleaner is a separate (much smaller) building, and the street
+// between them carries the air — a used-air lane leaving the room and a
+// clean-air lane returning — so you SEE the exchange loop the math describes.
+// The room building resizes with the length/width/height you enter. The numbers
+// (volume, air changes per hour, pass/fail vs target) come from the same
+// workbook math as Option A (ACH = flow × 60 ÷ room volume).
+//
+// Composition: esa-card panels, esa-text-field inputs, esa-stat readouts,
+// esa-alert-box verdict. The one bespoke part is the isometric city drawing —
+// no esa-* lego renders a to-scale 3D scene, so it's a documented bcn- concern
+// (see the bcn-lego-checked note on the .bcn-cityview markup). The scene is
+// drawn from an array of cleaners (streets to each), fed a single cleaner for
+// now; flow is animated with plain CSS stroke-dashoffset (no animation library
+// yet) so GSAP/WAAPI can take over the motion later without touching the
+// projection math.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+
+const MAX_CLEANERS = 4;
+const CLEANER_IDS = [1, 2, 3, 4];
+const roomMethods = [
+  { label: 'Length × width × height', value: 'dimensions' },
+  { label: 'Floor area + ceiling height', value: 'area' },
+  { label: 'Room volume directly', value: 'volume' },
+];
+
+// Isometric dot-lattice for the background "paper". A rectangular pattern tile
+// of (2A × 2B) carries two lattice dots — (0,0) and (A,B) — which tiles into the
+// full 30° iso dot grid these illustrations sit on. Fixed in screen space, so
+// the paper stays put while the scene scales.
+const DOT_SPACING = 26;
+const A = +(Math.cos(Math.PI / 6) * DOT_SPACING).toFixed(3); // ≈ 22.5
+const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
+---
+
+<div class="smaqmd-aerb" data-aerb>
+  <!-- The city. bcn-lego-checked: no esa- lego draws a to-scale isometric
+       city/room scene with animated flow (checked the catalog — esa-* has
+       cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
+       esa- lego provides a full-viewport fixed illustration backdrop. This SVG
+       projection is the reusable home for "see the air exchange", so it lives in
+       its own bcn- block, driven from the shared calc script below. -->
+  <div class="smaqmd-aerb__stage bcn-cityview" data-cityview data-state="idle">
+    <svg class="bcn-cityview__svg" viewBox="0 0 480 380" role="img"
+         aria-label="Isometric city scene: your room as a building, and each air cleaner as its own smaller building on a street carrying used air out and clean air back">
+      <defs>
+        <pattern id="bcn-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
+          <circle class="bcn-cityview__dot" cx="0" cy="0" r="1.1"></circle>
+          <circle class="bcn-cityview__dot" cx={A} cy={B} r="1.1"></circle>
+        </pattern>
+        <!-- Air-change waves — one return + one intake gradient PER cleaner, so
+             each lane scrolls at its own cadence (tied to that cleaner's ACH
+             share). Return: full saturation fading to transparent, scrolled
+             cleaner → room (one repeat = one air change). Both ends transparent
+             so repeats meet seamlessly; the full-saturation head sits near
+             offset 0.8. Intake: same shape, scrolled room → cleaner, in the
+             neutral used-air color. -->
+        {CLEANER_IDS.map((i) => (
+          <>
+            <linearGradient id={`bcn-return-grad-${i}`} data-return-grad={i}
+                            gradientUnits="userSpaceOnUse" spreadMethod="repeat"
+                            x1="0" y1="0" x2="1" y2="0">
+              <stop class="bcn-cityview__gstop" offset="0" stop-opacity="0"></stop>
+              <stop class="bcn-cityview__gstop" offset="0.8" stop-opacity="1"></stop>
+              <stop class="bcn-cityview__gstop" offset="1" stop-opacity="0"></stop>
+            </linearGradient>
+            <linearGradient id={`bcn-out-grad-${i}`} data-out-grad={i}
+                            gradientUnits="userSpaceOnUse" spreadMethod="repeat"
+                            x1="0" y1="0" x2="1" y2="0">
+              <stop class="bcn-cityview__gstop-out" offset="0" stop-opacity="0"></stop>
+              <stop class="bcn-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop>
+              <stop class="bcn-cityview__gstop-out" offset="1" stop-opacity="0"></stop>
+            </linearGradient>
+          </>
+        ))}
+      </defs>
+      <!-- Isometric dot paper — the lattice the whole drawing sits on. -->
+      <rect class="bcn-cityview__paper" x="0" y="0" width="100%" height="100%" fill="url(#bcn-iso-dots)"></rect>
+
+      <polygon class="bcn-cityview__ground" data-ground></polygon>
+
+      <!-- Streets — one per cleaner. Each carries a road surface, the out lane,
+           and the return lane's base track + bright wave. All sit BELOW the
+           buildings, so each lane end tucks behind the room / cleaner and reads
+           as entering or leaving it — never clipping on top of a face. Wave
+           strokes are inline `url(#…)` per cleaner (inline beats the scoped
+           stylesheet's presentation attributes). Groups i>1 start hidden. -->
+      {CLEANER_IDS.map((i) => (
+        <g class="bcn-cityview__lanes" data-lanes={i} style={i > 1 ? 'display:none' : undefined}>
+          <polyline class="bcn-cityview__road" data-road></polyline>
+          <polyline class="bcn-cityview__track" data-flow="out-track"></polyline>
+          <polyline class="bcn-cityview__wave" data-flow="out-wave" style={`stroke: url(#bcn-out-grad-${i})`}></polyline>
+          <polyline class="bcn-cityview__track" data-flow="return-track"></polyline>
+          <polyline class="bcn-cityview__wave" data-flow="wave" style={`stroke: url(#bcn-return-grad-${i})`}></polyline>
+        </g>
+      ))}
+
+      <!-- Room building (large). -->
+      <polygon class="bcn-cityview__room-face" data-room="left"></polygon>
+      <polygon class="bcn-cityview__room-face" data-room="right"></polygon>
+      <polygon class="bcn-cityview__room-face" data-room="top"></polygon>
+
+      <!-- Air-cleaner buildings (small) — one per cleaner, AFTER the room faces so
+           they paint in front. Groups i>1 start hidden. -->
+      {CLEANER_IDS.map((i) => (
+        <g class="bcn-cityview__unitg" data-unitg={i} style={i > 1 ? 'display:none' : undefined}>
+          <polygon class="bcn-cityview__unit-face" data-unit="left"></polygon>
+          <polygon class="bcn-cityview__unit-face" data-unit="right"></polygon>
+          <polygon class="bcn-cityview__unit-face" data-unit="top"></polygon>
+        </g>
+      ))}
+
+      <text class="bcn-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
+      <text class="bcn-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text>
+      <text class="bcn-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text>
+
+      <!-- Drag grips — part of the same bcn-lego-checked cityview block: each edge
+           drags its dimension and types into the form fields (inputs stay the
+           source of truth). No esa- lego offers draggable diagram handles; the
+           write-back goes through the esa-text-field legos. -->
+      <g data-grips>
+        <line class="bcn-cityview__hit" data-grip="length"></line>
+        <line class="bcn-cityview__hit" data-grip="width"></line>
+        <line class="bcn-cityview__hit" data-grip="height"></line>
+        <g class="bcn-cityview__handle" data-grip="length"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <g class="bcn-cityview__handle" data-grip="width"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <g class="bcn-cityview__handle" data-grip="height"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+      </g>
+    </svg>
+    <!-- Invisible safe-area sentinel: CSS declares (per breakpoint) where the
+         buildings may live, clear of the panel + header; JS observes this rect
+         and feeds it to the fit math. -->
+    <div class="bcn-cityview__safe" data-safe aria-hidden="true"></div>
+    <p class="type-caption bcn-cityview__cap">
+      Air leaves your room, passes through the cleaner, and returns. When
+      entering length × width, drag the room's edges — or type — to resize it.
+    </p>
+  </div>
+
+  <!-- Full-bleed backdrop + floating overlay composition. bcn-lego-checked:
+       layouts.css primitives are flow-only (no fixed full-viewport backdrop or
+       floating overlay); esa-dialog/esa-side-dialog are wrong here — their modal
+       scrim would hide the scene and their focus trap is wrong for an
+       always-open form. Panel chrome stays esa-card via the --card-bg hook; only
+       the positioning is bespoke, so it lives in these smaqmd-aerb__ blocks. -->
+  <div class="smaqmd-aerb__header">
+    <slot name="header" />
+  </div>
+
+  <!-- Inputs + result, stacked in the floating panel. -->
+  <div class="smaqmd-aerb__panel stack" data-gap="lg">
+      <EsaCard title="Your room" headingLevel={2}>
+        <div class="stack" data-gap="md">
+          <esa-radio-group
+            data-field="roomMethod"
+            label="How do you want to enter your room size?"
+            value="dimensions"
+            options={JSON.stringify(roomMethods)}
+          ></esa-radio-group>
+          <div class="smaqmd-aerb__dims grid" data-gap="md">
+            <div data-room="dimensions">
+              <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
+            </div>
+            <div data-room="dimensions">
+              <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+            </div>
+            <div data-room="dimensions area">
+              <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
+            </div>
+            <div data-room="area" hidden>
+              <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
+            </div>
+            <div data-room="volume" hidden>
+              <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
+            </div>
+          </div>
+        </div>
+      </EsaCard>
+
+      <EsaCard title="Your air cleaners" headingLevel={2}>
+        <div class="stack" data-gap="md">
+          <!-- Cleaner blocks stamped here by JS (template below) -->
+          <div class="stack" data-gap="lg" data-cleaners></div>
+
+          <div class="cluster" data-gap="sm">
+            <span data-add-cleaner>
+              <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
+                Add another air cleaner
+              </EsaButton>
+            </span>
+            <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
+          </div>
+
+          <esa-text-field
+            data-field="target"
+            type="text"
+            inputmode="decimal"
+            label="Target air changes per hour"
+            value="2"
+            help-text="CARB recommends at least 2."
+          ></esa-text-field>
+        </div>
+      </EsaCard>
+
+      <EsaCard variant="elevated" title="Your result" headingLevel={2}>
+        <div class="stack" data-gap="md" data-result>
+          <!-- ACH group: shown when a full room size + at least one cleaner are entered -->
+          <div class="stack" data-gap="md" data-group="ach">
+            <div class="smaqmd-aerb__metrics">
+              <div data-metric="ach"><EsaStat value="—" label="Air changes per hour" sub="in your room" accent /></div>
+              <div data-metric="volume"><EsaStat value="—" label="Room volume" /></div>
+            </div>
+            <div data-verdict="pass" hidden>
+              <EsaAlertBox variant="success" title="Meets your target">
+                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
+                at or above your target of <strong data-r="target">2</strong>.
+              </EsaAlertBox>
+            </div>
+            <div data-verdict="fail" hidden>
+              <EsaAlertBox variant="warning" title="Below your target">
+                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
+                short of your target of <strong data-r="target">2</strong>. Try a
+                higher-CADR cleaner, another unit, or a smaller room.
+              </EsaAlertBox>
+            </div>
+          </div>
+
+          <!-- Capacity group: shown whenever combined flow > 0, regardless of room -->
+          <div class="stack" data-gap="sm" data-group="capacity" hidden>
+            <div class="smaqmd-aerb__metrics">
+              <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
+              <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
+            </div>
+            <p class="type-caption">
+              <span data-r="setup">Your air cleaner</span> can maintain
+              <strong data-r="target">2</strong> air changes per hour up to this size.
+            </p>
+          </div>
+
+          <div data-prompt="empty" hidden>
+            <EsaAlertBox variant="info">
+              Enter your room size and an air cleaner rating to see your result.
+            </EsaAlertBox>
+          </div>
+
+          <!-- Polite announcer: a visually-hidden live region written by recompute()
+               after a 600 ms debounce so drag gestures do not chatter. -->
+          <p class="smaqmd-aerb__sr" aria-live="polite" data-announce></p>
+        </div>
+      </EsaCard>
+  </div>
+
+  <!-- Cleaner-block template — cloned per cleaner. data-cleaner is stamped with
+       the block's id on clone so each block's fields read/write independently.
+       bcn-lego-checked: no esa- lego provides a repeating list-item template with
+       remove animation; checked Beacon (none); .smaqmd-aerb__cleaner is the
+       reusable home for the cleaner block chrome. -->
+  <template data-cleaner-template>
+    <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
+      <div class="smaqmd-aerb__cleaner-head repel">
+        <p class="type-card-title smaqmd-aerb__cleaner-title">Air cleaner</p>
+        <span data-remove-cleaner hidden>
+          <EsaIconButton icon="trash-2" label="Remove this air cleaner" size="sm" />
+        </span>
+      </div>
+      <esa-text-field
+        data-field="airflow"
+        data-cleaner
+        type="text"
+        inputmode="decimal"
+        label="Air flow rate or CADR (ft³/min)"
+        help-text="Use the highest air flow, or the lowest CADR if three are listed."
+      ></esa-text-field>
+    </div>
+  </template>
+</div>
+
+<style>
+  .smaqmd-aerb [hidden] { display: none !important; }
+  .smaqmd-aerb__dims { --grid-min: 6.5rem; }
+
+  /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
+     utility; checked Beacon (uses a global .sr-only utility class not
+     available in this spoke); this 7-property clip-path pattern is the
+     only home for a polite live-region that stays off-screen. */
+  .smaqmd-aerb__sr {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Cleaner-block chrome — ported from Option A's .smaqmd-aer__cleaner* rules,
+     renamed to .smaqmd-aerb__cleaner*. Top border + padding separate blocks
+     visually; :first-of-type resets so the first block has no top chrome.
+     bcn-lego-checked: no esa- lego provides a repeating list-item divider
+     pattern; checked Beacon (none); the cleaner block is a spoke-level concern. */
+  .smaqmd-aerb__cleaner {
+    padding-block-start: var(--spacing-300, 0.75rem);
+    border-block-start: 1px solid var(--color-border);
+  }
+  .smaqmd-aerb__cleaner:first-of-type {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+  .smaqmd-aerb__cleaner-head { align-items: center; }
+  .smaqmd-aerb__cleaner-title { color: var(--color-text-secondary); }
+  .smaqmd-aerb__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-500, 1.5rem);
+  }
+
+  .smaqmd-aerb { position: relative; min-block-size: 100dvh; }
+
+  /* bcn-cityview — the isometric city scene. bcn-lego-checked: bespoke SVG
+     volume + flow drawing, no esa-/Beacon equivalent (see markup note); the
+     fixed-inset full-viewport stage + invisible safe-area sentinel are likewise
+     bespoke (no layouts.css primitive or esa- lego provides a fixed illustration
+     backdrop). Token-driven fills: value-layered neutrals for the ground/room,
+     brand accent for the cleaner building + clean-air return lane, --color-border
+     for edges. */
+  .bcn-cityview {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    /* wave tints — clean-air return is brand (green when meeting target); the
+       used-air intake is a neutral gray. */
+    --pulse-color: var(--color-primary, #159a86);
+    --out-color: var(--color-text-tertiary, #6b7280);
+  }
+  .bcn-cityview[data-state="fail"] { --pulse-color: var(--color-warning, #d9822b); }
+  .bcn-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+
+  /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
+  .bcn-cityview__safe {
+    position: absolute;
+    inset: 9rem calc(24rem + 2 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
+    visibility: hidden;
+  }
+
+  /* Dot paper sits under everything; the translucent ground lets it show
+     through faintly so the scene reads as drawn ON the iso lattice. */
+  .bcn-cityview__dot { fill: var(--color-border, #cfcfcf); }
+  .bcn-cityview__ground {
+    fill: color-mix(in srgb, var(--color-surface-sunken, #f0f0f0) 45%, transparent);
+    stroke: var(--color-border-light, #e0e0e0);
+    stroke-width: 1;
+    stroke-linejoin: round;
+  }
+
+  .bcn-cityview__road {
+    fill: none;
+    stroke: var(--color-surface-sunken, #eaeaea);
+    stroke-width: 13;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* Consistent base track each wave rides on — a light, always-present tint,
+     slightly wider than the wave so the path reads the same whether or not a
+     bright wave is passing over it. Return tints brand; intake tints neutral. */
+  .bcn-cityview__track {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .bcn-cityview__track[data-flow="return-track"] { stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
+  .bcn-cityview__track[data-flow="out-track"]    { stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
+
+  /* The air-change wave — a repeating full→transparent gradient scrolled by JS.
+     One repeat travels the lane per air change (cadence tied to ACH). The return
+     lane carries the clean-air (pulse) color, the intake the used-air color.
+     Sits idle until there's a valid result. */
+  .bcn-cityview__gstop     { stop-color: var(--pulse-color); }
+  .bcn-cityview__gstop-out { stop-color: var(--out-color); }
+  .bcn-cityview__wave {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  /* Wave strokes are set inline per cleaner (url(#bcn-return-grad-i) /
+     url(#bcn-out-grad-i)) so each lane scrolls its own gradient. */
+  .bcn-cityview[data-state="pass"] .bcn-cityview__wave,
+  .bcn-cityview[data-state="fail"] .bcn-cityview__wave { opacity: 1; }
+  /* A cleaner with no (or zero) flow shows faint tracks but no wave — JS marks
+     that lane group idle. */
+  .bcn-cityview__lanes[data-lane-idle] .bcn-cityview__wave { opacity: 0 !important; }
+
+  .bcn-cityview__room-face {
+    stroke: var(--color-border, #d0d0d0);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    transition: fill 200ms ease;
+  }
+  .bcn-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 80%, transparent); }
+  .bcn-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 78%, transparent); }
+  .bcn-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 78%, transparent); }
+
+  .bcn-cityview__unit-face {
+    stroke: var(--color-primary-hover, #0f7e6e);
+    stroke-width: 1;
+    stroke-linejoin: round;
+  }
+  .bcn-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 72%, #fff); }
+  .bcn-cityview__unit-face[data-unit="left"]  { fill: var(--color-primary, #159a86); }
+  .bcn-cityview__unit-face[data-unit="right"] { fill: var(--color-primary-hover, #0f7e6e); }
+
+  .bcn-cityview__dim {
+    fill: var(--color-text-secondary, #555);
+    font-size: 13px;
+    font-weight: var(--font-weight-medium, 500);
+    font-family: var(--font-family-base, system-ui, sans-serif);
+  }
+
+  /* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
+     edge drags its dimension and writes back into the esa-text-field legos. */
+  .bcn-cityview__hit {
+    stroke: transparent; stroke-width: 28; stroke-linecap: round;
+    pointer-events: stroke; cursor: grab; touch-action: none;
+  }
+  .bcn-cityview__dim[data-grip] {
+    pointer-events: all; cursor: grab; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  .bcn-cityview__handle { pointer-events: all; cursor: grab; touch-action: none; }
+  .bcn-cityview__chev {
+    fill: none;
+    stroke: var(--color-text-secondary, #555);
+    stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 120ms ease, stroke-width 120ms ease;
+  }
+  .bcn-cityview__handle:hover .bcn-cityview__chev,
+  .bcn-cityview__hit:hover ~ .bcn-cityview__handle .bcn-cityview__chev {
+    stroke: var(--color-text, #1a1a1a); stroke-width: 2.5;
+  }
+  .bcn-cityview[data-dragging] .bcn-cityview__hit,
+  .bcn-cityview[data-dragging] .bcn-cityview__handle,
+  .bcn-cityview[data-dragging] .bcn-cityview__dim[data-grip] { cursor: grabbing; }
+
+  /* Grips only make sense while entering length × width — the other room-entry
+     modes have no draggable edges, so hide the handles and neutralize the
+     label-drag affordance. The pointerdown handler guards the same condition. */
+  .bcn-cityview:not([data-entry-mode="dimensions"]) [data-grips] { display: none; }
+  .bcn-cityview:not([data-entry-mode="dimensions"]) .bcn-cityview__dim[data-grip] {
+    pointer-events: none; cursor: default;
+  }
+
+  .bcn-cityview__cap {
+    position: absolute;
+    inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
+    max-inline-size: 26rem; text-align: start;
+    color: var(--color-text-tertiary);
+  }
+
+  .smaqmd-aerb__header {
+    position: fixed; z-index: 1;
+    inset-block-start: var(--spacing-500); inset-inline-start: var(--spacing-500);
+    max-inline-size: 34rem;
+  }
+
+  .smaqmd-aerb__panel {
+    position: fixed; z-index: 1;
+    inset-block-start: var(--spacing-500); inset-inline-end: var(--spacing-500);
+    inline-size: 24rem;
+    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
+    overflow-y: auto; overscroll-behavior: contain;
+    --card-bg: color-mix(in srgb, var(--color-surface) 84%, transparent);  /* lego hook, inherits into cards */
+  }
+  /* The panel is a .stack (flex column) with a max height: without this, short
+     viewports shrink the cards (esa-card's overflow:hidden zeroes their flex
+     minimum) and clip fields instead of letting the panel scroll. */
+  .smaqmd-aerb__panel > :global(*) { flex-shrink: 0; }
+  .smaqmd-aerb__panel :global(.esa-card) {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .smaqmd-aerb__panel { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
+  }
+
+  @media (max-width: 56rem) {
+    .smaqmd-aerb { padding-block-end: var(--spacing-700); }
+    .smaqmd-aerb__header { position: relative; inset: auto; max-inline-size: none; padding: var(--spacing-500) var(--spacing-400) 0; }
+    .smaqmd-aerb__panel {
+      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
+      margin-block-start: min(44svh, 26rem);   /* scene owns the first viewport */
+      padding-inline: var(--spacing-400);
+    }
+    .bcn-cityview__safe { inset: 11rem var(--spacing-400) 54svh var(--spacing-400); }
+    .bcn-cityview__cap { display: none; }
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-radio-group';
+
+  const root = document.querySelector<HTMLElement>('[data-aerb]');
+  if (root) {
+    // ---- input plumbing (shared with the city drawing) ----
+    // Namespaced field lookup: a bare name matches the shared (no data-cleaner)
+    // field; passing a cleaner id matches that cleaner's per-block field. Grips
+    // and room math use the shared fields; cleaner math passes the block id.
+    const qa = (sel: string) => Array.from(root.querySelectorAll<HTMLElement>(sel));
+    const field = (name: string, id?: string | number) => {
+      const sel = id != null
+        ? `[data-field="${name}"][data-cleaner="${id}"]`
+        : `[data-field="${name}"]:not([data-cleaner])`;
+      return root.querySelector<HTMLElement & { value?: string }>(sel);
+    };
+    const raw = (name: string, id?: string | number): string => {
+      const el = field(name, id);
+      return (el && el.value != null ? String(el.value) : '').trim();
+    };
+    const num = (name: string, id?: string | number): number => {
+      const v = parseFloat(raw(name, id));
+      return Number.isFinite(v) ? v : NaN;
+    };
+    const pos = (name: string, id?: string | number): number => {
+      const v = num(name, id);
+      return Number.isFinite(v) && v > 0 ? v : NaN;
+    };
+    const fmt = (v: number, digits = 0) =>
+      v.toLocaleString('en-US', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+
+    type Pt = [number, number];
+
+    // ---- isometric projection ----
+    // Project a 3D world point (x=length axis, y=width axis, z=up, all in ft) to
+    // 2D. Classic 2:1 isometric: x runs right, y runs left, z runs up.
+    const COS30 = Math.cos(Math.PI / 6);
+    const SIN30 = 0.5;
+    const project = (x: number, y: number, z: number): Pt => [
+      (x - y) * COS30,
+      (x + y) * SIN30 - z,
+    ];
+
+    const svg = root.querySelector<SVGElement>('.bcn-cityview__svg')!;
+    const container = root.querySelector<HTMLElement>('[data-cityview]')!;
+    // px-per-projected-ft from the last fit; frozen at pointerdown for a drag so
+    // the gesture's px→ft mapping stays stable while the scene re-fits.
+    let fitScale = 1;
+    let viewW = 480, viewH = 380;
+    let safe = { x: 52, y: 52, w: 376, h: 276 };   // SSR fallback matching the old frame
+    const MAX_SCALE = 12;  // px per projected ft — stops a small room ballooning on huge monitors; tune visually
+    const sentinel = root.querySelector<HTMLElement>('[data-safe]')!;
+    const syncViewport = () => {
+      viewW = container.clientWidth; viewH = container.clientHeight;
+      svg.setAttribute('viewBox', `0 0 ${viewW} ${viewH}`);
+      const s = sentinel.getBoundingClientRect();
+      const c = container.getBoundingClientRect();
+      safe = { x: s.left - c.left, y: s.top - c.top, w: s.width, h: s.height };
+      drawScene(cur.L, cur.W, cur.H);
+    };
+    new ResizeObserver(syncViewport).observe(sentinel);
+    // One screen-coord lane path per cleaner, filled each draw. returnPaths[i]
+    // runs cleaner i → room; outPaths[i] runs room → cleaner i.
+    const returnPaths: Pt[][] = [];
+    const outPaths: Pt[][] = [];
+    // How many cleaners the scene is currently drawing (mirrors the panel list,
+    // capped at MAX_CLEANERS); set in recompute(), read by drawScene + waves.
+    let sceneN = 1;
+    const MAX_CLEANERS = 4;
+
+    const ptsAttr = (pts: Pt[]) => pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const setPoly = (sel: string, pts: Pt[]) => {
+      const el = svg.querySelector(sel);
+      if (el) el.setAttribute('points', ptsAttr(pts));
+    };
+    const setLabel = (name: string, at: Pt, text: string) => {
+      const el = svg.querySelector(`[data-label="${name}"]`);
+      if (!el) return;
+      el.setAttribute('x', at[0].toFixed(1));
+      el.setAttribute('y', at[1].toFixed(1));
+      el.textContent = text;
+    };
+    const mid = (p: Pt, q: Pt): Pt => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+
+    // N air cleaners on the right street side (x > L), spread along the room's
+    // width. Cleaner k of n centers at cyc_k = W·(k+0.5)/n, so n=1 lands at W/2
+    // (today's geometry). Footprint shrinks as more cleaners share the width so
+    // their small faces never overlap. Each keeps its own two straight iso lanes.
+    type Cleaner = { x0: number; y0: number; x1: number; y1: number; h: number; laneOut: number; laneRet: number };
+    const layoutCleaners = (L: number, W: number, n: number): Cleaner[] => {
+      const gap = Math.max(3, Math.min(L, W) * 0.55); // street width between room + cleaner
+      // Anti-overlap: footprint capped so n cleaners fit down the width band.
+      const cw = Math.min(Math.max(2, Math.min(L, W) * 0.18), (W / n) * 0.55);
+      const ch = cw * 1.3;
+      const off = cw * 0.3; // lane separation tied to the cleaner, not the room
+      const out: Cleaner[] = [];
+      for (let k = 0; k < n; k++) {
+        const cyc = (W * (k + 0.5)) / n;
+        out.push({
+          x0: L + gap, y0: cyc - cw / 2, x1: L + gap + cw, y1: cyc + cw / 2, h: ch,
+          laneOut: cyc - off, laneRet: cyc + off,
+        });
+      }
+      return out;
+    };
+
+    // Draw the whole scene at the given (already-eased) room dimensions. Every
+    // world point is projected, then the entire figure is scaled + centred to
+    // fill the frame, so proportions stay truthful at any absolute size.
+    const drawScene = (L: number, W: number, H: number) => {
+      const n = Math.min(Math.max(1, sceneN), MAX_CLEANERS);
+      const cleaners = layoutCleaners(L, W, n);
+
+      // Lot bounds enclose the room, every cleaner, and a margin — the city block.
+      const maxX1 = Math.max(L, ...cleaners.map((c) => c.x1));
+      const maxY1 = Math.max(W, ...cleaners.map((c) => c.y1));
+      const c0 = cleaners[0];
+      const margin = Math.max(c0.x1 - c0.x0, c0.x0 - L) * 0.9 + 1;
+      const lotX0 = -margin, lotY0 = -margin;
+      const lotX1 = maxX1 + margin;
+      const lotY1 = maxY1 + margin;
+
+      // Collect every world point that must be on-screen, then fit. Every cleaner
+      // box feeds the fit so the whole city stays inside the safe area.
+      const fitPts: Pt[] = [];
+      const box = (x0: number, y0: number, x1: number, y1: number, z1: number) => {
+        for (const [x, y] of [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Pt[])
+          for (const z of [0, z1]) fitPts.push(project(x, y, z));
+      };
+      box(0, 0, L, W, H);
+      for (const c of cleaners) box(c.x0, c.y0, c.x1, c.y1, c.h);
+      for (const [x, y] of [[lotX0, lotY0], [lotX1, lotY0], [lotX1, lotY1], [lotX0, lotY1]] as Pt[])
+        fitPts.push(project(x, y, 0));
+
+      const xs = fitPts.map((p) => p[0]);
+      const ys = fitPts.map((p) => p[1]);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const scale = Math.min(safe.w / (maxX - minX || 1), safe.h / (maxY - minY || 1), MAX_SCALE);
+      fitScale = scale;
+      const ox = safe.x + (safe.w - (maxX - minX) * scale) / 2 - minX * scale;
+      const oy = safe.y + (safe.h - (maxY - minY) * scale) / 2 - minY * scale;
+      const w = (x: number, y: number, z: number): Pt => {
+        const p = project(x, y, z);
+        return [ox + p[0] * scale, oy + p[1] * scale];
+      };
+
+      // Ground lot (the city block) — sits on the dot paper behind it.
+      setPoly('[data-ground]', [w(lotX0, lotY0, 0), w(lotX1, lotY0, 0), w(lotX1, lotY1, 0), w(lotX0, lotY1, 0)]);
+
+      // Room building — top + the two near walls.
+      setPoly('[data-room="top"]', [w(0, 0, H), w(L, 0, H), w(L, W, H), w(0, W, H)]);
+      setPoly('[data-room="left"]', [w(0, W, H), w(L, W, H), w(L, W, 0), w(0, W, 0)]);
+      setPoly('[data-room="right"]', [w(L, 0, H), w(L, W, H), w(L, W, 0), w(L, 0, 0)]);
+
+      // Per cleaner: its street + lanes group (behind the room) and its building
+      // group (in front). Groups beyond n are hidden via style.display — an
+      // SVGGElement has no `.hidden`, so we toggle display directly.
+      returnPaths.length = 0;
+      outPaths.length = 0;
+      for (let i = 0; i < MAX_CLEANERS; i++) {
+        const laneG = svg.querySelector<SVGGElement>(`.bcn-cityview__lanes[data-lanes="${i + 1}"]`);
+        const unitG = svg.querySelector<SVGGElement>(`.bcn-cityview__unitg[data-unitg="${i + 1}"]`);
+        const on = i < n;
+        if (laneG) laneG.style.display = on ? '' : 'none';
+        if (unitG) unitG.style.display = on ? '' : 'none';
+        if (!on) { returnPaths[i] = []; outPaths[i] = []; continue; }
+        const c = cleaners[i];
+
+        // Street: road surface from the room's wall to the cleaner, then the two
+        // straight iso lanes (out runs room→cleaner, return runs cleaner→room).
+        const setLaneG = (sel: string, pts: Pt[]) => {
+          const el = laneG?.querySelector(sel);
+          if (el) el.setAttribute('points', ptsAttr(pts));
+        };
+        const cyc = (c.laneOut + c.laneRet) / 2; // road runs down the lane centerline
+        setLaneG('[data-road]', [w(L, cyc, 0), w(c.x0, cyc, 0)]);
+        const outPath = [w(L, c.laneOut, 0), w(c.x0, c.laneOut, 0)]; // room → cleaner
+        setLaneG('[data-flow="out-track"]', outPath);
+        setLaneG('[data-flow="out-wave"]', outPath);
+        const returnPath = [w(c.x0, c.laneRet, 0), w(L, c.laneRet, 0)]; // cleaner → room
+        setLaneG('[data-flow="return-track"]', returnPath);
+        setLaneG('[data-flow="wave"]', returnPath);
+        outPaths[i] = outPath;
+        returnPaths[i] = returnPath;
+
+        // Air-cleaner building — same three faces, small.
+        const setUnitG = (sel: string, pts: Pt[]) => {
+          const el = unitG?.querySelector(sel);
+          if (el) el.setAttribute('points', ptsAttr(pts));
+        };
+        setUnitG('[data-unit="top"]', [w(c.x0, c.y0, c.h), w(c.x1, c.y0, c.h), w(c.x1, c.y1, c.h), w(c.x0, c.y1, c.h)]);
+        setUnitG('[data-unit="left"]', [w(c.x0, c.y1, c.h), w(c.x1, c.y1, c.h), w(c.x1, c.y1, 0), w(c.x0, c.y1, 0)]);
+        setUnitG('[data-unit="right"]', [w(c.x1, c.y0, c.h), w(c.x1, c.y1, c.h), w(c.x1, c.y1, 0), w(c.x1, c.y0, 0)]);
+      }
+
+      // Dimension labels around the room's LEFT-front corner (0,W) — away from
+      // the street on the right, so nothing collides.
+      const [lx, ly] = mid(w(0, W, 0), w(L, W, 0)); setLabel('length', [lx - 4, ly + 20], `${fmt(L, 1)} ft`);
+      // Width rides the ROOF back-left edge (z=H), so it meets the top of the
+      // height edge at (0,W,H) — reading as height going up, then width across
+      // the top. Nudge up-left (its outward normal) to sit just outside the roof.
+      const [wx, wy] = mid(w(0, 0, H), w(0, W, H)); setLabel('width', [wx - 12, wy - 12], `${fmt(W, 1)} ft`);
+      const [hx, hy] = mid(w(0, W, 0), w(0, W, H)); setLabel('height', [hx - 26, hy], `${fmt(H, 1)} ft`);
+
+      // Drag grips: an invisible fat hit-line along each dimension's edge + a
+      // visible knob at the edge midpoint. Positioned every draw so they track
+      // the morphing room.
+      const HANDLE_DEG: Record<string, number> = { length: 30, width: 150, height: 90 };
+      const setLine = (dim: string, p: Pt, q: Pt) => {
+        const line = svg.querySelector(`.bcn-cityview__hit[data-grip="${dim}"]`);
+        if (line) {
+          line.setAttribute('x1', p[0].toFixed(1)); line.setAttribute('y1', p[1].toFixed(1));
+          line.setAttribute('x2', q[0].toFixed(1)); line.setAttribute('y2', q[1].toFixed(1));
+        }
+        const [mx, my] = mid(p, q);
+        const handle = svg.querySelector(`.bcn-cityview__handle[data-grip="${dim}"]`);
+        if (handle) handle.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${HANDLE_DEG[dim]})`);
+      };
+      setLine('length', w(0, W, 0), w(L, W, 0));
+      setLine('width', w(0, 0, H), w(0, W, H)); // roof back-left edge, meets top of height
+      setLine('height', w(0, W, 0), w(0, W, H));
+    };
+
+    // ---- animation loop: room morph + a scrolling gradient wave on the lane ----
+    // Time scale: HOUR_SECONDS of wall-clock = one hour. Each bright wave sweeping
+    // the return lane (filter → room) is one air change, so a fresh wave leaves
+    // the filter every HOUR_SECONDS / ACH seconds (ACH 2 → every 2.5s). The wave
+    // is a repeating full→transparent gradient scrolled along the lane, not a dot.
+    const HOUR_SECONDS = 5;
+    const TRAVEL = 2.2;              // seconds for one wave to cross the lane
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cur = { L: 12, W: 10, H: 8 };
+    const tgt = { L: 12, W: 10, H: 8 };
+    // Per-cleaner air-change cadence: laneAch[i] = that cleaner's flow × 60 ÷ room
+    // volume. Zero (blank cleaner) → faint tracks, no wave on that street.
+    const laneAch: number[] = [];
+    let stateNow = 'idle';          // idle | pass | fail (aggregate tint)
+    let running = false;
+    let last = 0;
+    // One wave entry per lane — return + intake for each of the MAX_CLEANERS
+    // streets (8 total). Each carries its own scroll phase and its cleaner index
+    // so updateWave can look up that cleaner's cadence + lane path independently.
+    const grad = (attr: string, i: number) =>
+      svg.querySelector<SVGElement>(`[${attr}="${i}"]`)!;
+    type Wave = { grad: SVGElement; path: () => Pt[]; idx: number; phase: number };
+    const waves: Wave[] = [];
+    for (let i = 0; i < MAX_CLEANERS; i++) {
+      waves.push({ grad: grad('data-return-grad', i + 1), path: () => returnPaths[i] || [], idx: i, phase: 0 });
+      waves.push({ grad: grad('data-out-grad', i + 1), path: () => outPaths[i] || [], idx: i, phase: 0 });
+    }
+    const animating = () => stateNow !== 'idle' && !reduced;
+
+    // Scroll each cleaner's repeating gradient along its (possibly morphed) lane by
+    // moving the gradient start; spreadMethod="repeat" tiles the rest. One repeat
+    // (wavelength wl) passes a point every HOUR_SECONDS / ACH_i seconds — one air
+    // change for THAT cleaner. Skip lanes past sceneN or with no flow.
+    const updateWave = (dt: number) => {
+      if (stateNow === 'idle') return;
+      for (const wv of waves) {
+        if (wv.idx >= sceneN) continue;
+        const ach = laneAch[wv.idx];
+        if (!ach || !Number.isFinite(ach)) continue;
+        const path = wv.path();
+        if (path.length < 2) continue;
+        const interval = Math.max(0.3, Math.min(20, HOUR_SECONDS / ach));
+        const P0 = path[0], P1 = path[path.length - 1];
+        const dx = P1[0] - P0[0], dy = P1[1] - P0[1];
+        const Ln = Math.hypot(dx, dy) || 1;
+        const ux = dx / Ln, uy = dy / Ln;
+        const v = Ln / TRAVEL;                    // px/s a wave head travels
+        const wl = Math.max(8, v * interval);     // px between successive waves
+        wv.phase = reduced ? 0 : (wv.phase + v * dt) % wl;
+        const sx = P0[0] + ux * wv.phase, sy = P0[1] + uy * wv.phase;
+        wv.grad.setAttribute('x1', sx.toFixed(1));
+        wv.grad.setAttribute('y1', sy.toFixed(1));
+        wv.grad.setAttribute('x2', (sx + ux * wl).toFixed(1));
+        wv.grad.setAttribute('y2', (sy + uy * wl).toFixed(1));
+      }
+    };
+
+    const frame = (ts: number) => {
+      const dt = Math.min(0.05, (ts - last) / 1000 || 0);
+      last = ts;
+
+      // Ease the room toward the entered dimensions.
+      cur.L += (tgt.L - cur.L) * 0.22;
+      cur.W += (tgt.W - cur.W) * 0.22;
+      cur.H += (tgt.H - cur.H) * 0.22;
+      const morphing = Math.abs(tgt.L - cur.L) + Math.abs(tgt.W - cur.W) + Math.abs(tgt.H - cur.H) >= 0.01;
+      if (!morphing) { cur.L = tgt.L; cur.W = tgt.W; cur.H = tgt.H; }
+      drawScene(cur.L, cur.W, cur.H);
+
+      updateWave(dt);
+
+      if (morphing || animating()) requestAnimationFrame(frame);
+      else running = false;
+    };
+    const startLoop = () => {
+      if (running) return;
+      running = true;
+      last = performance.now();
+      requestAnimationFrame(frame);
+    };
+    // ---- room size across the three entry modes ----
+    // roomVolume(): the true volume for the ACH math, per the chosen method.
+    // sceneBox(): a drawable L×W×H box for the isometric scene, derived from
+    // whatever the mode gives — area/volume modes have no real footprint, so we
+    // draw a square room of the equivalent size (√area, or √(vol/8)) with a
+    // standard ceiling. 0.5 fallbacks keep the scene alive while fields are blank.
+    const roomVolume = (): number => {
+      switch (raw('roomMethod')) {
+        case 'dimensions': return num('length') * num('width') * num('height');
+        case 'area':       return num('area') * num('height');
+        case 'volume':     return num('volume');
+        default:           return NaN;
+      }
+    };
+    const sceneBox = (): { L: number; W: number; H: number } => {
+      const method = raw('roomMethod');
+      if (method === 'area') {
+        const area = pos('area');
+        const H = pos('height') || 8;
+        const side = Number.isFinite(area) ? Math.sqrt(area) : 0.5;
+        return { L: side || 0.5, W: side || 0.5, H };
+      }
+      if (method === 'volume') {
+        const vol = pos('volume');
+        const H = 8;
+        const side = Number.isFinite(vol) ? Math.sqrt(vol / H) : 0.5;
+        return { L: side || 0.5, W: side || 0.5, H };
+      }
+      return { L: pos('length') || 0.5, W: pos('width') || 0.5, H: pos('height') || 0.5 };
+    };
+    const morphScene = () => {
+      const b = sceneBox();
+      tgt.L = b.L; tgt.W = b.W; tgt.H = b.H;
+      startLoop();
+    };
+
+    // ---- air-cleaner list (add / remove any number, capped at MAX_CLEANERS) ----
+    const cleanersHost = root.querySelector<HTMLElement>('[data-cleaners]')!;
+    const template = root.querySelector<HTMLTemplateElement>('[data-cleaner-template]')!;
+    const cleanerBlocks = () =>
+      qa('[data-cleaner-block]:not([data-removing])');
+    let nextId = 0;
+
+    const addCleaner = (initial?: string) => {
+      if (cleanerBlocks().length >= MAX_CLEANERS) return;
+      const frag = template.content.cloneNode(true) as DocumentFragment;
+      const b = frag.querySelector<HTMLElement>('[data-cleaner-block]')!;
+      const id = String(++nextId);
+      b.setAttribute('data-cleaner-block', id);
+      b.querySelectorAll('[data-cleaner]').forEach((el) => el.setAttribute('data-cleaner', id));
+      // Stamp the default airflow BEFORE upgrade so the field boots populated even
+      // if the esa-text-field hasn't defined yet (value is a plain attribute then).
+      if (initial != null) {
+        const af = b.querySelector<HTMLElement & { value?: string }>('[data-field="airflow"][data-cleaner]');
+        if (af) af.setAttribute('value', initial);
+      }
+      cleanersHost.appendChild(frag);
+    };
+    // First cleaner boots with 200 CFM (the default that keeps the scene alive);
+    // any additional cleaner starts blank.
+    const resetCleaners = () => {
+      cleanersHost.replaceChildren();
+      nextId = 0;
+      addCleaner('200');
+    };
+
+    // Collapse the clicked block in place so the eye tracks WHICH cleaner leaves.
+    // It's excluded from cleanerBlocks() the moment it starts collapsing, so the
+    // scene + result update immediately while the row animates out.
+    const removeCleaner = (b: HTMLElement) => {
+      b.setAttribute('data-removing', '');
+      const finishNow = () => { b.remove(); morphScene(); recompute(); };
+      if (reduced) { finishNow(); return; }
+      const startHeight = b.offsetHeight;
+      b.style.overflow = 'hidden';
+      b.style.boxSizing = 'border-box';
+      b.style.blockSize = `${startHeight}px`;
+      b.getBoundingClientRect(); // flush the start height before transitioning
+      const duration = 180;
+      b.style.transition =
+        `block-size ${duration}ms ease, opacity ${duration}ms ease, ` +
+        `padding-block ${duration}ms ease, margin-block ${duration}ms ease, ` +
+        `border-block ${duration}ms ease`;
+      b.style.blockSize = '0';
+      b.style.opacity = '0';
+      b.style.paddingBlock = '0';
+      b.style.marginBlock = '0';
+      b.style.borderBlock = '0';
+      let done = false;
+      const finish = () => { if (done) return; done = true; finishNow(); };
+      b.addEventListener('transitionend', (e) => {
+        const p = (e as TransitionEvent).propertyName;
+        if (p === 'block-size' || p === 'height') finish();
+      });
+      window.setTimeout(finish, duration + 60);
+      recompute(); // update the readout now, before the collapse finishes
+    };
+
+    // ---- visibility sync (room-mode wrappers, entry-mode flag, cleaner chrome) ----
+    const showEl = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const syncVisibility = () => {
+      // Room-entry field wrappers matching the chosen method.
+      const method = raw('roomMethod') || 'dimensions';
+      qa('[data-room]').forEach((el) => showEl(el, el.dataset.room!.split(' ').includes(method)));
+      // Entry-mode flag drives the CSS grip gate (dimensions-only draggable edges).
+      container.dataset.entryMode = method;
+
+      // Per-cleaner: renumber the title + remove-button label, show Remove only
+      // when >1 cleaner. Then toggle the Add button + cap note against the cap.
+      const blocks = cleanerBlocks();
+      blocks.forEach((b, i) => {
+        const title = b.querySelector('.smaqmd-aerb__cleaner-title');
+        if (title) title.textContent = `Air cleaner ${i + 1}`;
+        const rm = b.querySelector('[data-remove-cleaner]');
+        showEl(rm, blocks.length > 1);
+        const btn = rm?.querySelector<HTMLElement>('esa-icon-button, [label]');
+        if (btn) btn.setAttribute('label', `Remove air cleaner ${i + 1}`);
+      });
+      const atCap = blocks.length >= MAX_CLEANERS;
+      showEl(root.querySelector('[data-add-cleaner]'), !atCap);
+      showEl(root.querySelector('[data-cap-note]'), atCap);
+    };
+
+    // ---- result + flow state ----
+    const block = root.querySelector<HTMLElement>('[data-result]')!;
+    const setMetric = (name: string, text: string) => {
+      const el = root.querySelector(`[data-metric="${name}"] .esa-stat__value`);
+      if (el) el.textContent = text;
+    };
+    const setReadout = (name: string, text: string) =>
+      block.querySelectorAll(`[data-r="${name}"]`).forEach((el) => (el.textContent = text));
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setVerdict = (state: string | null) =>
+      block.querySelectorAll<HTMLElement>('[data-verdict]').forEach((el) =>
+        show(el, el.dataset.verdict === state));
+
+    // Clean-air flow (ft³/min) for one cleaner block; blank/partial → 0 so empty
+    // rows never block the result. Combined flow sums the live (non-removing) rows.
+    const cleanerFlow = (id: string): number => {
+      const f = pos('airflow', id);
+      return Number.isFinite(f) ? f : 0;
+    };
+    const combinedFlow = (): number =>
+      cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0);
+
+    const showGroup = (name: string, on: boolean) =>
+      show(block.querySelector(`[data-group="${name}"]`), on);
+
+    // Debounced polite announcer: a one-sentence summary written 600 ms after the
+    // last change (drag gestures don't chatter), and only when the text differs.
+    const announcer = root.querySelector<HTMLElement>('[data-announce]');
+    let announceTimer = 0;
+    let lastAnnounce = '';
+    const announce = (msg: string) => {
+      if (!announcer) return;
+      window.clearTimeout(announceTimer);
+      announceTimer = window.setTimeout(() => {
+        if (msg !== lastAnnounce) { announcer.textContent = msg; lastAnnounce = msg; }
+      }, 600);
+    };
+
+    const recompute = () => {
+      syncVisibility();
+
+      const blocks = cleanerBlocks();
+      sceneN = Math.min(Math.max(1, blocks.length), MAX_CLEANERS);
+      const target = pos('target') || 2;
+      setReadout('target', fmt(target, 2));
+
+      const flow = combinedFlow();
+      const vol = roomVolume();
+      const hasFlow = flow > 0;
+      const hasRoom = Number.isFinite(vol) && vol > 0;
+
+      const vols = hasRoom ? vol : NaN;
+      setMetric('volume', hasRoom ? `${fmt(vols, 0)} ft³` : '—');
+
+      // Fill each cleaner's ACH share for the wave cadence (flow_i × 60 ÷ vol),
+      // and mark idle any lane with no flow so its wave stays hidden.
+      laneAch.length = 0;
+      blocks.forEach((b, i) => {
+        if (i >= MAX_CLEANERS) return;
+        const f = cleanerFlow(b.dataset.cleanerBlock!);
+        laneAch[i] = hasRoom && f > 0 ? (f / vol) * 60 : 0;
+      });
+      for (let i = 0; i < MAX_CLEANERS; i++) {
+        const laneG = svg.querySelector<SVGGElement>(`.bcn-cityview__lanes[data-lanes="${i + 1}"]`);
+        if (!laneG) continue;
+        const idle = !(i < sceneN && laneAch[i] > 0);
+        if (idle) laneG.setAttribute('data-lane-idle', '');
+        else laneG.removeAttribute('data-lane-idle');
+      }
+
+      // Capacity — shown whenever combined flow > 0, regardless of room.
+      if (hasFlow) {
+        const maxVol = (flow * 60) / target;
+        setMetric('maxvol', `${fmt(maxVol, 0)} ft³`);
+        setMetric('maxarea', `${fmt(maxVol / 8, 0)} ft²`);
+        const count = blocks.length;
+        setReadout('setup', count > 1 ? `Your ${count} air cleaners together` : 'Your air cleaner');
+        showGroup('capacity', true);
+      } else {
+        setMetric('maxvol', '—');
+        setMetric('maxarea', '—');
+        showGroup('capacity', false);
+      }
+
+      // ACH + verdict + wave — needs both a room size and a flow.
+      const setPrompt = (on: boolean) => show(block.querySelector('[data-prompt="empty"]'), on);
+      if (hasFlow && hasRoom) {
+        const ach = (flow / vol) * 60;
+        setMetric('ach', fmt(ach, 1));
+        setReadout('ach', fmt(ach, 1));
+        const pass = ach >= target;
+        setVerdict(pass ? 'pass' : 'fail');
+        showGroup('ach', true);
+        setPrompt(false);
+        stateNow = pass ? 'pass' : 'fail';
+        container.dataset.state = stateNow;
+        announce(
+          `This setup delivers ${fmt(ach, 1)} air changes per hour, ` +
+          `${pass ? 'at or above' : 'below'} your target of ${fmt(target, 2)}.`,
+        );
+        startLoop();
+      } else {
+        setMetric('ach', '—');
+        setVerdict(null);
+        showGroup('ach', false);
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        // Empty prompt only when neither a cleaner rating nor a room is entered.
+        setPrompt(!hasFlow && !hasRoom);
+        if (hasFlow) {
+          const maxVol = (flow * 60) / target;
+          announce(
+            `Your ${blocks.length > 1 ? `${blocks.length} air cleaners can` : 'air cleaner can'} ` +
+            `cover a room up to ${fmt(maxVol, 0)} cubic feet at ${fmt(target, 2)} air changes per hour.`,
+          );
+        } else {
+          announce('');
+        }
+      }
+    };
+
+    // Numbers only (no stepper, so no negative spinning): strip to digits + one dot.
+    const sanitizeNumeric = (s: string): string => {
+      let out = s.replace(/[^0-9.]/g, '');
+      const dot = out.indexOf('.');
+      if (dot !== -1) out = out.slice(0, dot + 1) + out.slice(dot + 1).replace(/\./g, '');
+      return out;
+    };
+    // Switching room-entry mode: prefill the newly shown (empty) area/volume field
+    // from the current drawn box so the scene never jumps. round(L·W) for area,
+    // round(L·W·H) for volume; only when the target field is blank.
+    const prefillMode = (method: string) => {
+      const b = sceneBox();
+      if (method === 'area') {
+        const f = field('area');
+        if (f && !raw('area')) f.value = String(Math.round(b.L * b.W));
+      } else if (method === 'volume') {
+        const f = field('volume');
+        if (f && !raw('volume')) f.value = String(Math.round(b.L * b.W * b.H));
+      }
+    };
+
+    const onEdit = (e: Event) => {
+      const el = e.target as (HTMLElement & { value?: string; dataset?: DOMStringMap }) | null;
+      if (el && el.tagName === 'ESA-TEXT-FIELD') {
+        const clean = sanitizeNumeric(el.value ?? '');
+        if (clean !== el.value) el.value = clean;
+      }
+      // Prefill before the mode's fields are read for the scene box.
+      if (el && el.tagName === 'ESA-RADIO-GROUP' && el.dataset?.field === 'roomMethod') {
+        prefillMode(el.value ?? 'dimensions');
+      }
+      morphScene();
+      recompute();
+    };
+    root.addEventListener('input', onEdit);
+    root.addEventListener('change', onEdit);
+
+    // Add / remove cleaner (delegated). Add clones the template; remove collapses
+    // the clicked block. Both funnel through morphScene()/recompute().
+    root.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-add-cleaner]')) {
+        e.preventDefault();
+        if (cleanerBlocks().length >= MAX_CLEANERS) return;
+        addCleaner();
+        morphScene();
+        recompute();
+        return;
+      }
+      const rm = t.closest('[data-remove-cleaner]');
+      if (rm) {
+        e.preventDefault();
+        const b = rm.closest<HTMLElement>('[data-cleaner-block]');
+        if (b && !b.hasAttribute('data-removing')) removeCleaner(b);
+      }
+    });
+
+    // ---- drag-to-resize: each grip edge converts pointer delta to feet via the
+    // frozen fit scale + the per-axis screen unit vector, then types the snapped
+    // value into the matching esa-text-field. The onEdit pipeline does the rest.
+    // Drag → feet: project the pointer delta onto each edge's screen axis. Width
+    // is inverted from its raw iso axis so pulling RIGHT enlarges it (matching
+    // length), rather than the geometric down-left grow direction.
+    const AXIS: Record<string, Pt> = {
+      length: [COS30, SIN30], width: [COS30, -SIN30], height: [0, -1],
+    };
+    const KEY = { length: 'L', width: 'W', height: 'H' } as const;
+    type DragDim = keyof typeof KEY;
+    let drag: { dim: DragDim; sx: number; sy: number; v0: number; sc: number } | null = null;
+
+    svg.addEventListener('pointerdown', (e) => {
+      // Grips only resize in dimensions mode — the other room-entry modes have no
+      // draggable edges (CSS also hides the handles).
+      if (raw('roomMethod') !== 'dimensions') return;
+      const grip = (e.target as Element).closest?.('[data-grip]');
+      if (!grip) return;
+      const dim = grip.getAttribute('data-grip') as DragDim;
+      drag = { dim, sx: e.clientX, sy: e.clientY, v0: tgt[KEY[dim]], sc: fitScale };
+      (e.target as Element).setPointerCapture(e.pointerId);
+      container.dataset.dragging = dim;
+      e.preventDefault();
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const [ux, uy] = AXIS[drag.dim];
+      const ft = ((e.clientX - drag.sx) * ux + (e.clientY - drag.sy) * uy) / drag.sc;
+      const next = Math.min(100, Math.max(1, Math.round((drag.v0 + ft) * 2) / 2));
+      const f = field(drag.dim);
+      if (f && f.value !== String(next)) {
+        f.value = String(next);
+        f.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+    const endDrag = () => { drag = null; delete container.dataset.dragging; };
+    svg.addEventListener('pointerup', endDrag);
+    svg.addEventListener('pointercancel', endDrag);
+
+    // Boot: stamp cleaner 1 (airflow "200" as an attribute, before upgrade) and
+    // draw the default scene immediately (cur/tgt default to 12×10×8). Once the
+    // legos upgrade — so field .value getters read the entered attributes — sync
+    // the mode wrappers/entry-mode flag, snap the box to the fields, and compute,
+    // leaving the scene alive with defaults (200 CFM, target 2, wave running).
+    resetCleaners();
+    drawScene(cur.L, cur.W, cur.H);
+    Promise.all([
+      customElements.whenDefined('esa-text-field'),
+      customElements.whenDefined('esa-radio-group'),
+    ]).then(() => {
+      syncVisibility();
+      morphScene();
+      recompute();
+    });
+  }
+</script>

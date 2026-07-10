@@ -32,6 +32,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-07-08',
     status: 'in-progress',
   },
+  {
+    slug: 'air-exchange-rate-b',
+    title: 'Air Exchange Rate Tool — Option B (visual)',
+    description:
+      'A visual rethink: the isometric city scene fills the whole page and the form floats over it — the room resizes as you type, so you see the volume the air-changes math runs on.',
+    route: '/prototypes/air-exchange-rate-b',
+    createdAt: '2026-07-09',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */
