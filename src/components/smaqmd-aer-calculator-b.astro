@@ -24,10 +24,16 @@ import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 
 const MAX_CLEANERS = 4;
 const CLEANER_IDS = [1, 2, 3, 4];
+const WINDOW_SLOTS = Array.from({ length: 24 }, (_, i) => i + 1); // per-wall window pool: 3 rows × 8 columns
+const RTU_IDS = [1, 2, 3];                      // rooftop-unit pool
 const roomMethods = [
   { label: 'Length × width × height', value: 'dimensions' },
   { label: 'Floor area + ceiling height', value: 'area' },
   { label: 'Room volume directly', value: 'volume' },
+];
+const unitOptions = [
+  { label: 'Air flow rate / CADR (ft³/min)', value: 'airflow' },
+  { label: 'Air changes per hour (ACH)', value: 'ach' },
 ];
 
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
@@ -48,7 +54,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        its own bcn- block, driven from the shared calc script below. -->
   <div class="smaqmd-aerb__stage bcn-cityview" data-cityview data-state="idle">
     <svg class="bcn-cityview__svg" viewBox="0 0 480 380" role="img"
-         aria-label="Isometric city scene: your room as a building, and each air cleaner as its own smaller building on a street carrying used air out and clean air back">
+         aria-label="Isometric city scene: your room as a building with windows and a door, and each air cleaner as its own smaller building on a street carrying used air out and clean air back. A dashed outline shows the largest room the cleaners could cover.">
       <defs>
         <pattern id="bcn-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
           <circle class="bcn-cityview__dot" cx="0" cy="0" r="1.1"></circle>
@@ -92,7 +98,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            strokes are inline `url(#…)` per cleaner (inline beats the scoped
            stylesheet's presentation attributes). Groups i>1 start hidden. -->
       {CLEANER_IDS.map((i) => (
-        <g class="bcn-cityview__lanes" data-lanes={i} style={i > 1 ? 'display:none' : undefined}>
+        <g class="bcn-cityview__lanes" data-lanes={i} style={i > 1 ? 'visibility:hidden' : undefined}>
           <polyline class="bcn-cityview__road" data-road></polyline>
           <polyline class="bcn-cityview__track" data-flow="out-track"></polyline>
           <polyline class="bcn-cityview__wave" data-flow="out-wave" style={`stroke: url(#bcn-out-grad-${i})`}></polyline>
@@ -106,10 +112,58 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <polygon class="bcn-cityview__room-face" data-room="right"></polygon>
       <polygon class="bcn-cityview__room-face" data-room="top"></polygon>
 
+      <!-- Architectural details on the room building — part of the same
+           bcn-lego-checked cityview block (windows on both visible walls whose
+           count scales with wall length, a door, a parapet line, rooftop units).
+           Pre-rendered pools only; JS toggles style.visibility (NOT display — the
+           same WebKit paint-server quirk noted on the lanes/ghost) and sets
+           points every draw so details morph in lockstep with the eased room. -->
+      <g class="bcn-cityview__details" data-room-details style="visibility:hidden">
+        <polygon class="bcn-cityview__parapet" data-parapet></polygon>
+        {WINDOW_SLOTS.map((i) => (
+          <polygon class="bcn-cityview__win" data-win-l={i} style="visibility:hidden"></polygon>
+        ))}
+        {WINDOW_SLOTS.map((i) => (
+          <polygon class="bcn-cityview__win" data-win-r={i} style="visibility:hidden"></polygon>
+        ))}
+        <polygon class="bcn-cityview__door" data-door style="visibility:hidden"></polygon>
+        {RTU_IDS.map((i) => (
+          <g class="bcn-cityview__rtu" data-rtu={i} style="visibility:hidden">
+            <polygon class="bcn-cityview__rtu-face" data-rtu-face="top"></polygon>
+            <polygon class="bcn-cityview__rtu-face" data-rtu-face="left"></polygon>
+            <polygon class="bcn-cityview__rtu-face" data-rtu-face="right"></polygon>
+          </g>
+        ))}
+        <g class="bcn-cityview__tower" data-tower style="visibility:hidden">
+          <line class="bcn-cityview__tower-leg" data-tower-leg="1"></line>
+          <line class="bcn-cityview__tower-leg" data-tower-leg="2"></line>
+          <polygon class="bcn-cityview__tower-face" data-tower-face="top"></polygon>
+          <polygon class="bcn-cityview__tower-face" data-tower-face="left"></polygon>
+          <polygon class="bcn-cityview__tower-face" data-tower-face="right"></polygon>
+        </g>
+        <g class="bcn-cityview__mast" data-mast style="visibility:hidden">
+          <line class="bcn-cityview__mast-line" data-mast-line></line>
+          <circle class="bcn-cityview__mast-tip" data-mast-tip r="1.8"></circle>
+        </g>
+      </g>
+
+      <!-- Capacity ghost — a dashed outline of the largest room the cleaners can
+           cover at the target, drawn on the actual room to compare sizes. Static
+           (scope-stamped) group; JS sets its face points + label each draw and
+           toggles visibility (NOT display — same WebKit paint-server quirk noted
+           on the lanes). Paints after the room faces; the data-cap-compare swap on
+           the container makes the bigger box the more transparent one. -->
+      <g class="bcn-cityview__capg" data-capg style="visibility:hidden">
+        <polygon class="bcn-cityview__cap-face" data-cap="left"></polygon>
+        <polygon class="bcn-cityview__cap-face" data-cap="right"></polygon>
+        <polygon class="bcn-cityview__cap-face" data-cap="top"></polygon>
+        <text class="bcn-cityview__dim bcn-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
+      </g>
+
       <!-- Air-cleaner buildings (small) — one per cleaner, AFTER the room faces so
            they paint in front. Groups i>1 start hidden. -->
       {CLEANER_IDS.map((i) => (
-        <g class="bcn-cityview__unitg" data-unitg={i} style={i > 1 ? 'display:none' : undefined}>
+        <g class="bcn-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
           <polygon class="bcn-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="bcn-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="bcn-cityview__unit-face" data-unit="top"></polygon>
@@ -124,12 +178,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            drags its dimension and types into the form fields (inputs stay the
            source of truth). No esa- lego offers draggable diagram handles; the
            write-back goes through the esa-text-field legos. -->
+      <!-- Each hit line sits immediately before its own handle so the hover/active
+           CSS can scope to a single grip with the adjacent-sibling combinator (+).
+           Interleaving (not hit,hit,hit,handle,handle,handle) is what prevents one
+           edge's hover from darkening every chevron. -->
       <g data-grips>
         <line class="bcn-cityview__hit" data-grip="length"></line>
-        <line class="bcn-cityview__hit" data-grip="width"></line>
-        <line class="bcn-cityview__hit" data-grip="height"></line>
         <g class="bcn-cityview__handle" data-grip="length"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <line class="bcn-cityview__hit" data-grip="width"></line>
         <g class="bcn-cityview__handle" data-grip="width"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <line class="bcn-cityview__hit" data-grip="height"></line>
         <g class="bcn-cityview__handle" data-grip="height"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
       </g>
     </svg>
@@ -196,16 +254,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             </span>
             <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
           </div>
-
-          <esa-text-field
-            data-field="target"
-            type="text"
-            inputmode="decimal"
-            label="Target air changes per hour"
-            value="2"
-            help-text="CARB recommends at least 2."
-          ></esa-text-field>
         </div>
+      </EsaCard>
+
+      <EsaCard title="Your target" headingLevel={2}>
+        <esa-text-field
+          data-field="target"
+          type="text"
+          inputmode="decimal"
+          label="Target air changes per hour"
+          value="2"
+          help-text="CARB recommends at least 2. This target applies to the whole room — all cleaners together."
+        ></esa-text-field>
       </EsaCard>
 
       <EsaCard variant="elevated" title="Your result" headingLevel={2}>
@@ -237,10 +297,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
               <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
             </div>
-            <p class="type-caption">
-              <span data-r="setup">Your air cleaner</span> can maintain
-              <strong data-r="target">2</strong> air changes per hour up to this size.
-            </p>
           </div>
 
           <div data-prompt="empty" hidden>
@@ -269,14 +325,42 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <EsaIconButton icon="trash-2" label="Remove this air cleaner" size="sm" />
         </span>
       </div>
-      <esa-text-field
-        data-field="airflow"
+      <esa-radio-group
+        data-field="unit"
         data-cleaner
-        type="text"
-        inputmode="decimal"
-        label="Air flow rate or CADR (ft³/min)"
-        help-text="Use the highest air flow, or the lowest CADR if three are listed."
-      ></esa-text-field>
+        label="What does the manufacturer report?"
+        value="airflow"
+        options={JSON.stringify(unitOptions)}
+      ></esa-radio-group>
+
+      <div data-unit-mode="airflow">
+        <esa-text-field
+          data-field="airflow"
+          data-cleaner
+          type="text"
+          inputmode="decimal"
+          label="Air flow rate or CADR (ft³/min)"
+          help-text="Use the highest air flow, or the lowest CADR if three are listed."
+        ></esa-text-field>
+      </div>
+
+      <div class="stack" data-gap="md" data-unit-mode="ach" hidden>
+        <esa-text-field
+          data-field="ach"
+          data-cleaner
+          type="text"
+          inputmode="decimal"
+          label="Air changes per hour (ACH)"
+        ></esa-text-field>
+        <p class="type-caption smaqmd-aerb__cleaner-note">
+          In what size room was that measured?
+        </p>
+        <div class="smaqmd-aerb__ref grid" data-gap="md">
+          <esa-text-field data-field="refLength" data-cleaner type="text" inputmode="decimal" label="Length (ft)"></esa-text-field>
+          <esa-text-field data-field="refWidth" data-cleaner type="text" inputmode="decimal" label="Width (ft)"></esa-text-field>
+          <esa-text-field data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
+        </div>
+      </div>
     </div>
   </template>
 </div>
@@ -284,6 +368,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 <style>
   .smaqmd-aerb [hidden] { display: none !important; }
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
+  .smaqmd-aerb__ref { --grid-min: 6.5rem; }
+  .smaqmd-aerb__cleaner-note { color: var(--color-text-tertiary); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
@@ -318,6 +404,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-500, 1.5rem);
+  }
+  /* Below target: recolor the accent ACH value from its brand tint to warning.
+     esa-stat exposes --stat-accent-color as the consumer hook for its value. */
+  .smaqmd-aerb__metrics [data-metric="ach"][data-below] {
+    --stat-accent-color: var(--color-warning, #d9822b);
   }
 
   .smaqmd-aerb { position: relative; min-block-size: 100dvh; }
@@ -407,6 +498,62 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .bcn-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 78%, transparent); }
   .bcn-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 78%, transparent); }
 
+  /* Capacity ghost — dashed brand-tinted outline of the largest coverable room,
+     drawn over the real room to compare sizes. Near-transparent brand fills so
+     whichever box is BEHIND still reads through. The data-cap-compare swap makes
+     the LARGER box the more transparent one:
+       bigger  → capacity box is larger: cap fills stay very faint (default),
+                 the solid room reads inside it.
+       smaller → the user's room is larger: room faces drop to more-transparent
+                 fills and the cap fills strengthen so the ghost reads inside. */
+  .bcn-cityview__cap-face {
+    stroke: color-mix(in srgb, var(--color-primary, #159a86) 55%, transparent);
+    stroke-dasharray: 5 4;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+  .bcn-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 8%, transparent); }
+  .bcn-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-primary, #159a86) 10%, transparent); }
+  .bcn-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-primary, #159a86) 12%, transparent); }
+
+  /* smaller: the user's room is the bigger box, so make IT the more transparent
+     one. The ghost keeps its default (low-alpha) fills in both cases. */
+  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 40%, transparent); }
+  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 38%, transparent); }
+  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 38%, transparent); }
+
+  .bcn-cityview__cap-label { fill: var(--color-primary, #159a86); }
+
+  /* Architectural details on the room building — quiet, token-driven fills and
+     thin --color-border strokes so windows/door/RTUs/parapet/tower/mast read as
+     building features without competing with the room or the flow. Window rows
+     stack by story as the building grows tall (1 row short, up to 3 rows tall);
+     a water tower and antenna mast appear on very tall roofs. No pointer-events
+     rules: details inherit pointer-events:none from the stage. */
+  .bcn-cityview__details { transition: opacity 200ms ease; }
+  .bcn-cityview__win {
+    fill: color-mix(in srgb, var(--color-primary, #159a86) 11%, transparent);
+    stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
+  }
+  .bcn-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-primary, #159a86) 15%, transparent); }
+  .bcn-cityview__door {
+    fill: color-mix(in srgb, var(--smaqmd-gray-6, #d9d9d9) 85%, transparent);
+    stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
+  }
+  .bcn-cityview__parapet { fill: none; stroke: var(--color-border-light, #d9d9d9); stroke-width: 1; stroke-linejoin: round; }
+  .bcn-cityview__rtu-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .bcn-cityview__rtu-face[data-rtu-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .bcn-cityview__rtu-face[data-rtu-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
+  .bcn-cityview__rtu-face[data-rtu-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  .bcn-cityview__tower-leg { stroke: var(--color-border, #cecece); stroke-width: 1.5; stroke-linecap: round; }
+  .bcn-cityview__tower-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .bcn-cityview__tower-face[data-tower-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .bcn-cityview__tower-face[data-tower-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
+  .bcn-cityview__tower-face[data-tower-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  .bcn-cityview__mast-line { stroke: var(--color-text-tertiary, #6b7280); stroke-width: 1.5; stroke-linecap: round; }
+  .bcn-cityview__mast-tip { fill: var(--pulse-color, var(--color-primary, #159a86)); opacity: 0.9; }
+  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__details { opacity: 0.45; }
+
   .bcn-cityview__unit-face {
     stroke: var(--color-primary-hover, #0f7e6e);
     stroke-width: 1;
@@ -439,11 +586,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     stroke: var(--color-text-secondary, #555);
     stroke-width: 2;
     stroke-linecap: round; stroke-linejoin: round;
-    transition: stroke 120ms ease, stroke-width 120ms ease;
+    /* Scale around the chevron's own centre (its path is symmetric about 0,0). */
+    transform-box: fill-box; transform-origin: center;
+    transition: stroke 120ms ease, transform 120ms ease;
   }
+  /* Hover: `+` (adjacent sibling) scopes the highlight to the hovered edge's own
+     handle — `~` would darken every following handle, i.e. all of them. */
   .bcn-cityview__handle:hover .bcn-cityview__chev,
-  .bcn-cityview__hit:hover ~ .bcn-cityview__handle .bcn-cityview__chev {
+  .bcn-cityview__hit:hover + .bcn-cityview__handle .bcn-cityview__chev {
     stroke: var(--color-text, #1a1a1a); stroke-width: 2.5;
+  }
+  /* Active: press-down feedback (like a button :active) while the grip is held.
+     Pointer capture keeps :active on the pressed hit/handle through the drag. */
+  .bcn-cityview__handle:active .bcn-cityview__chev,
+  .bcn-cityview__hit:active + .bcn-cityview__handle .bcn-cityview__chev {
+    stroke: var(--color-text, #1a1a1a); transform: scale(0.97);
   }
   .bcn-cityview[data-dragging] .bcn-cityview__hit,
   .bcn-cityview[data-dragging] .bcn-cityview__handle,
@@ -555,6 +712,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     let viewW = 480, viewH = 380;
     let safe = { x: 52, y: 52, w: 376, h: 276 };   // SSR fallback matching the old frame
     const MAX_SCALE = 12;  // px per projected ft — stops a small room ballooning on huge monitors; tune visually
+    // Air-cleaner sizing bounds. The cleaner footprint scales with the room only
+    // UP TO a world cap (CW_MAX): past that the units stop growing so a big room's
+    // cleaners don't read as absurd 18 ft blocks. Independently, UNIT_MIN_PX is a
+    // readability FLOOR on screen — a huge room fits by zooming the whole scene
+    // out, which can shrink the (now world-capped) cleaner below legibility, so the
+    // fit runs a second pass that widens the cleaner in world units to clear it.
+    const CW_MAX = 4.5;      // ft — cleaners stop growing with the room here
+    const CW_MIN = 2;        // ft — existing world floor
+    const GAP_MAX = 10;      // ft — street width cap (keeps the ensemble compact)
+    const UNIT_MIN_PX = 22;  // px — readability floor for the cleaner footprint on screen
     const sentinel = root.querySelector<HTMLElement>('[data-safe]')!;
     const syncViewport = () => {
       viewW = container.clientWidth; viewH = container.clientHeight;
@@ -588,15 +755,32 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     const mid = (p: Pt, q: Pt): Pt => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
 
+    // Architectural-detail helpers: one wrapper-group lookup + a per-poly toggle
+    // that mirrors the lane/ghost pattern — style.visibility (never display), and
+    // set points only when shown.
+    const detailsG = svg.querySelector<SVGGElement>('[data-room-details]');
+    const setDetail = (sel: string, on: boolean, pts?: Pt[]) => {
+      const el = svg.querySelector<SVGElement>(sel);
+      if (!el) return;
+      el.style.visibility = on ? '' : 'hidden';
+      if (on && pts) el.setAttribute('points', ptsAttr(pts));
+    };
+
     // N air cleaners on the right street side (x > L), spread along the room's
     // width. Cleaner k of n centers at cyc_k = W·(k+0.5)/n, so n=1 lands at W/2
     // (today's geometry). Footprint shrinks as more cleaners share the width so
     // their small faces never overlap. Each keeps its own two straight iso lanes.
     type Cleaner = { x0: number; y0: number; x1: number; y1: number; h: number; laneOut: number; laneRet: number };
-    const layoutCleaners = (L: number, W: number, n: number): Cleaner[] => {
-      const gap = Math.max(3, Math.min(L, W) * 0.55); // street width between room + cleaner
-      // Anti-overlap: footprint capped so n cleaners fit down the width band.
-      const cw = Math.min(Math.max(2, Math.min(L, W) * 0.18), (W / n) * 0.55);
+    const layoutCleaners = (L: number, W: number, n: number, cwOpt?: number): Cleaner[] => {
+      const gap = Math.min(Math.max(3, Math.min(L, W) * 0.55), GAP_MAX); // street width between room + cleaner, capped
+      // Base footprint: scales with the room (floor CW_MIN) but stops growing at
+      // CW_MAX so big rooms don't get absurd cleaners. cwOpt (the readability pass)
+      // overrides that base. Either way the anti-overlap ceiling (W/n)·0.55 is the
+      // FINAL clamp so n cleaners never overlap down the width band — it can
+      // legitimately defeat the readability floor when many cleaners share a
+      // narrow room, which we accept.
+      const cwBase = Math.min(Math.max(Math.min(L, W) * 0.18, CW_MIN), CW_MAX);
+      const cw = Math.min(cwOpt ?? cwBase, (W / n) * 0.55);
       const ch = cw * 1.3;
       const off = cw * 0.3; // lane separation tied to the cleaner, not the room
       const out: Cleaner[] = [];
@@ -610,42 +794,151 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       return out;
     };
 
+    // Architectural details on the room building. All positions are pure,
+    // deterministic functions of the eased dims — no randomness — so details
+    // morph in lockstep with the room and the drag grips.
+    const WIN_POOL = 8;
+    const WIN_W = 2.4;                                  // ft — fixed; count scales, size doesn't
+    const RTU_DEFS = [
+      { fx: 0.66, fy: 0.38, sx: 2.4, sy: 1.8, h: 1.4 },
+      { fx: 0.40, fy: 0.70, sx: 1.8, sy: 1.8, h: 1.0 },
+      { fx: 0.80, fy: 0.68, sx: 1.4, sy: 1.4, h: 0.8 },
+    ];
+    // Evenly distributed window centers inside [span0, span1]; count ~len/6
+    // (floor((S+3)/6) recovers floor(len/6) after the 1.5 ft end margins) and
+    // guarantees slot ≥ 3 ft for n ≥ 2, so fixed-width windows never overlap.
+    const winCenters = (span0: number, span1: number): number[] => {
+      const S = span1 - span0;
+      if (S < WIN_W) return [];
+      const n = Math.min(Math.max(Math.floor((S + 3) / 6), 1), WIN_POOL);
+      return Array.from({ length: n }, (_, i) => span0 + (S * (i + 0.5)) / n);
+    };
+    const layoutDetails = (L: number, W: number, H: number) => {
+      const degenerate = L < 3 || W < 3 || H < 3.5;
+      // Window rows stack by story as the building grows tall. H=8 → 1 row
+      // (identical to before), H=16 → 2, H=24+ → 3 (cap; taller just stretches
+      // the stories, matching the horizontal cap-8 column philosophy).
+      const stories = Math.min(Math.max(Math.floor(H / 8), 1), 3);
+      const storyH = H / stories;
+      const winH = Math.min(3, storyH * 0.4);           // per-story sill+winH ≤ 0.76·storyH
+      // Per-row sills. At H=8/stories=1 this is [H*0.36-clamped] — the old single
+      // sill — so a short building is byte-for-byte the same as before.
+      const sills = Array.from({ length: stories }, (_, r) =>
+        r * storyH + Math.min(3, storyH * 0.36));
+      const doorOn = !degenerate && L >= 8 && H >= 5;   // left wall, near the (L,W) corner —
+      const doorH = Math.min(6.8, H * 0.8);             // the x=L wall carries the lane ends
+      const winL = degenerate ? [] : winCenters(1.5, doorOn ? L - 5.5 : L - 1.5);
+      const winR = degenerate ? [] : winCenters(1.5, W - 1.5);
+      const rtus: { x0: number; y0: number; x1: number; y1: number; h: number }[] = [];
+      if (!degenerate && Math.min(L, W) >= 5) {
+        const count = Math.min(3, 1 + Math.floor(Math.sqrt(L * W) / 14));
+        for (let k = 0; k < count; k++) {
+          const d = RTU_DEFS[k];
+          const sx = Math.min(d.sx, L * 0.28), sy = Math.min(d.sy, W * 0.28);
+          // 1.6 ft back margin keeps units clear of the roof edge carrying the
+          // width label + grip; 1 ft on the other sides.
+          const x0 = Math.max(Math.min(d.fx * L - sx / 2, L - 1 - sx), 1.6);
+          const y0 = Math.max(Math.min(d.fy * W - sy / 2, W - 1 - sy), 1);
+          rtus.push({ x0, y0, x1: x0 + sx, y1: y0 + sy, h: Math.min(d.h, H * 0.2) });
+        }
+      }
+      // Water tower (very tall + roomy roofs). 2.2×2.2 ft footprint on 2.2 ft
+      // legs, tank 2.6 ft tall (z from H+2.2 to H+4.8). Centered near (0.25L,
+      // 0.30W) — a fraction chosen to dodge the three RTU_DEFS spots — then
+      // clamped inside the roof exactly like the RTUs, with a 1.6 ft margin from
+      // the x=0 edge that carries the width label/grip.
+      const towerOn = !degenerate && H >= 18 && Math.min(L, W) >= 6;
+      const tx0 = Math.max(Math.min(0.25 * L - 1.1, L - 1 - 2.2), 1.6);
+      const ty0 = Math.max(Math.min(0.30 * W - 1.1, W - 1 - 2.2), 1);
+      const tx1 = tx0 + 2.2, ty1 = ty0 + 2.2;
+      // Antenna mast at the roof center (only the tallest roofs). Its tip is a
+      // tiny status beacon — it inherits --pulse-color like the flow lanes.
+      const mastOn = !degenerate && H >= 26;
+      const mastH = Math.min(6, H * 0.22);
+      return {
+        degenerate, stories, winH, sills, doorOn, doorH, winL, winR, rtus,
+        towerOn, tx0, ty0, tx1, ty1, mastOn, mastH,
+      };
+    };
+
     // Draw the whole scene at the given (already-eased) room dimensions. Every
     // world point is projected, then the entire figure is scaled + centred to
     // fill the frame, so proportions stay truthful at any absolute size.
     const drawScene = (L: number, W: number, H: number) => {
       const n = Math.min(Math.max(1, sceneN), MAX_CLEANERS);
-      const cleaners = layoutCleaners(L, W, n);
+      const det = layoutDetails(L, W, H);
 
-      // Lot bounds enclose the room, every cleaner, and a margin — the city block.
-      const maxX1 = Math.max(L, ...cleaners.map((c) => c.x1));
-      const maxY1 = Math.max(W, ...cleaners.map((c) => c.y1));
-      const c0 = cleaners[0];
-      const margin = Math.max(c0.x1 - c0.x0, c0.x0 - L) * 0.9 + 1;
-      const lotX0 = -margin, lotY0 = -margin;
-      const lotX1 = maxX1 + margin;
-      const lotY1 = maxY1 + margin;
+      // Capacity ghost shares the room's origin + ceiling; footprint scaled by
+      // capS. Cleaner-independent, so computed once and fed into both fit passes.
+      const drawCap = capS > 0.01;
+      const gL = L * capS, gW = W * capS;
+      // Anchor the ghost at the room's NEAR-bottom corner (L,W) and grow it back
+      // toward the origin, so an over-capacity ghost extends away from the viewer
+      // instead of over the cleaner buildings in front. Its near walls stay flush
+      // with the room's near walls (x=L, y=W).
+      const gx0 = L - gL, gy0 = W - gW;
 
-      // Collect every world point that must be on-screen, then fit. Every cleaner
-      // box feeds the fit so the whole city stays inside the safe area.
-      const fitPts: Pt[] = [];
-      const box = (x0: number, y0: number, x1: number, y1: number, z1: number) => {
-        for (const [x, y] of [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Pt[])
-          for (const z of [0, z1]) fitPts.push(project(x, y, z));
+      // The fit as a closure so it can run twice: pass 1 with the world-capped
+      // cleaner, then — if that cleaner would render below the on-screen
+      // readability floor — pass 2 with a wider (world-unit) cleaner. Everything
+      // it reads besides the cleaner array (L/W/H, det, ghost dims, safe,
+      // MAX_SCALE) is captured from the enclosing scope. Lot bounds derive from
+      // cls[0], so they're computed INSIDE and returned — both passes stay
+      // consistent and the ground lot draws from the FINAL cleaners.
+      const computeFit = (cls: Cleaner[]) => {
+        // Lot bounds enclose the room, every cleaner, and a margin — the city block.
+        const maxX1 = Math.max(L, ...cls.map((c) => c.x1));
+        const maxY1 = Math.max(W, ...cls.map((c) => c.y1));
+        const c0 = cls[0];
+        const margin = Math.max(c0.x1 - c0.x0, c0.x0 - L) * 0.9 + 1;
+        const lotX0 = -margin, lotY0 = -margin;
+        const lotX1 = maxX1 + margin;
+        const lotY1 = maxY1 + margin;
+
+        // Collect every world point that must be on-screen, then fit. Every cleaner
+        // box feeds the fit so the whole city stays inside the safe area.
+        const fitPts: Pt[] = [];
+        const box = (x0: number, y0: number, x1: number, y1: number, z1: number) => {
+          for (const [x, y] of [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Pt[])
+            for (const z of [0, z1]) fitPts.push(project(x, y, z));
+        };
+        box(0, 0, L, W, H);
+        for (const u of det.rtus) box(u.x0, u.y0, u.x1, u.y1, H + u.h);
+        // Tower + mast poke above the roof — feed their tops into the fit so a very
+        // tall building's rooftop hardware never clips against the safe area.
+        if (det.towerOn) box(det.tx0, det.ty0, det.tx1, det.ty1, H + 4.8);
+        if (det.mastOn) box(L / 2, W / 2, L / 2, W / 2, H + det.mastH);
+        for (const c of cls) box(c.x0, c.y0, c.x1, c.y1, c.h);
+        // Feed the ghost into the fit so the whole ghost stays inside the safe
+        // area (when it's larger than the room, it's what drives the fit).
+        if (drawCap) box(gx0, gy0, L, W, H);
+        for (const [x, y] of [[lotX0, lotY0], [lotX1, lotY0], [lotX1, lotY1], [lotX0, lotY1]] as Pt[])
+          fitPts.push(project(x, y, 0));
+
+        const xs = fitPts.map((p) => p[0]);
+        const ys = fitPts.map((p) => p[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const scale = Math.min(safe.w / (maxX - minX || 1), safe.h / (maxY - minY || 1), MAX_SCALE);
+        const ox = safe.x + (safe.w - (maxX - minX) * scale) / 2 - minX * scale;
+        const oy = safe.y + (safe.h - (maxY - minY) * scale) / 2 - minY * scale;
+        return { scale, ox, oy, lotX0, lotY0, lotX1, lotY1 };
       };
-      box(0, 0, L, W, H);
-      for (const c of cleaners) box(c.x0, c.y0, c.x1, c.y1, c.h);
-      for (const [x, y] of [[lotX0, lotY0], [lotX1, lotY0], [lotX1, lotY1], [lotX0, lotY1]] as Pt[])
-        fitPts.push(project(x, y, 0));
 
-      const xs = fitPts.map((p) => p[0]);
-      const ys = fitPts.map((p) => p[1]);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-      const scale = Math.min(safe.w / (maxX - minX || 1), safe.h / (maxY - minY || 1), MAX_SCALE);
+      // Pass 1: world-capped cleaner. If that footprint would paint below
+      // UNIT_MIN_PX on screen (the whole scene zoomed out to fit a huge room),
+      // re-lay the cleaner wider in WORLD units so it clears the readability floor,
+      // then re-fit once. The 1.1 headroom compensates for pass 2's slightly
+      // smaller scale (a wider cleaner is more content to fit). One extra pass only.
+      let cleaners = layoutCleaners(L, W, n);
+      let fit = computeFit(cleaners);
+      const cw1 = cleaners[0].x1 - cleaners[0].x0;
+      if (cw1 * fit.scale < UNIT_MIN_PX) {
+        cleaners = layoutCleaners(L, W, n, (UNIT_MIN_PX * 1.1) / fit.scale);
+        fit = computeFit(cleaners);
+      }
+      const { scale, ox, oy, lotX0, lotY0, lotX1, lotY1 } = fit;
       fitScale = scale;
-      const ox = safe.x + (safe.w - (maxX - minX) * scale) / 2 - minX * scale;
-      const oy = safe.y + (safe.h - (maxY - minY) * scale) / 2 - minY * scale;
       const w = (x: number, y: number, z: number): Pt => {
         const p = project(x, y, z);
         return [ox + p[0] * scale, oy + p[1] * scale];
@@ -659,17 +952,126 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       setPoly('[data-room="left"]', [w(0, W, H), w(L, W, H), w(L, W, 0), w(0, W, 0)]);
       setPoly('[data-room="right"]', [w(L, 0, H), w(L, W, H), w(L, W, 0), w(L, 0, 0)]);
 
+      // Architectural details — re-derived every frame from the eased dims.
+      // Counts come from cur: the 0.22 lerp is monotone (no overshoot), so a count
+      // steps through each threshold exactly once per morph — windows pop in one
+      // at a time as the wall grows, never flicker. Window rows STACK by story
+      // (det.stories, up to 3) as the building grows tall; each row reuses the
+      // same columns, addressing slot s = r*8 + c + 1 in the 24-per-wall pool.
+      if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
+      if (!det.degenerate) {
+        const hw = WIN_W / 2;
+        for (let r = 0; r < 3; r++) {
+          const rowOn = r < det.stories;
+          const z0 = det.sills[r] ?? 0, z1 = z0 + det.winH;
+          for (let c = 0; c < WIN_POOL; c++) {
+            const s = r * 8 + c + 1;
+            const cl = det.winL[c];   // left wall: y = W plane
+            const onL = rowOn && cl != null;
+            setDetail(`[data-win-l="${s}"]`, onL, onL ? [
+              w(cl - hw, W, z1), w(cl + hw, W, z1), w(cl + hw, W, z0), w(cl - hw, W, z0),
+            ] : undefined);
+            const cr = det.winR[c];   // right wall: x = L plane
+            const onR = rowOn && cr != null;
+            setDetail(`[data-win-r="${s}"]`, onR, onR ? [
+              w(L, cr - hw, z1), w(L, cr + hw, z1), w(L, cr + hw, z0), w(L, cr - hw, z0),
+            ] : undefined);
+          }
+        }
+        setDetail('[data-door]', det.doorOn, det.doorOn ? [
+          w(L - 4.5, W, det.doorH), w(L - 1.5, W, det.doorH), w(L - 1.5, W, 0), w(L - 4.5, W, 0),
+        ] : undefined);
+        const pin = Math.min(0.9, 0.15 * Math.min(L, W));   // parapet inset line
+        setPoly('[data-parapet]', [w(pin, pin, H), w(L - pin, pin, H), w(L - pin, W - pin, H), w(pin, W - pin, H)]);
+        for (let k = 0; k < 3; k++) {
+          const u = det.rtus[k];
+          const g = svg.querySelector<SVGGElement>(`[data-rtu="${k + 1}"]`);
+          if (g) g.style.visibility = u ? '' : 'hidden';
+          if (!u) continue;
+          const zt = H + u.h;       // same 3-face mini-box pattern as the cleaner units
+          setPoly(`[data-rtu="${k + 1}"] [data-rtu-face="top"]`,   [w(u.x0, u.y0, zt), w(u.x1, u.y0, zt), w(u.x1, u.y1, zt), w(u.x0, u.y1, zt)]);
+          setPoly(`[data-rtu="${k + 1}"] [data-rtu-face="left"]`,  [w(u.x0, u.y1, zt), w(u.x1, u.y1, zt), w(u.x1, u.y1, H), w(u.x0, u.y1, H)]);
+          setPoly(`[data-rtu="${k + 1}"] [data-rtu-face="right"]`, [w(u.x1, u.y0, zt), w(u.x1, u.y1, zt), w(u.x1, u.y1, H), w(u.x1, u.y0, H)]);
+        }
+
+        // Water tower — legs from the tank's two VISIBLE bottom corners down to
+        // the roof, then the same 3-face mini-box as the RTUs, raised on the legs
+        // (z from H+2.2 to H+4.8). The tower group toggles with style.visibility.
+        const towerG = svg.querySelector<SVGGElement>('[data-tower]');
+        if (towerG) towerG.style.visibility = det.towerOn ? '' : 'hidden';
+        if (det.towerOn) {
+          const { tx0, ty0, tx1, ty1 } = det;
+          const setLine2 = (sel: string, p: Pt, q: Pt) => {
+            const el = svg.querySelector(sel);
+            if (!el) return;
+            el.setAttribute('x1', p[0].toFixed(1)); el.setAttribute('y1', p[1].toFixed(1));
+            el.setAttribute('x2', q[0].toFixed(1)); el.setAttribute('y2', q[1].toFixed(1));
+          };
+          // Two legs from the tank's visible bottom corners to the roof.
+          setLine2('[data-tower-leg="1"]', w(tx0, ty1, H + 2.2), w(tx0, ty1, H));
+          setLine2('[data-tower-leg="2"]', w(tx1, ty0, H + 2.2), w(tx1, ty0, H));
+          const zb = H + 2.2, zt = H + 4.8;   // tank bottom + top
+          setPoly('[data-tower-face="top"]',   [w(tx0, ty0, zt), w(tx1, ty0, zt), w(tx1, ty1, zt), w(tx0, ty1, zt)]);
+          setPoly('[data-tower-face="left"]',  [w(tx0, ty1, zt), w(tx1, ty1, zt), w(tx1, ty1, zb), w(tx0, ty1, zb)]);
+          setPoly('[data-tower-face="right"]', [w(tx1, ty0, zt), w(tx1, ty1, zt), w(tx1, ty1, zb), w(tx1, ty0, zb)]);
+        }
+
+        // Antenna mast — a line up from the roof center with a status-beacon tip.
+        const mastG = svg.querySelector<SVGGElement>('[data-mast]');
+        if (mastG) mastG.style.visibility = det.mastOn ? '' : 'hidden';
+        if (det.mastOn) {
+          const base = w(L / 2, W / 2, H);
+          const top = w(L / 2, W / 2, H + det.mastH);
+          const line = svg.querySelector('[data-mast-line]');
+          if (line) {
+            line.setAttribute('x1', base[0].toFixed(1)); line.setAttribute('y1', base[1].toFixed(1));
+            line.setAttribute('x2', top[0].toFixed(1)); line.setAttribute('y2', top[1].toFixed(1));
+          }
+          const tip = svg.querySelector('[data-mast-tip]');
+          if (tip) {
+            tip.setAttribute('cx', top[0].toFixed(1));
+            tip.setAttribute('cy', top[1].toFixed(1));
+          }
+        }
+      }
+
+      // Capacity ghost — same three faces as the room at the scaled footprint, so
+      // it reads as a room drawn over the actual room. Purely decorative
+      // (pointer-events inherit none). Group visibility is owned by recompute().
+      if (drawCap) {
+        setPoly('[data-cap="top"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, W, H), w(gx0, W, H)]);
+        setPoly('[data-cap="left"]', [w(gx0, W, H), w(L, W, H), w(L, W, 0), w(gx0, W, 0)]);
+        setPoly('[data-cap="right"]', [w(L, gy0, H), w(L, W, H), w(L, W, 0), w(L, gy0, 0)]);
+        // Label near the ghost's far-back top corner, nudged up-right and out of the room.
+        const [cx, cy] = w(gx0, gy0, H);
+        const prefix = capClamped ? '≥' : '';
+        setLabel('capacity', [cx + 6, cy - 8], `cleaners cover up to ${prefix}${fmt(capMaxVol, 0)} ft³`);
+      }
+
       // Per cleaner: its street + lanes group (behind the room) and its building
-      // group (in front). Groups beyond n are hidden via style.display — an
-      // SVGGElement has no `.hidden`, so we toggle display directly.
+      // group (in front). Groups beyond n are hidden via style.visibility — NOT
+      // display: a lane's wave stroke is a paint server (url(#…-grad)) resolved
+      // once, and WebKit can leave a group that was ever display:none unpainted
+      // after it's shown again, so added cleaners' lanes never animate. Toggling
+      // visibility keeps the paint server live. (An SVGGElement has no `.hidden`,
+      // so we set the style property directly.)
       returnPaths.length = 0;
       outPaths.length = 0;
       for (let i = 0; i < MAX_CLEANERS; i++) {
         const laneG = svg.querySelector<SVGGElement>(`.bcn-cityview__lanes[data-lanes="${i + 1}"]`);
         const unitG = svg.querySelector<SVGGElement>(`.bcn-cityview__unitg[data-unitg="${i + 1}"]`);
         const on = i < n;
-        if (laneG) laneG.style.display = on ? '' : 'none';
-        if (unitG) unitG.style.display = on ? '' : 'none';
+        // Belt-and-braces for the same WebKit quirk: when a lane group goes
+        // hidden→shown, re-assert each wave polyline's inline stroke so WebKit
+        // re-resolves the paint server on the now-visible element.
+        const wasHidden = laneG?.style.visibility === 'hidden';
+        if (laneG) laneG.style.visibility = on ? '' : 'hidden';
+        if (unitG) unitG.style.visibility = on ? '' : 'hidden';
+        if (laneG && on && wasHidden) {
+          laneG.querySelectorAll<SVGElement>('.bcn-cityview__wave').forEach((wave) => {
+            wave.style.stroke = wave.style.stroke;
+          });
+        }
         if (!on) { returnPaths[i] = []; outPaths[i] = []; continue; }
         const c = cleaners[i];
 
@@ -738,6 +1140,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const cur = { L: 12, W: 10, H: 8 };
     const tgt = { L: 12, W: 10, H: 8 };
+    // Capacity ghost: the eased footprint scale (capS) toward its target
+    // (capSTgt). capSTgt = √(maxVol / roomVol) clamped to 3 for the DRAWING only
+    // (the stats keep the true maxVol); 0 hides the ghost. Set in recompute().
+    let capS = 0;
+    let capSTgt = 0;
+    let capMaxVol = 0;      // true (un-clamped) largest coverable volume, for the label
+    let capClamped = false; // whether the drawn scale hit the 3× clamp
+    const capG = svg.querySelector<SVGGElement>('[data-capg]');
     // Per-cleaner air-change cadence: laneAch[i] = that cleaner's flow × 60 ÷ room
     // volume. Zero (blank cleaner) → faint tracks, no wave on that street.
     const laneAch: number[] = [];
@@ -789,12 +1199,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       const dt = Math.min(0.05, (ts - last) / 1000 || 0);
       last = ts;
 
-      // Ease the room toward the entered dimensions.
+      // Ease the room toward the entered dimensions, and the capacity ghost's
+      // footprint scale toward its target, so the ghost grows/shrinks in step.
       cur.L += (tgt.L - cur.L) * 0.22;
       cur.W += (tgt.W - cur.W) * 0.22;
       cur.H += (tgt.H - cur.H) * 0.22;
-      const morphing = Math.abs(tgt.L - cur.L) + Math.abs(tgt.W - cur.W) + Math.abs(tgt.H - cur.H) >= 0.01;
-      if (!morphing) { cur.L = tgt.L; cur.W = tgt.W; cur.H = tgt.H; }
+      capS += (capSTgt - capS) * 0.22;
+      const morphing =
+        Math.abs(tgt.L - cur.L) + Math.abs(tgt.W - cur.W) + Math.abs(tgt.H - cur.H) +
+        Math.abs(capSTgt - capS) >= 0.01;
+      if (!morphing) { cur.L = tgt.L; cur.W = tgt.W; cur.H = tgt.H; capS = capSTgt; }
       drawScene(cur.L, cur.W, cur.H);
 
       updateWave(dt);
@@ -925,6 +1339,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         showEl(rm, blocks.length > 1);
         const btn = rm?.querySelector<HTMLElement>('esa-icon-button, [label]');
         if (btn) btn.setAttribute('label', `Remove air cleaner ${i + 1}`);
+        // Per-cleaner unit mode: show the airflow or the ACH sub-form.
+        const unit = raw('unit', b.dataset.cleanerBlock!);
+        showEl(b.querySelector('[data-unit-mode="airflow"]'), unit !== 'ach');
+        showEl(b.querySelector('[data-unit-mode="ach"]'), unit === 'ach');
       });
       const atCap = blocks.length >= MAX_CLEANERS;
       showEl(root.querySelector('[data-add-cleaner]'), !atCap);
@@ -945,10 +1363,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         show(el, el.dataset.verdict === state));
 
     // Clean-air flow (ft³/min) for one cleaner block; blank/partial → 0 so empty
-    // rows never block the result. Combined flow sums the live (non-removing) rows.
+    // rows never block the result. Combined flow sums the live (non-removing)
+    // rows. In airflow mode the reported flow is used directly; in ACH mode the
+    // flow is derived from the reported ACH × the manufacturer's reference room
+    // volume (L×W×(H‖8)) ÷ 60 — the same equation Option A uses, with the
+    // simplified L×W×H-only reference room (blank height → a standard 8 ft).
     const cleanerFlow = (id: string): number => {
-      const f = pos('airflow', id);
-      return Number.isFinite(f) ? f : 0;
+      let f: number;
+      if (raw('unit', id) === 'ach') {
+        const refVol = num('refLength', id) * num('refWidth', id) * (pos('refHeight', id) || 8);
+        f = (pos('ach', id) * refVol) / 60;
+      } else {
+        f = pos('airflow', id);
+      }
+      return Number.isFinite(f) && f > 0 ? f : 0;
     };
     const combinedFlow = (): number =>
       cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0);
@@ -985,6 +1413,25 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       const vols = hasRoom ? vol : NaN;
       setMetric('volume', hasRoom ? `${fmt(vols, 0)} ft³` : '—');
 
+      // Capacity ghost — the largest room the cleaners cover at the target,
+      // overlaid on the actual room. Only meaningful with both a flow and a room
+      // (need both boxes to compare). The DRAWN footprint scale clamps at 3× so
+      // an extreme target can't blow the scene out; the label + stats keep the
+      // true un-clamped maxVol. data-cap-compare tells the CSS which box is bigger
+      // so the LARGER one gets the more transparent fill.
+      if (hasFlow && hasRoom) {
+        capMaxVol = (flow * 60) / target;
+        const s = Math.sqrt(capMaxVol / vol);
+        capSTgt = Math.min(s, 3);
+        capClamped = s > 3;
+        container.dataset.capCompare = capMaxVol >= vol ? 'bigger' : 'smaller';
+        if (capG) capG.style.visibility = '';
+      } else {
+        capSTgt = 0;
+        capClamped = false;
+        if (capG) capG.style.visibility = 'hidden';
+      }
+
       // Fill each cleaner's ACH share for the wave cadence (flow_i × 60 ÷ vol),
       // and mark idle any lane with no flow so its wave stays hidden.
       laneAch.length = 0;
@@ -1006,8 +1453,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         const maxVol = (flow * 60) / target;
         setMetric('maxvol', `${fmt(maxVol, 0)} ft³`);
         setMetric('maxarea', `${fmt(maxVol / 8, 0)} ft²`);
-        const count = blocks.length;
-        setReadout('setup', count > 1 ? `Your ${count} air cleaners together` : 'Your air cleaner');
         showGroup('capacity', true);
       } else {
         setMetric('maxvol', '—');
@@ -1023,6 +1468,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         setReadout('ach', fmt(ach, 1));
         const pass = ach >= target;
         setVerdict(pass ? 'pass' : 'fail');
+        // Tint the ACH readout warning when it falls short of the target.
+        root.querySelector('[data-metric="ach"]')?.toggleAttribute('data-below', !pass);
         showGroup('ach', true);
         setPrompt(false);
         stateNow = pass ? 'pass' : 'fail';
@@ -1049,6 +1496,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         } else {
           announce('');
         }
+        // Wake the loop if the ghost still has residual scale to ease away (it was
+        // showing, then flow/room cleared) — otherwise it'd freeze mid-shrink.
+        if (capS > 0.01) startLoop();
       }
     };
 
@@ -1063,13 +1513,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // from the current drawn box so the scene never jumps. round(L·W) for area,
     // round(L·W·H) for volume; only when the target field is blank.
     const prefillMode = (method: string) => {
-      const b = sceneBox();
+      // Derive from tgt (the last drawn box) — NOT sceneBox(), which would read
+      // the new mode's still-blank fields and derive from the 0.5 ft fallbacks.
       if (method === 'area') {
         const f = field('area');
-        if (f && !raw('area')) f.value = String(Math.round(b.L * b.W));
+        if (f && !raw('area')) f.value = String(Math.round(tgt.L * tgt.W));
       } else if (method === 'volume') {
         const f = field('volume');
-        if (f && !raw('volume')) f.value = String(Math.round(b.L * b.W * b.H));
+        if (f && !raw('volume')) f.value = String(Math.round(tgt.L * tgt.W * tgt.H));
       }
     };
 
@@ -1096,7 +1547,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (t.closest('[data-add-cleaner]')) {
         e.preventDefault();
         if (cleanerBlocks().length >= MAX_CLEANERS) return;
-        addCleaner();
+        // Start added cleaners at 200 CFM (same default as cleaner 1) so their
+        // lane animates immediately rather than sitting idle (blank = 0 flow);
+        // the user then edits the value.
+        addCleaner('200');
         morphScene();
         recompute();
         return;
