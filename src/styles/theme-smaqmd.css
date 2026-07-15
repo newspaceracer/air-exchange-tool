@@ -65,7 +65,7 @@
   /* ===== (3) FONTS — point the type tokens at the faces loaded in <!-- TODO(spoke-init): add the brand's Google Fonts <link> tags --> =====
      The <link> tags live in BaseLayout/DocsLayout. Set the families here so
      components pick them up. Leave a token out to keep the hub default. */
-  --font-sans: /* __FILL__ */ 'DM Sans', system-ui, sans-serif;
+  --font-sans: /* __FILL__ */ 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
   --font-mono: /* __FILL__ */ 'Roboto Mono', ui-monospace, monospace;
   /* Optional decorative/display voice — components reach for these explicitly. */
   --font-display:    /* __FILL__ (or remove to inherit --font-sans) */ var(--font-sans);

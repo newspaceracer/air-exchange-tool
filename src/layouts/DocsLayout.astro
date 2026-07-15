@@ -30,7 +30,10 @@ const { title = 'SMAQMD — Design System', activeHref = '' } = Astro.props;
   <Fragment slot="head">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- TODO(spoke-init): add the brand's Google Fonts <link> tags -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300..700;1,300..700&family=Roboto+Mono:wght@400;500&display=swap"
+    />
   </Fragment>
 
   <a class="topbar-action" slot="topbar-actions" href={withBase('/')}>
