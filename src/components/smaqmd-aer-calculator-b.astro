@@ -267,7 +267,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           help-text="CARB recommends at least 2. This target applies to the whole room — all cleaners together."
         ></esa-text-field>
       </EsaCard>
+  </div>
 
+  <!-- Result — lifted OUT of the scrolling input panel into its own fixed card,
+       pinned to the LEFT of the inputs so the verdict stays visible while you
+       edit and scroll the inputs. Same [data-result] subtree the calc script
+       writes to; only its position in the tree changed, so no JS touched. -->
+  <div class="smaqmd-aerb__result">
       <EsaCard variant="elevated" title="Your result" headingLevel={2}>
         <div class="stack" data-gap="md" data-result>
           <!-- ACH group: shown when a full room size + at least one cleaner are entered -->
@@ -289,6 +295,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                 higher-CADR cleaner, another unit, or a smaller room.
               </EsaAlertBox>
             </div>
+          </div>
+
+          <!-- Buy guidance: the minimum CADR a SINGLE air cleaner needs to hit the
+               target in this room (target × volume ÷ 60). Shown whenever a room +
+               target are entered — the key number for choosing a cleaner you don't
+               own yet, independent of any cleaner already listed. -->
+          <div class="stack" data-gap="sm" data-group="need" hidden>
+            <div class="smaqmd-aerb__metrics">
+              <div data-metric="need"><EsaStat value="—" label="Minimum CADR to look for" sub="for a single air cleaner" /></div>
+            </div>
+            <!-- Filled by setNeedNote(): adapts to the number of (assumed-equal)
+                 cleaners and whether the shortfall is "no cleaner yet" or "entered
+                 cleaners miss the target". -->
+            <p class="type-caption smaqmd-aerb__need-note" data-need-note>
+              To reach your target, look for an air cleaner with a high enough CADR.
+            </p>
           </div>
 
           <!-- Capacity group: shown whenever combined flow > 0, regardless of room -->
@@ -369,7 +391,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb [hidden] { display: none !important; }
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
-  .smaqmd-aerb__cleaner-note { color: var(--color-text-tertiary); }
+  .smaqmd-aerb__cleaner-note,
+  .smaqmd-aerb__need-note { color: var(--color-text-tertiary); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
@@ -431,9 +454,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .bcn-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
   /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
+  /* Right inset clears BOTH the inputs panel (24rem) and the result card (20rem)
+     stacked to its left, plus the three gaps between them and the scene. */
   .bcn-cityview__safe {
     position: absolute;
-    inset: 9rem calc(24rem + 2 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
+    inset: 9rem calc(44rem + 3 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
     visibility: hidden;
   }
 
@@ -567,7 +592,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     fill: var(--color-text-secondary, #555);
     font-size: 13px;
     font-weight: var(--font-weight-medium, 500);
-    font-family: var(--font-family-base, system-ui, sans-serif);
+    font-family: var(--font-sans, system-ui, sans-serif);
   }
 
   /* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
@@ -643,16 +668,39 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
+  /* Result card — its own fixed pane pinned to the LEFT of the inputs panel, so
+     the verdict is always on screen while the inputs scroll independently. Right
+     edge sits one gap left of the inputs panel; same glass chrome as the panel. */
+  .smaqmd-aerb__result {
+    position: fixed; z-index: 1;
+    inset-block-start: var(--spacing-500);
+    inset-inline-end: calc(24rem + 2 * var(--spacing-500, 1.5rem));
+    inline-size: 20rem;
+    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
+    overflow-y: auto; overscroll-behavior: contain;
+    --card-bg: color-mix(in srgb, var(--color-surface) 84%, transparent);  /* lego hook */
+  }
+  .smaqmd-aerb__result :global(.esa-card) {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .smaqmd-aerb__panel { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
+    .smaqmd-aerb__panel,
+    .smaqmd-aerb__result { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
   }
 
-  @media (max-width: 56rem) {
+  @media (max-width: 68rem) {
     .smaqmd-aerb { padding-block-end: var(--spacing-700); }
     .smaqmd-aerb__header { position: relative; inset: auto; max-inline-size: none; padding: var(--spacing-500) var(--spacing-400) 0; }
     .smaqmd-aerb__panel {
       position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
       margin-block-start: min(44svh, 26rem);   /* scene owns the first viewport */
+      padding-inline: var(--spacing-400);
+    }
+    /* Result flows below the inputs (its place in the DOM) once stacked. */
+    .smaqmd-aerb__result {
+      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
+      margin-block-start: var(--spacing-500);
       padding-inline: var(--spacing-400);
     }
     .bcn-cityview__safe { inset: 11rem var(--spacing-400) 54svh var(--spacing-400); }
@@ -1265,27 +1313,38 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       qa('[data-cleaner-block]:not([data-removing])');
     let nextId = 0;
 
-    const addCleaner = (initial?: string) => {
+    // Fields duplicated when copying a cleaner — air cleaners are assumed identical
+    // by default, so an added one inherits the last one's reported values.
+    const CLEANER_FIELDS = ['unit', 'airflow', 'ach', 'refLength', 'refWidth', 'refHeight'];
+    const addCleaner = (opts?: { copyLast?: boolean }) => {
       if (cleanerBlocks().length >= MAX_CLEANERS) return;
+      // Copy from the last existing cleaner so its values replicate into the new
+      // one. If that cleaner is blank (e.g. the initial one), the new one is blank
+      // too — hence "blank for the first new one, replicate once you've entered it".
+      const srcId = opts?.copyLast ? cleanerBlocks().at(-1)?.dataset.cleanerBlock : undefined;
       const frag = template.content.cloneNode(true) as DocumentFragment;
       const b = frag.querySelector<HTMLElement>('[data-cleaner-block]')!;
       const id = String(++nextId);
       b.setAttribute('data-cleaner-block', id);
       b.querySelectorAll('[data-cleaner]').forEach((el) => el.setAttribute('data-cleaner', id));
-      // Stamp the default airflow BEFORE upgrade so the field boots populated even
-      // if the esa-text-field hasn't defined yet (value is a plain attribute then).
-      if (initial != null) {
-        const af = b.querySelector<HTMLElement & { value?: string }>('[data-field="airflow"][data-cleaner]');
-        if (af) af.setAttribute('value', initial);
+      // Stamp copied values as attributes BEFORE upgrade so each field boots
+      // populated even if the esa-* element hasn't defined yet.
+      if (srcId) {
+        CLEANER_FIELDS.forEach((name) => {
+          const val = raw(name, srcId);
+          if (!val) return;
+          const dst = b.querySelector(`[data-field="${name}"][data-cleaner]`);
+          if (dst) dst.setAttribute('value', val);
+        });
       }
       cleanersHost.appendChild(frag);
     };
-    // First cleaner boots with 200 CFM (the default that keeps the scene alive);
-    // any additional cleaner starts blank.
+    // The initial cleaner boots blank, so the tool opens on the "no cleaner yet →
+    // here's the minimum CADR to look for" state.
     const resetCleaners = () => {
       cleanersHost.replaceChildren();
       nextId = 0;
-      addCleaner('200');
+      addCleaner();
     };
 
     // Collapse the clicked block in place so the eye tracks WHICH cleaner leaves.
@@ -1384,6 +1443,30 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const showGroup = (name: string, on: boolean) =>
       show(block.querySelector(`[data-group="${name}"]`), on);
 
+    // Min-CADR guidance copy: adapts to the count of (assumed-identical) cleaners
+    // and whether the shortfall is "no cleaner yet" (hasFlow false) or "entered
+    // cleaners miss the target" (hasFlow true). Numbers bolded to match the alerts.
+    const needSub = root.querySelector<HTMLElement>('[data-metric="need"] .esa-stat__sub');
+    const needNote = root.querySelector<HTMLElement>('[data-need-note]');
+    const setNeedNote = (n: number, cadrEach: number, target: number, hasFlow: boolean) => {
+      if (needSub) needSub.textContent = n > 1 ? `for each of ${n} equal air cleaners` : 'for a single air cleaner';
+      if (!needNote) return;
+      const b = (s: string | number) => `<strong>${s}</strong>`;
+      const cadr = `${b(fmt(cadrEach, 0))} ft³/min`;
+      const tgt = b(fmt(target, 2));
+      let msg: string;
+      if (!hasFlow) {
+        msg = n > 1
+          ? `To reach ${tgt} air changes per hour with ${b(n)} equal air cleaners, look for a CADR of at least ${cadr} each.`
+          : `To reach ${tgt} air changes per hour in this room, look for an air cleaner with a CADR of at least ${cadr}.`;
+      } else {
+        msg = n > 1
+          ? `Your cleaners fall short. Assuming ${b(n)} equal cleaners, each needs a CADR of at least ${cadr} to together reach ${tgt} air changes per hour.`
+          : `Your cleaner falls short. Look for a CADR of at least ${cadr} to reach ${tgt} air changes per hour in this room.`;
+      }
+      needNote.innerHTML = msg;
+    };
+
     // Debounced polite announcer: a one-sentence summary written 600 ms after the
     // last change (drag gestures don't chatter), and only when the text differs.
     const announcer = root.querySelector<HTMLElement>('[data-announce]');
@@ -1412,6 +1495,25 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
       const vols = hasRoom ? vol : NaN;
       setMetric('volume', hasRoom ? `${fmt(vols, 0)} ft³` : '—');
+
+      // ACH the current setup delivers + whether it meets the target. Computed once
+      // here so the min-CADR guidance and the verdict below stay in agreement.
+      const ach = hasFlow && hasRoom ? (flow / vol) * 60 : NaN;
+      const pass = hasFlow && hasRoom && ach >= target;
+
+      // Minimum CADR guidance — the CADR to shop for when there's no solution yet:
+      // either no cleaner entered, OR the entered cleaners miss the target. Air
+      // cleaners are assumed identical, so the number is PER cleaner across the N
+      // cleaner blocks: (target × volume ÷ 60) ÷ N. Hidden once the target is met.
+      if (hasRoom && !pass) {
+        const nUnits = Math.max(1, blocks.length);
+        const needEach = (target * vol) / 60 / nUnits;
+        setMetric('need', `${fmt(needEach, 0)} ft³/min`);
+        setNeedNote(nUnits, needEach, target, hasFlow);
+        showGroup('need', true);
+      } else {
+        showGroup('need', false);
+      }
 
       // Capacity ghost — the largest room the cleaners cover at the target,
       // overlaid on the actual room. Only meaningful with both a flow and a room
@@ -1463,10 +1565,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // ACH + verdict + wave — needs both a room size and a flow.
       const setPrompt = (on: boolean) => show(block.querySelector('[data-prompt="empty"]'), on);
       if (hasFlow && hasRoom) {
-        const ach = (flow / vol) * 60;
         setMetric('ach', fmt(ach, 1));
         setReadout('ach', fmt(ach, 1));
-        const pass = ach >= target;
         setVerdict(pass ? 'pass' : 'fail');
         // Tint the ACH readout warning when it falls short of the target.
         root.querySelector('[data-metric="ach"]')?.toggleAttribute('data-below', !pass);
@@ -1492,6 +1592,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           announce(
             `Your ${blocks.length > 1 ? `${blocks.length} air cleaners can` : 'air cleaner can'} ` +
             `cover a room up to ${fmt(maxVol, 0)} cubic feet at ${fmt(target, 2)} air changes per hour.`,
+          );
+        } else if (hasRoom) {
+          const n = Math.max(1, blocks.length);
+          const needEach = (target * vol) / 60 / n;
+          announce(
+            n > 1
+              ? `To reach ${fmt(target, 2)} air changes per hour with ${n} equal air cleaners, ` +
+                `look for a CADR of at least ${fmt(needEach, 0)} cubic feet per minute each.`
+              : `To reach ${fmt(target, 2)} air changes per hour in this room, look for an ` +
+                `air cleaner with a CADR of at least ${fmt(needEach, 0)} cubic feet per minute.`,
           );
         } else {
           announce('');
@@ -1547,10 +1657,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (t.closest('[data-add-cleaner]')) {
         e.preventDefault();
         if (cleanerBlocks().length >= MAX_CLEANERS) return;
-        // Start added cleaners at 200 CFM (same default as cleaner 1) so their
-        // lane animates immediately rather than sitting idle (blank = 0 flow);
-        // the user then edits the value.
-        addCleaner('200');
+        // Air cleaners are assumed identical: a new one copies the last cleaner's
+        // values (blank if that one is still blank), so you only re-enter what
+        // differs between them.
+        addCleaner({ copyLast: true });
         morphScene();
         recompute();
         return;
@@ -1603,11 +1713,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     svg.addEventListener('pointerup', endDrag);
     svg.addEventListener('pointercancel', endDrag);
 
-    // Boot: stamp cleaner 1 (airflow "200" as an attribute, before upgrade) and
-    // draw the default scene immediately (cur/tgt default to 12×10×8). Once the
-    // legos upgrade — so field .value getters read the entered attributes — sync
-    // the mode wrappers/entry-mode flag, snap the box to the fields, and compute,
-    // leaving the scene alive with defaults (200 CFM, target 2, wave running).
+    // Boot: stamp the (blank) first cleaner and draw the default scene immediately
+    // (cur/tgt default to 12×10×8). Once the legos upgrade — so field .value
+    // getters read entered attributes — sync the mode wrappers/entry-mode flag,
+    // snap the box to the fields, and compute, opening on the "no cleaner yet →
+    // minimum CADR to look for" state (room 12×10×8, target 2, no wave).
     resetCleaners();
     drawScene(cur.L, cur.W, cur.H);
     Promise.all([
