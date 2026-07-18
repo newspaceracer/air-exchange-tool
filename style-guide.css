@@ -1,0 +1,437 @@
+﻿
+H1.pxml-stylesElement-H1 {
+  -ms-name: "Heading 1";
+  -ms-element: "true"; }
+
+H2.pxml-stylesElement-H2 {
+  -ms-name: "Heading 2";
+  -ms-element: "true"; }
+
+H3.pxml-stylesElement-H3 {
+  -ms-name: "Heading 3";
+  -ms-element: "true"; }
+
+H4.pxml-stylesElement-H4 {
+  -ms-name: "Heading 4";
+  -ms-element: "true"; }
+
+P.pxml-stylesElement-P {
+  -ms-name: "Paragraph";
+  -ms-element: "true"; }
+
+.ms-rteStyle-Bold {
+  -ms-name: "Bold"; }
+
+.ms-rteStyle-Underline {
+  -ms-name: "Underline"; }
+  
+.ms-rteStyle-superscript {
+	-ms-name: "Superscript";
+}
+	
+.ms-rteStyle-subscript {
+	-ms-name: "Subscript";
+}
+
+.ms-rteStyle-ButtonOne {
+  -ms-name: "Button"; 
+}
+
+
+.ms-rteStyle-Button1 {
+  -ms-name: "Button"; 
+}
+
+
+TABLE.ms-rteTable-default {
+  border: solid 1px #6b839f; }
+  TABLE.ms-rteTable-default .ms-rteTableHeaderRow-default TH {
+    border: solid 1px #6b839f;
+    background-color: #ffffff;
+    padding: 10px; }
+  TABLE.ms-rteTable-default .ms-rteTableOddRow-default TD {
+    border: solid 1px #6b839f;
+    background-color: #eeeeee;
+    padding: 10px; }
+  TABLE.ms-rteTable-default .ms-rteTableEvenRow-default TD {
+    border: solid 1px #6b839f;
+    background-color: #ffffff;
+    padding: 10px; }
+
+TABLE.ms-rteTable-style1 {
+  -ms-name: "Style 1";
+  border: solid 1px #0073B2;
+  margin-bottom: 10px;
+  color: #121212; }
+  TABLE.ms-rteTable-style1 .ms-rteTableHeaderRow-style1 TH, 
+  TABLE.ms-rteTable-style1 .ms-rteTableHeaderRow-style1 TH p,
+  TABLE.ms-rteTable-style1 .ms-rteTableHeaderRow-style1 TH span {
+    background-color: #0073B2;
+    color: white;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style1 .ms-rteTableFirstCol-style1 {
+    border: solid 1px #0073B2;
+    vertical-align: top;
+    padding: 10px;
+    text-align: left; }
+  TABLE.ms-rteTable-style1 .ms-rteTableOddRow-style1 TD {
+    border: solid 1px #0073B2;
+    background-color: #eef3f7;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style1 .ms-rteTableOddRow-style1 .ms-rteTableFirstCol-style1 {
+    background-color: #eef3f7; }
+  TABLE.ms-rteTable-style1 .ms-rteTableEvenRow-style1 TD {
+    border: solid 1px #0073B2;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style1 .ms-rteTableEvenRow-style1 .ms-rteTableFirstCol-style1 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style1 .ms-rteTableFooterFirstCol-style1 {
+    text-align: left;
+    padding: 10px; }
+
+TABLE.ms-rteTable-style2 {
+  -ms-name: "Style 2";
+  margin-bottom: 10px;
+  color: #121212; }
+  TABLE.ms-rteTable-style2 .ms-rteTableHeaderRow-style2 TH, 
+  TABLE.ms-rteTable-style1 .ms-rteTableHeaderRow-style2 TH p,
+  TABLE.ms-rteTable-style1 .ms-rteTableHeaderRow-style2 TH span {
+    background-color: #a6c6df;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style2 .ms-rteTableFirstCol-style2 {
+    vertical-align: top;
+    padding: 10px;
+    text-align: left; }
+  TABLE.ms-rteTable-style2 .ms-rteTableOddRow-style2 TD {
+    background-color: #e0edf6;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style2 .ms-rteTableOddRow-style2 .ms-rteTableFirstCol-style2 {
+    background-color: #e0edf6; }
+  TABLE.ms-rteTable-style2 .ms-rteTableEvenRow-style2 TD {
+    border: solid 1px #ffffff;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style2 .ms-rteTableEvenRow-style2 .ms-rteTableFirstCol-style2 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style2 .ms-rteTableFooterFirstCol-style2 {
+    text-align: left;
+    padding: 10px; }
+
+TABLE.ms-rteTable-style3 {
+  -ms-name: "Style 3";
+  border: solid 1px #82AC69;
+  margin-bottom: 10px;
+  color: #121212; }
+  TABLE.ms-rteTable-style3 .ms-rteTableHeaderRow-style3 TH {
+    background-color: #82AC69;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style3 .ms-rteTableFirstCol-style3 {
+    border: solid 1px #82AC69;
+    vertical-align: top;
+    padding: 10px;
+    text-align: left; }
+  TABLE.ms-rteTable-style3 .ms-rteTableOddRow-style3 TD {
+    border: solid 1px #82AC69;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style3 .ms-rteTableOddRow-style3 .ms-rteTableFirstCol-style3 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style3 .ms-rteTableEvenRow-style3 TD {
+    border: solid 1px #82AC69;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style3 .ms-rteTableEvenRow-style3 .ms-rteTableFirstCol-style3 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style3 .ms-rteTableFooterFirstCol-style3 {
+    text-align: left;
+    padding: 10px; }
+
+TABLE.ms-rteTable-style4 {
+  -ms-name: "Style 4";
+  border: solid 1px #67a1c5;
+  margin-bottom: 10px;
+  color: #121212; }
+  TABLE.ms-rteTable-style4 .ms-rteTableHeaderRow-style4 TH {
+    background-color: #00A2E5;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #00A2E5 #00A2E5 #00A2E5 #ffffff;
+    vertical-align: top;
+    padding: 10px;
+    color: white; }
+    TABLE.ms-rteTable-style4 .ms-rteTableHeaderRow-style4 TH.ms-rteTableHeaderFirstCol-style4 {
+      border-left-color: #00A2E5; }
+  TABLE.ms-rteTable-style4 .ms-rteTableFirstCol-style4 {
+    border: solid 1px #67a1c5;
+    vertical-align: top;
+    padding: 10px;
+    text-align: left; }
+  TABLE.ms-rteTable-style4 .ms-rteTableOddRow-style4 TD {
+    border: solid 1px #67a1c5;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style4 .ms-rteTableOddRow-style4 .ms-rteTableFirstCol-style4 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style4 .ms-rteTableEvenRow-style4 TD {
+    border: solid 1px #67a1c5;
+    background-color: #ffffff;
+    vertical-align: top;
+    padding: 10px; }
+  TABLE.ms-rteTable-style4 .ms-rteTableEvenRow-style4 .ms-rteTableFirstCol-style14 {
+    background-color: #ffffff; }
+  TABLE.ms-rteTable-style4 .ms-rteTableFooterFirstCol-style4 {
+    text-align: left;
+    padding: 10px; }
+
+.pxml-stylesElement-H1, .ms-rtestate-field h1, h1.ms-rteElement-H1, .chr-rte-Element-H1, .pm-row H1 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 2.9334em;
+  color: #0073B2;
+  margin: .5em auto 0 auto;
+  padding-bottom: .2em;
+  color: #0073B2;
+  line-height: 1.09; }
+
+.pxml-stylesElement-H2, .ms-rtestate-field h2, h2.ms-rteElement-H2, .chr-rte-Element-H2, .pm-row H2 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 2.4em;
+  color: #0073B2;
+  line-height: 1.11;
+  margin: .2em auto; }
+
+.pxml-stylesElement-H3, .ms-rtestate-field h3, h3.ms-rteElement-H3, .chr-rte-Element-H3, .pm-row H3 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.6em;
+  color: #121212;
+  line-height: 1.25; }
+
+.pxml-stylesElement-H4, .ms-rtestate-field h4, h4.ms-rteElement-H4, .chr-rte-Element-H4, .pm-row H4 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.2667em;
+  color: #121212;
+  line-height: 1.25;
+  font-weight: normal;
+  font-style: normal; }
+
+.pxml-stylesElement-H5, .ms-rtestate-field h5, h5.ms-rteElement-H5, .chr-rte-Element-H5, .pm-row H5 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.2em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+.pxml-stylesElement-H6, .ms-rtestate-field h6, h6.ms-rteElement-H6, .chr-rte-Element-H6, .pm-row H6 {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.0667em;
+  color: #0073B2;
+  line-height: 1.5; }
+
+h1.ms-rteElement-H1B {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 2.9334em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+h2.ms-rteElement-H2B {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 2.4em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+h3.ms-rteElement-H3B {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.6em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+h4.ms-rteElement-H4B {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.2667em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+.pxml-stylesElementp-P, 
+.ms-rtestate-field P,  
+P.ms-rteElement-P, 
+.chr-rte-Element-P, 
+.pm-row P {
+  font-family: 'Source Sans Pro';
+  font-size: 1.0667em;
+  color: #121212;
+  line-height: 1.5 }
+
+.pm-row A {
+  font-family: 'Source Sans Pro';
+  font-size: 1.0667em;
+  color: #0073B2;
+  line-height: 1.5; }
+
+.ms-rteStyle-Normal {
+  font-family: 'Source Sans Pro';
+  font-size: 1.0667em;
+  color: #121212;
+  background-color: transparent;
+  line-height: 1.5; }
+
+.ms-rteStyle-Quote {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-size: 1.0667em;
+  color: #121212;
+  line-height: 1.5; }
+
+.ms-rteStyle-IntenseQuote {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-size: 1.0667em;
+  color: #121212;
+  text-decoration: underline;
+  line-height: 1.5; }
+
+.ms-rteStyle-Emphasis {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.0667em;
+  color: #121212;
+  line-height: 1.5;
+  color: #82AC69;
+  font-style: normal; }
+
+.ms-rteStyle-IntenseEmphasis {
+  font-family: 'Source Sans Pro Semibold';
+  font-size: 1.0667em;
+  color: #121212;
+  text-decoration: underline;
+  line-height: 1.5; }
+
+.ms-rteStyle-References {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-size: 1.0667em;
+  color: #121212;
+  line-height: 1.5; }
+
+.ms-rteStyle-IntenseReferences {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-size: 1.0667em;
+  color: #121212;
+  text-decoration: underline;
+  line-height: 1.5; }
+
+.ms-rteStyle-Accent1 {
+  font-family: 'Source Sans Pro';
+  font-size: 1.0667em;
+  color: #0073B2;
+  line-height: 1.5; }
+
+.ms-rteStyle-Accent2 {
+  font-family: 'Source Sans Pro';
+  font-size: 1.0667em;
+  color: #00A2E5;
+  line-height: 1.5; }
+
+.ms-rteStyle-Bold {
+  font-weight: bold; }
+
+.ms-rteStyle-Underline {
+  text-decoration: underline; }
+  
+.ms-rteStyle-superscript {
+	vertical-align: super;
+	font-size: .83em; 
+}
+	
+.ms-rteStyle-subscript {
+	vertical-align: sub;
+	font-size: .83em;
+}
+
+
+.ms-rteStyle-Button1, .ms-rteStyle-ButtonOne {
+  font-family: Arial, "Helvetica Neue", "Helvetica", Helvetica, sans-serif;
+  font-weight: bold;
+  line-height: normal;
+  margin: 0 0 1.25rem;
+  position: relative;
+  text-decoration: none;
+  text-align: center;
+  -webkit-appearance: none;
+  display: inline-block;
+  padding-top: 1rem;
+  padding-right: 2rem;
+  padding-bottom: 1.0625rem;
+  padding-left: 2rem;
+  font-size: 1rem;
+  color: #0073B2 !important;
+  background-color: #fafafa;
+  border: 1px solid #B7B7B7;
+  -webkit-border-radius: 3px 3px 3px 3px;
+  -khtml-border-radius: 3px 3px 3px 3px;
+  -moz-border-radius: 3px 3px 3px 3px;
+  -ms-border-radius: 3px 3px 3px 3px;
+  -o-border-radius: 3px 3px 3px 3px;
+  border-radius: 3px 3px 3px 3px;
+  transition: background-color 300ms ease-out; }
+  
+.ms-rteStyle-Button1, .ms-rteStyle-ButtonOne {
+    width: 75%;
+}
+
+.sidebarWrapperLandingPage .ms-rteStyle-Button1, 
+.sidebarWrapperLandingPage .ms-rteStyle-ButtonOne {
+	width: 87%;
+}
+
+@media screen and (min-width: 768px) {
+.sidebarWrapperLandingPage .ms-rteStyle-Button1, 
+.sidebarWrapperLandingPage .ms-rteStyle-ButtonOne {
+    width: 48%;
+}
+
+.ms-rteStyle-Button1, 
+.ms-rteStyle-ButtonOne {
+    width: 66%;
+}
+
+}
+@media screen and (min-width: 992px) {
+.sidebarWrapperLandingPage .ms-rteStyle-Button1, 
+.sidebarWrapperLandingPage .ms-rteStyle-ButtonOne {
+    width: 64%;
+}
+}
+@media screen and (min-width: 1200px) {
+.sidebarWrapperLandingPage .ms-rteStyle-Button1, 
+.sidebarWrapperLandingPage .ms-rteStyle-ButtonOne {
+     width: 72%;
+}
+}
+
+#s4-workspace .main-content .rowBand.pmBand2 .ms-rteStyle-Button1, #s4-workspace .main-content .rowBand.pmBand2 .ms-rteStyle-ButtonOne {
+	text-align: center;
+}
+
+
+.ms-rteStyle-Button1 a, .ms-rteStyle-ButtonOne a {
+  color: white !important; }
+
+.ms-rteStyle-Button1 a:hover, .ms-rteStyle-ButtonOne a:hover {
+  color: white !important;
+  text-decoration: none; }
+
+IMG.ms-rtePosition-6 {
+  -ms-name: "Center"; }
+
+IMG.ms-rtePosition-6 {
+  margin: 0px auto !important; }
+

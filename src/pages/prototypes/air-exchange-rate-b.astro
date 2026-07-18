@@ -6,22 +6,26 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import SmaqmdAerCalculatorB from '../../components/smaqmd-aer-calculator-b.astro';
+import SmaqmdVersionToggle from '../../components/smaqmd-version-toggle.astro';
 ---
 <!-- manifest:
   layout: full-bleed canvas (component-owned)
   sections:
+    - version toggle   -> smaqmd-version-toggle (slotted overlay)
     - page header      -> esa-page-header (slotted overlay)
     - calculator + scene -> smaqmd-aer-calculator-b
 -->
 <BaseLayout title="Air Exchange Rate Tool (Option B) — SMAQMD">
   <main>
     <SmaqmdAerCalculatorB>
-      <EsaPageHeader
-        slot="header"
-        eyebrow="Sacramento Metropolitan Air Quality Management District"
-        title="See your room clear the air"
-        lede="Size your room, pick your cleaner, and watch the air-changes math play out on the block."
-      />
+      <div slot="header">
+        <SmaqmdVersionToggle active="classic" />
+        <EsaPageHeader
+          eyebrow="Sacramento Metropolitan Air Quality Management District"
+          title="See your room clear the air"
+          lede="Size your room, pick your cleaner, and watch the air-changes math play out on the block."
+        />
+      </div>
     </SmaqmdAerCalculatorB>
   </main>
 </BaseLayout>

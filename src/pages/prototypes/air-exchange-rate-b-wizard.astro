@@ -1,0 +1,33 @@
+---
+// /prototypes/air-exchange-rate-b-wizard — the WIZARD presentation of Option B.
+// Same math + same isometric scene as the classic Option B, re-chromed into a
+// gated step-by-step flow (room → cleaners → target → result). Thin assembler:
+// the page header + version toggle slot into the wizard component's header, and
+// the wizard component owns the scene + form. Kept separate from the classic page
+// so the two can be compared via the toggle.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import SmaqmdAerWizard from '../../components/smaqmd-aer-wizard.astro';
+import SmaqmdVersionToggle from '../../components/smaqmd-version-toggle.astro';
+---
+<!-- manifest:
+  layout: full-bleed canvas (component-owned)
+  sections:
+    - version toggle     -> smaqmd-version-toggle (slotted overlay)
+    - page header        -> esa-page-header (slotted overlay)
+    - wizard + scene     -> smaqmd-aer-wizard
+-->
+<BaseLayout title="Air Exchange Rate Tool (Wizard) — SMAQMD">
+  <main>
+    <SmaqmdAerWizard>
+      <div slot="header">
+        <SmaqmdVersionToggle active="wizard" />
+        <EsaPageHeader
+          eyebrow="Sacramento Metropolitan Air Quality Management District"
+          title="Clear your air, step by step"
+          lede="Answer three quick questions and watch the air-changes math play out on the block."
+        />
+      </div>
+    </SmaqmdAerWizard>
+  </main>
+</BaseLayout>

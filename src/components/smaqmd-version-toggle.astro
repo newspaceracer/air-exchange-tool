@@ -1,0 +1,63 @@
+---
+// smaqmd-version-toggle — a small segmented control that flips between the two
+// presentations of the Air Exchange Rate tool (the classic always-open form and
+// the step-by-step wizard) so they can be compared side by side. Thin wrapper
+// over the esa-button-toggle lego: it owns only the two routes + the on-change
+// navigation. Reused in the header of BOTH prototype pages.
+//
+// bcn-lego-checked: the segmented control itself IS the esa-button-toggle lego —
+// nothing is hand-rolled here; this component only supplies the options + the
+// navigation behavior, which no lego can know about (app-specific routes).
+interface Props {
+  /** Which version this page is, so the matching segment renders selected. */
+  active: 'classic' | 'wizard';
+}
+const { active } = Astro.props;
+
+const CLASSIC_URL = '/prototypes/air-exchange-rate-b';
+const WIZARD_URL = '/prototypes/air-exchange-rate-b-wizard';
+---
+<div class="smaqmd-version-toggle" data-version-toggle
+     data-classic-url={CLASSIC_URL} data-wizard-url={WIZARD_URL}>
+  <esa-button-toggle
+    size="sm"
+    label="View"
+    value={active}
+    data-version-switch
+  ></esa-button-toggle>
+</div>
+
+<style>
+  /* Just a light chrome so the control reads over the scene; the segments
+     themselves are the lego. */
+  .smaqmd-version-toggle {
+    display: inline-flex;
+    margin-block-end: var(--spacing-300, 0.75rem);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  document.querySelectorAll<HTMLElement>('[data-version-toggle]').forEach((root) => {
+    const toggle = root.querySelector<HTMLElement & { options?: unknown; value?: string }>(
+      '[data-version-switch]',
+    );
+    if (!toggle) return;
+    const classicUrl = root.dataset.classicUrl!;
+    const wizardUrl = root.dataset.wizardUrl!;
+    // options is an ARRAY property (not an attribute) per the esa-button-toggle
+    // contract — set it after the element upgrades.
+    customElements.whenDefined('esa-button-toggle').then(() => {
+      toggle.options = [
+        { label: 'Classic', value: 'classic' },
+        { label: 'Wizard', value: 'wizard' },
+      ];
+    });
+    toggle.addEventListener('change', (e) => {
+      const value = (e as CustomEvent<{ value: string }>).detail?.value;
+      const url = value === 'wizard' ? wizardUrl : classicUrl;
+      if (url && !window.location.pathname.endsWith(url)) window.location.assign(url);
+    });
+  });
+</script>

@@ -54,7 +54,7 @@
      --color-text-muted feeds readable text via component tokens (esa-text-field
      help + placeholder, esa-stat sublabel), so it must clear 4.5:1. */
   --color-text-muted:     var(--smaqmd-gray-11);
-  --color-text-link:      var(--smaqmd-brand-12); /* AA on light surfaces; brand pass can tune the link hue */
+  --color-text-link:      var(--smaqmd-brand-11); /* conventional blue link, AA on light surfaces (matches airquality.org) */
   --color-border:         var(--smaqmd-gray-7);
   --color-border-light:   var(--smaqmd-gray-6);
   --color-border-strong:  var(--smaqmd-gray-8);
@@ -93,6 +93,14 @@
   --form-radius-md: /* __FILL__ */ var(--radius-100);
   --form-radius-lg: /* __FILL__ */ var(--radius-100);
 
+  /* Focus treatment — pin both the focus RING and the focused BORDER to the
+     brand ramp. The hub sets --focus-ring-color: var(--color-primary) in :root
+     (inherits grass unless pinned here), and --form-border-color-focus has no hub
+     token at all (components fall back to the literal #43608a blue-gray). Setting
+     both makes every esa-* control's focus state read as brand blue. */
+  --focus-ring-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --form-border-color-focus: var(--color-primary);
+
   /* ===== (6) --button-on-warning — text color on a filled warning button =====
      Set to #fff if this spoke's warning fill is dark enough for white text;
      leave at the hub default (dark text) for a lighter amber. */
@@ -121,22 +129,24 @@
   --smaqmd-gray-9:  #8d8d8d;
   --smaqmd-gray-10: #838383;
   --smaqmd-gray-11: #646464;
-  --smaqmd-gray-12: #202020;
+  --smaqmd-gray-12: #121212;  /* near-black body text, matching airquality.org */
 
   /* Brand ramp — this spoke's signature color (feeds --color-primary*/secondary*).
-     __FILL__ placeholder = a stand-in teal; swap for SMAQMD's real hue ramp. */
-  --smaqmd-brand-1:  #fafefd;
-  --smaqmd-brand-2:  #f3fbf9;
-  --smaqmd-brand-3:  #e0f8f3;
-  --smaqmd-brand-4:  #ccf3ea;
-  --smaqmd-brand-5:  #b8eae0;
-  --smaqmd-brand-6:  #a1ded2;
-  --smaqmd-brand-7:  #83cdc1;
-  --smaqmd-brand-8:  #53b9ab;
-  --smaqmd-brand-9:  #12a594;
-  --smaqmd-brand-10: #0d9b8a;
-  --smaqmd-brand-11: #008573;
-  --smaqmd-brand-12: #0d3d38;
+     SMAQMD blue, extracted from airquality.org custom CSS: step 9 is the site's
+     primary #0073b2 (its most-used brand color), step 8 leans toward the bright
+     #00a2e5 accent. Radix-style 1-12 lightness progression on white. */
+  --smaqmd-brand-1:  #fbfdff;
+  --smaqmd-brand-2:  #eef6fc;  /* light blue wash — matches the site's #ebf3fc panels */
+  --smaqmd-brand-3:  #dcecf8;
+  --smaqmd-brand-4:  #c7e1f3;
+  --smaqmd-brand-5:  #aed4ec;
+  --smaqmd-brand-6:  #8fc3e3;
+  --smaqmd-brand-7:  #66acd6;
+  --smaqmd-brand-8:  #2f97cf;  /* bright interactive blue, near the site's #00a2e5 */
+  --smaqmd-brand-9:  #0073b2;  /* SOLID BRAND — the site's exact primary blue */
+  --smaqmd-brand-10: #00669e;  /* hovered fill */
+  --smaqmd-brand-11: #015b8c;  /* low-contrast text (AA on white) */
+  --smaqmd-brand-12: #0a2c42;  /* high-contrast text */
 
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */

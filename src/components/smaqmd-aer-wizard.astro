@@ -1,6 +1,15 @@
 ---
-// smaqmd-aer-calculator-b — Option B of the Air Exchange Rate tool. A visual
-// rethink built on a CITY metaphor: the room is a large building on a city
+// smaqmd-aer-wizard — the WIZARD presentation of Option B. Identical math + the
+// identical isometric city engine as smaqmd-aer-calculator-b (this file was
+// forked from it), re-chromed from an always-open form into a gated linear flow:
+// step 0 room → step 1 cleaners → step 2 target → step 3 result. Every field and
+// the whole [data-result] subtree are byte-for-byte the classic view's, so the
+// SAME calc/scene script drives both — the ONLY differences are (a) the root is
+// [data-aerb-wizard], (b) the inputs are wrapped in a bcn-wizard step shell, and
+// (c) a step-navigation block appended to the script. Keep the two in sync by
+// porting engine changes across; presentation diverges on purpose.
+//
+// A visual rethink built on a CITY metaphor: the room is a large building on a city
 // block, the air cleaner is a separate (much smaller) building, and the street
 // between them carries the air — a used-air lane leaving the room and a
 // clean-air lane returning — so you SEE the exchange loop the math describes.
@@ -45,7 +54,7 @@ const A = +(Math.cos(Math.PI / 6) * DOT_SPACING).toFixed(3); // ≈ 22.5
 const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 ---
 
-<div class="smaqmd-aerb" data-aerb>
+<div class="smaqmd-aerb" data-aerb-wizard>
   <!-- The city. bcn-lego-checked: no esa- lego draws a to-scale isometric
        city/room scene with animated flow (checked the catalog — esa-* has
        cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
@@ -211,70 +220,93 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     <slot name="header" />
   </div>
 
-  <!-- Inputs + result, stacked in the floating panel. -->
-  <div class="smaqmd-aerb__panel stack" data-gap="lg">
-      <EsaCard title="Your room" headingLevel={2}>
-        <div class="stack" data-gap="md">
-          <esa-radio-group
-            data-field="roomMethod"
-            label="How do you want to enter your room size?"
-            value="dimensions"
-            options={JSON.stringify(roomMethods)}
-          ></esa-radio-group>
-          <div class="smaqmd-aerb__dims grid" data-gap="md">
-            <div data-room="dimensions">
-              <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
-            </div>
-            <div data-room="dimensions">
-              <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
-            </div>
-            <div data-room="dimensions area">
-              <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
-            </div>
-            <div data-room="area" hidden>
-              <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
-            </div>
-            <div data-room="volume" hidden>
-              <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
-            </div>
+  <!-- Wizard: one fixed panel, one step at a time. bcn-lego-checked: no esa- lego
+       is a multi-step wizard/stepper (checked the catalog — esa-tab-layout is
+       user-driven tabs, not a gated linear flow; esa-progress-bar is a bare bar;
+       Beacon has no equivalent). The step shell + numbered progress dots are the
+       bespoke bcn-wizard concern; every CONTROL inside stays an esa-* lego, and
+       the fields + [data-result] subtree are byte-for-byte the classic view's, so
+       the SAME calc engine drives both — only the chrome differs. -->
+  <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
+    <EsaCard>
+      <div class="bcn-wizard stack" data-gap="lg" data-wizard>
+        <!-- Progress head: numbered dots (the 3 input steps) + counter + title. -->
+        <div class="bcn-wizard__head stack" data-gap="sm">
+          <div class="bcn-wizard__dots cluster" data-gap="xs" aria-hidden="true">
+            <span class="bcn-wizard__dot" data-dot="0">1</span>
+            <span class="bcn-wizard__dot" data-dot="1">2</span>
+            <span class="bcn-wizard__dot" data-dot="2">3</span>
           </div>
+          <p class="type-caption bcn-wizard__count" data-step-count>Step 1 of 3</p>
+          <h2 class="type-card-title bcn-wizard__title" data-step-title>Your room</h2>
         </div>
-      </EsaCard>
 
-      <EsaCard title="Your air cleaners" headingLevel={2}>
-        <div class="stack" data-gap="md">
-          <!-- Cleaner blocks stamped here by JS (template below) -->
-          <div class="stack" data-gap="lg" data-cleaners></div>
+        <!-- Step bodies — all present in the DOM (the engine reads every field on
+             every recompute); only the active step is shown. -->
+        <div class="bcn-wizard__body">
+          <!-- Step 0 — room -->
+          <section class="stack" data-gap="md" data-step="0">
+            <esa-radio-group
+              data-field="roomMethod"
+              label="How do you want to enter your room size?"
+              value="dimensions"
+              options={JSON.stringify(roomMethods)}
+            ></esa-radio-group>
+            <div class="smaqmd-aerb__dims grid" data-gap="md">
+              <div data-room="dimensions">
+                <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
+              </div>
+              <div data-room="dimensions">
+                <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+              </div>
+              <div data-room="dimensions area">
+                <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
+              </div>
+              <div data-room="area" hidden>
+                <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
+              </div>
+              <div data-room="volume" hidden>
+                <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
+              </div>
+            </div>
+            <div data-room-hint hidden>
+              <EsaAlertBox variant="info">Enter your room size to continue.</EsaAlertBox>
+            </div>
+          </section>
 
-          <div class="cluster" data-gap="sm">
-            <span data-add-cleaner>
-              <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
-                Add another air cleaner
-              </EsaButton>
-            </span>
-            <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
-          </div>
-        </div>
-      </EsaCard>
+          <!-- Step 1 — air cleaners -->
+          <section class="stack" data-gap="md" data-step="1" hidden>
+            <p class="type-body bcn-wizard__lede">
+              Add the air cleaners you own — or skip ahead to see the minimum
+              rating to shop for.
+            </p>
+            <!-- Cleaner blocks stamped here by JS (template below) -->
+            <div class="stack" data-gap="lg" data-cleaners></div>
+            <div class="cluster" data-gap="sm">
+              <span data-add-cleaner>
+                <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
+                  Add another air cleaner
+                </EsaButton>
+              </span>
+              <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
+            </div>
+          </section>
 
-      <EsaCard title="Your target" headingLevel={2}>
-        <esa-text-field
-          data-field="target"
-          type="text"
-          inputmode="decimal"
-          label="Target air changes per hour"
-          value="2"
-          help-text="CARB recommends at least 2. This target applies to the whole room — all cleaners together."
-        ></esa-text-field>
-      </EsaCard>
-  </div>
+          <!-- Step 2 — target -->
+          <section class="stack" data-gap="md" data-step="2" hidden>
+            <esa-text-field
+              data-field="target"
+              type="text"
+              inputmode="decimal"
+              label="Target air changes per hour"
+              value="2"
+              help-text="CARB recommends at least 2. This target applies to the whole room — all cleaners together."
+            ></esa-text-field>
+          </section>
 
-  <!-- Result — lifted OUT of the scrolling input panel into its own fixed card,
-       pinned to the LEFT of the inputs so the verdict stays visible while you
-       edit and scroll the inputs. Same [data-result] subtree the calc script
-       writes to; only its position in the tree changed, so no JS touched. -->
-  <div class="smaqmd-aerb__result">
-      <EsaCard variant="outlined" title="Your result" headingLevel={2}>
+          <!-- Step 3 — result. The SAME [data-result] subtree the classic view
+               uses; the engine writes here regardless of which step is shown. -->
+          <section class="stack" data-gap="md" data-step="3" hidden>
         <div class="stack" data-gap="md" data-result>
           <!-- ACH group: shown when a full room size + at least one cleaner are entered -->
           <div class="stack" data-gap="md" data-group="ach">
@@ -331,7 +363,27 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                after a 600 ms debounce so drag gestures do not chatter. -->
           <p class="smaqmd-aerb__sr" aria-live="polite" data-announce></p>
         </div>
-      </EsaCard>
+          </section>
+        </div>
+
+        <!-- Nav — Back sits left (margin-auto), the forward action right. Which
+             forward button shows depends on the step; the script toggles them. -->
+        <div class="bcn-wizard__nav">
+          <span data-nav="back" hidden>
+            <EsaButton color="ghost" appearance="outline" size="sm" icon="arrow-left" type="button">Back</EsaButton>
+          </span>
+          <span data-nav="next">
+            <EsaButton size="sm" type="button">Next</EsaButton>
+          </span>
+          <span data-nav="result" hidden>
+            <EsaButton size="sm" icon="check" type="button">See my result</EsaButton>
+          </span>
+          <span data-nav="restart" hidden>
+            <EsaButton color="ghost" appearance="outline" size="sm" icon="rotate-ccw" type="button">Start over</EsaButton>
+          </span>
+        </div>
+      </div>
+    </EsaCard>
   </div>
 
   <!-- Cleaner-block template — cloned per cleaner. data-cleaner is stamped with
@@ -454,11 +506,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .bcn-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
   /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
-  /* Right inset clears BOTH the inputs panel (24rem) and the result card (20rem)
-     stacked to its left, plus the three gaps between them and the scene. */
+  /* Wizard has a SINGLE panel (26rem) on the right, so the right inset only needs
+     to clear that one panel + a gap (the classic view cleared two stacked panels). */
   .bcn-cityview__safe {
     position: absolute;
-    inset: 9rem calc(44rem + 3 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
+    inset: 9rem calc(26rem + 2 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
     visibility: hidden;
   }
 
@@ -667,6 +719,44 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook, inherits into cards */
     --card-border-color: var(--color-border-strong);  /* visible hairline over the scene (default #cecece reads too faint) */
   }
+  /* Wizard uses ONE panel and gives each step room to breathe, so it runs a touch
+     wider than the classic inputs panel. */
+  .smaqmd-aerw__panel { inline-size: 26rem; }
+
+  /* bcn-wizard — the step shell. bcn-lego-checked: no esa- lego is a gated linear
+     wizard/stepper (see the markup note); the numbered dots + step chrome are the
+     bespoke home, composing esa-button / esa-* controls inside. Token-driven. */
+  .bcn-wizard__dots { --cluster-align: center; }
+  .bcn-wizard__dot {
+    display: inline-grid; place-items: center;
+    inline-size: 1.5rem; block-size: 1.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem; font-weight: var(--font-weight-medium, 500);
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-sunken, #eee);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  }
+  /* Completed steps: filled brand; current step: brand ring + brand text. */
+  .bcn-wizard__dot[data-done] {
+    background: var(--color-primary);
+    color: var(--button-on-primary, #fff);
+    box-shadow: none;
+  }
+  .bcn-wizard__dot[data-active] {
+    color: var(--color-primary);
+    background: var(--color-primary-subtle, #eef);
+    box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  }
+  .bcn-wizard__count { color: var(--color-text-tertiary); }
+  .bcn-wizard__lede { color: var(--color-text-secondary); }
+  /* Nav: forward action on the right, Back pushed to the left when present. */
+  .bcn-wizard__nav {
+    display: flex; align-items: center;
+    gap: var(--spacing-300, 0.75rem);
+    margin-block-start: var(--spacing-200, 0.5rem);
+  }
+  .bcn-wizard__nav [data-nav="back"] { margin-inline-end: auto; }
   /* The panel is a .stack (flex column) with a max height: without this, short
      viewports shrink the cards (esa-card's overflow:hidden zeroes their flex
      minimum) and clip fields instead of letting the panel scroll. */
@@ -721,7 +811,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-radio-group';
 
-  const root = document.querySelector<HTMLElement>('[data-aerb]');
+  const root = document.querySelector<HTMLElement>('[data-aerb-wizard]');
   if (root) {
     // ---- input plumbing (shared with the city drawing) ----
     // Namespaced field lookup: a bare name matches the shared (no data-cleaner)
@@ -1722,6 +1812,65 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     svg.addEventListener('pointerup', endDrag);
     svg.addEventListener('pointercancel', endDrag);
 
+    // ---- wizard step navigation ----
+    // Steps 0 room / 1 cleaners / 2 target gate forward; step 3 is the result
+    // screen. Every step lives in the DOM at once (the engine reads all fields on
+    // each recompute) — this only toggles which step is visible + the chrome, and
+    // gates leaving the room step on a valid room size. The scene backdrop already
+    // reflects every input regardless of the step shown.
+    const INPUT_STEPS = 3;
+    const TITLES = ['Your room', 'Your air cleaners', 'Your target', 'Your result'];
+    const stepSections = qa('[data-step]');
+    const dots = qa('[data-dot]');
+    const stepCountEl = root.querySelector('[data-step-count]');
+    const stepTitleEl = root.querySelector('[data-step-title]');
+    const roomHint = root.querySelector<HTMLElement>('[data-room-hint]');
+    const navEl = (name: string) => root.querySelector<HTMLElement>(`[data-nav="${name}"]`);
+    const roomValid = () => { const v = roomVolume(); return Number.isFinite(v) && v > 0; };
+    let stepIdx = 0;
+
+    const renderStep = () => {
+      const isResult = stepIdx >= INPUT_STEPS;
+      stepSections.forEach((s) => show(s, Number(s.dataset.step) === stepIdx));
+      dots.forEach((d, i) => {
+        d.toggleAttribute('data-active', i === stepIdx && !isResult);
+        d.toggleAttribute('data-done', i < stepIdx);
+      });
+      if (stepCountEl) stepCountEl.textContent = isResult ? 'Result' : `Step ${stepIdx + 1} of ${INPUT_STEPS}`;
+      if (stepTitleEl) stepTitleEl.textContent = TITLES[stepIdx];
+      show(navEl('back'), stepIdx > 0);
+      show(navEl('next'), stepIdx < INPUT_STEPS - 1);
+      show(navEl('result'), stepIdx === INPUT_STEPS - 1);
+      show(navEl('restart'), isResult);
+      if (roomHint && stepIdx !== 0) show(roomHint, false);
+      // Re-fit the scene: the panel height changes between steps, which moves the
+      // safe-area sentinel; a sync recentres the buildings for the new frame.
+      syncViewport();
+    };
+
+    const goStep = (i: number) => {
+      const next = Math.min(Math.max(0, i), INPUT_STEPS);
+      // Forward gate: you can't leave the room step without a valid room size.
+      if (next > stepIdx && stepIdx === 0 && !roomValid()) {
+        if (roomHint) show(roomHint, true);
+        return;
+      }
+      stepIdx = next;
+      renderStep();
+    };
+
+    root.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-nav="next"]'))         { e.preventDefault(); goStep(stepIdx + 1); }
+      else if (t.closest('[data-nav="result"]'))  { e.preventDefault(); goStep(INPUT_STEPS); }
+      else if (t.closest('[data-nav="back"]'))    { e.preventDefault(); goStep(stepIdx - 1); }
+      else if (t.closest('[data-nav="restart"]')) { e.preventDefault(); goStep(0); }
+    });
+    // Clear the room-required hint the moment a valid room is entered.
+    root.addEventListener('input', () => {
+      if (stepIdx === 0 && roomHint && roomValid()) show(roomHint, false);
+    });
+
     // Boot: stamp the (blank) first cleaner and draw the default scene immediately
     // (cur/tgt default to 12×10×8). Once the legos upgrade — so field .value
     // getters read entered attributes — sync the mode wrappers/entry-mode flag,
@@ -1736,6 +1885,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       syncVisibility();
       morphScene();
       recompute();
+      renderStep();
     });
   }
 </script>
