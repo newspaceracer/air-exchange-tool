@@ -132,22 +132,47 @@
   --smaqmd-gray-12: #121212;  /* near-black body text, matching airquality.org */
 
   /* Brand ramp — this spoke's signature color (feeds --color-primary*/secondary*).
-     SMAQMD blue, extracted from airquality.org custom CSS: step 9 is the site's
-     primary #0073b2 (its most-used brand color), step 8 leans toward the bright
-     #00a2e5 accent. Radix-style 1-12 lightness progression on white. */
+     A custom Radix-generated BLUE scale (hue 254.3) — a softer, more classic
+     blue than the earlier extracted #0073b2. Step 9 (#4270a8) is the solid brand
+     (feeds --color-primary); 11/12 are the AA/AAA text steps. sRGB values here;
+     the @supports (color-gamut: p3) block after this rule upgrades every step to
+     its wide-gamut oklch twin. Contrast on step 9 is white (--button-on-primary). */
   --smaqmd-brand-1:  #fbfdff;
-  --smaqmd-brand-2:  #eef6fc;  /* light blue wash — matches the site's #ebf3fc panels */
-  --smaqmd-brand-3:  #dcecf8;
-  --smaqmd-brand-4:  #c7e1f3;
-  --smaqmd-brand-5:  #aed4ec;
-  --smaqmd-brand-6:  #8fc3e3;
-  --smaqmd-brand-7:  #66acd6;
-  --smaqmd-brand-8:  #2f97cf;  /* bright interactive blue, near the site's #00a2e5 */
-  --smaqmd-brand-9:  #0073b2;  /* SOLID BRAND — the site's exact primary blue */
-  --smaqmd-brand-10: #00669e;  /* hovered fill */
-  --smaqmd-brand-11: #015b8c;  /* low-contrast text (AA on white) */
-  --smaqmd-brand-12: #0a2c42;  /* high-contrast text */
+  --smaqmd-brand-2:  #f4f9ff;  /* light blue wash — subtle brand-tinted surface */
+  --smaqmd-brand-3:  #e8f3ff;
+  --smaqmd-brand-4:  #dbebff;
+  --smaqmd-brand-5:  #cce1fc;
+  --smaqmd-brand-6:  #b9d4f5;
+  --smaqmd-brand-7:  #a2c2eb;
+  --smaqmd-brand-8:  #80abe0;  /* secondary fill */
+  --smaqmd-brand-9:  #4270a8;  /* SOLID BRAND — Radix blue step 9 */
+  --smaqmd-brand-10: #356299;  /* hovered fill */
+  --smaqmd-brand-11: #3e6ca4;  /* low-contrast text (AA on white) */
+  --smaqmd-brand-12: #273c57;  /* high-contrast text */
 
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */
+}
+
+/* Wide-gamut (P3) upgrade for the brand ramp — same Radix blue scale in oklch,
+   so the brand renders richer on capable displays and falls back to the sRGB hex
+   above elsewhere. Scoped to the same [data-theme] selector, AFTER the base block
+   so it wins by source order on P3 screens. */
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    [data-theme="smaqmd"] {
+      --smaqmd-brand-1:  oklch(99.3% 0.005 254.3);
+      --smaqmd-brand-2:  oklch(98% 0.0094 254.3);
+      --smaqmd-brand-3:  oklch(96.1% 0.0225 254.3);
+      --smaqmd-brand-4:  oklch(93.6% 0.0336 254.3);
+      --smaqmd-brand-5:  oklch(90.3% 0.0439 254.3);
+      --smaqmd-brand-6:  oklch(86.1% 0.0544 254.3);
+      --smaqmd-brand-7:  oklch(80.6% 0.0677 254.3);
+      --smaqmd-brand-8:  oklch(72.9% 0.0908 254.3);
+      --smaqmd-brand-9:  oklch(53.8% 0.102 254.3);
+      --smaqmd-brand-10: oklch(49.1% 0.102 254.3);
+      --smaqmd-brand-11: oklch(52.6% 0.102 254.3);
+      --smaqmd-brand-12: oklch(35.1% 0.054 254.3);
+    }
+  }
 }
