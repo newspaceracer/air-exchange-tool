@@ -1,0 +1,139 @@
+---
+// smaqmd-form-section — one collapsible section of the "sections" (accordion)
+// presentation of the Air Exchange Rate tool. A native <details>/<summary>
+// disclosure (free a11y, keyboard, and open/close state — no JS needed for the
+// toggle itself) whose summary carries a numbered/checked status marker, the
+// section title, and a live "here's what you entered" recap the host writes as
+// the section is completed — so a COLLAPSED section still shows its values. An
+// Edit affordance appears on completed-and-collapsed sections. The body slots
+// the esa-* form controls for that section.
+//
+// bcn-lego-checked: esa-collapsible is the closest lego and sits on the same
+// native <details> primitive — but its summary is title-only (icon + title) with
+// NO slot for a live entered-values recap, a completion status marker, or an Edit
+// affordance, which are the whole point of this progressive-disclosure form.
+// That's a missing summary/recap slot on esa-collapsible — a candidate hub gap
+// worth a /request-lego; until the lego grows one, this smaqmd-form-section is
+// the reusable home. Every
+// CONTROL inside stays an esa-* lego — only the disclosure chrome is bespoke.
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+
+interface Props {
+  /** Section title (required), e.g. "Room size". */
+  title: string;
+  /** 1-based number shown in the status marker (becomes a check when complete). */
+  step: number;
+  /** Render expanded on load (the first section). */
+  open?: boolean;
+}
+const { title, step, open = false } = Astro.props;
+---
+<details class="smaqmd-form-section" data-section={step - 1} open={open}>
+  <summary class="smaqmd-form-section__summary">
+    <span class="smaqmd-form-section__marker" aria-hidden="true">
+      <span class="smaqmd-form-section__num">{step}</span>
+      <EsaIcon name="check" size="sm" />
+    </span>
+    <span class="smaqmd-form-section__headings">
+      <span class="type-body smaqmd-form-section__title">{title}</span>
+      <span class="type-body-small smaqmd-form-section__recap" data-recap></span>
+    </span>
+    <span class="type-body-small smaqmd-form-section__edit">Edit</span>
+  </summary>
+  <div class="smaqmd-form-section__body stack" data-gap="md">
+    <slot />
+  </div>
+</details>
+
+<style>
+  /* Flush stacked sections separated by a hairline — they live inside the panel's
+     esa-card, so no nested card chrome; the divider is the only separator (first
+     section resets it), matching the austere product-UI direction. */
+  .smaqmd-form-section { border-block-start: 1px solid var(--color-border); }
+  .smaqmd-form-section:first-of-type { border-block-start: 0; }
+
+  .smaqmd-form-section__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300, 0.75rem);
+    padding-block: var(--spacing-300, 0.75rem);
+    cursor: pointer;
+    list-style: none;
+  }
+  /* Hide the native disclosure marker (both engines) — a right-aligned caret leads instead. */
+  .smaqmd-form-section__summary::-webkit-details-marker { display: none; }
+
+  /* Status marker: a numbered ring that fills brand + shows a check when the
+     section is complete, and takes a brand ring while open (active). Mirrors the
+     numbered-dot language the step wizard uses, so the two presentations feel kin. */
+  .smaqmd-form-section__marker {
+    flex-shrink: 0;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--color-text-tertiary);
+    background: var(--color-surface-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  }
+  .smaqmd-form-section__marker :global(.esa-icon) { display: none; color: var(--button-on-primary, #fff); }
+  /* Open but not yet complete → brand ring (this is the section you're on). */
+  .smaqmd-form-section[open]:not([data-complete]) .smaqmd-form-section__marker {
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  }
+  /* Complete → filled brand + check, number hidden. */
+  .smaqmd-form-section[data-complete] .smaqmd-form-section__marker {
+    background: var(--color-primary);
+    box-shadow: none;
+    color: var(--button-on-primary, #fff);
+  }
+  .smaqmd-form-section[data-complete] .smaqmd-form-section__num { display: none; }
+  .smaqmd-form-section[data-complete] .smaqmd-form-section__marker :global(.esa-icon) { display: block; }
+
+  /* Title + recap stack; the recap is the "what you entered" line, shown only
+     when the section is collapsed (redundant with the live fields when open). */
+  .smaqmd-form-section__headings {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3xs, 0.125rem);
+  }
+  .smaqmd-form-section__title { color: var(--color-text-primary); font-weight: var(--font-weight-semibold, 600); }
+  .smaqmd-form-section__recap { color: var(--color-text-secondary); }
+  .smaqmd-form-section__recap:empty { display: none; }
+  .smaqmd-form-section[open] .smaqmd-form-section__recap { display: none; }
+
+  /* Edit hint: only on a completed, collapsed section (an affordance to reopen it);
+     when open, the caret alone signals collapse. */
+  .smaqmd-form-section__edit { color: var(--color-text-tertiary); display: none; flex-shrink: 0; }
+  .smaqmd-form-section[data-complete]:not([open]) .smaqmd-form-section__edit { display: inline; }
+
+  /* Right-aligned chevron caret; rotates when open. */
+  .smaqmd-form-section__summary::after {
+    content: '';
+    inline-size: 8px;
+    block-size: 8px;
+    border-right: 2px solid var(--color-text-tertiary);
+    border-bottom: 2px solid var(--color-text-tertiary);
+    transform: rotate(-45deg);
+    transition: transform 150ms ease;
+    margin-inline-start: var(--spacing-100, 0.25rem);
+    flex-shrink: 0;
+  }
+  .smaqmd-form-section[open] > .smaqmd-form-section__summary::after { transform: rotate(45deg); }
+
+  .smaqmd-form-section__body { padding-block-end: var(--spacing-400, 1rem); }
+
+  /* Expand/collapse is animated in JS (Web Animations API) by the host accordion
+     controller — a height tween on __body that works in EVERY current browser,
+     Safari and Firefox included (the CSS-only ::details-content / interpolate-size
+     route is Chromium-only today, and this ships to production). Reduced-motion is
+     honoured there by skipping the tween. */
+</style>

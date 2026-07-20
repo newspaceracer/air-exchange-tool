@@ -1,0 +1,33 @@
+---
+// /prototypes/air-exchange-rate-b-accordion — the SECTIONS (accordion)
+// presentation of Option B. Same math + same isometric scene as the classic and
+// wizard views, re-chromed into ONE scrolling form of collapsible sections that
+// collapse to a "what you entered" recap as you complete them. Thin assembler:
+// the page header + version toggle slot into the component's header, and the
+// component owns the scene + form. Kept separate from the classic/wizard pages so
+// all three can be compared via the toggle.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import SmaqmdAerAccordion from '../../components/smaqmd-aer-accordion.astro';
+import SmaqmdVersionToggle from '../../components/smaqmd-version-toggle.astro';
+---
+<!-- manifest:
+  layout: full-bleed canvas (component-owned)
+  sections:
+    - version toggle     -> smaqmd-version-toggle (slotted overlay)
+    - page header        -> esa-page-header (slotted overlay)
+    - sections + scene   -> smaqmd-aer-accordion
+-->
+<BaseLayout title="Air Exchange Rate Tool (Sections) — SMAQMD">
+  <main>
+    <SmaqmdAerAccordion>
+      <div slot="header">
+        <SmaqmdVersionToggle active="accordion" />
+        <EsaPageHeader
+          title="Is your air cleaner big enough for your room?"
+          lede="Fill in each section — room size, your air cleaner's rating, and your target — to see how often the air refreshes, and the minimum rating to shop for if it falls short."
+        />
+      </div>
+    </SmaqmdAerAccordion>
+  </main>
+</BaseLayout>

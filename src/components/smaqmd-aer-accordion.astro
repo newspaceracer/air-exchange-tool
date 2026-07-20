@@ -1,6 +1,21 @@
 ---
-// smaqmd-aer-calculator-b — Option B of the Air Exchange Rate tool. A visual
-// rethink built on a CITY metaphor: the room is a large building on a city
+// smaqmd-aer-accordion — the SECTIONS (accordion) presentation of Option B.
+// Identical math + the identical isometric city engine as smaqmd-aer-wizard /
+// smaqmd-aer-calculator-b (forked from the wizard), re-chromed from a gated
+// step-by-step flow into ONE scrolling form of collapsible sections: room →
+// cleaners → target, each a smaqmd-form-section that collapses to a "what you
+// entered" recap as you complete it (single-open, auto-advancing). The result
+// lives in its OWN card, hidden until the first "See my result"; from then on it
+// sits ABOVE the (still-usable) form and updates LIVE as inputs change, so the
+// user can experiment. Every field and the whole [data-result]
+// subtree are byte-for-byte the classic/wizard view's, so the SAME calc/scene
+// script drives all three — the ONLY differences here are (a) the root is
+// [data-aerb-accordion], (b) the inputs live in smaqmd-form-section disclosures
+// instead of gated steps, and (c) an accordion controller replaces the
+// step-navigation block. Keep the three in sync by porting engine changes across;
+// presentation diverges on purpose.
+//
+// A visual rethink built on a CITY metaphor: the room is a large building on a city
 // block, the air cleaner is a separate (much smaller) building, and the street
 // between them carries the air — a used-air lane leaving the room and a
 // clean-air lane returning — so you SEE the exchange loop the math describes.
@@ -21,6 +36,7 @@ import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import SmaqmdFormSection from './smaqmd-form-section.astro';
 
 const MAX_CLEANERS = 4;
 const CLEANER_IDS = [1, 2, 3, 4];
@@ -35,6 +51,18 @@ const unitOptions = [
   { label: 'Air flow rate / CADR (ft³/min)', value: 'airflow' },
   { label: 'Air changes per hour (ACH)', value: 'ach' },
 ];
+// Step-2 fork: a shopper with no cleaner takes the "No" path straight to the
+// minimum-CADR-to-buy result; a checker takes "Yes" and enters their cleaner(s).
+const cleanerChoice = [
+  { label: "Yes, I'll enter it", value: 'yes' },
+  { label: 'No, show me what to buy', value: 'no' },
+];
+// Display-unit toggle for the result legend + diagram capacity label. Floor area
+// (ft²) is the default relatable unit; ft³ is there for people who think in volume.
+const unitToggle = [
+  { label: 'ft²', value: 'ft2' },
+  { label: 'ft³', value: 'ft3' },
+];
 
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
 // of (2A × 2B) carries two lattice dots — (0,0) and (A,B) — which tiles into the
@@ -45,7 +73,7 @@ const A = +(Math.cos(Math.PI / 6) * DOT_SPACING).toFixed(3); // ≈ 22.5
 const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 ---
 
-<div class="smaqmd-aerb" data-aerb>
+<div class="smaqmd-aerb" data-aerb-accordion>
   <!-- The city. bcn-lego-checked: no esa- lego draws a to-scale isometric
        city/room scene with animated flow (checked the catalog — esa-* has
        cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
@@ -206,131 +234,210 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        floating overlay); esa-dialog/esa-side-dialog are wrong here — their modal
        scrim would hide the scene and their focus trap is wrong for an
        always-open form. Panel chrome stays esa-card via the --card-bg hook; only
-       the positioning is bespoke, so it lives in these smaqmd-aerb__ blocks. -->
+       the positioning is bespoke, so it lives in these smaqmd-aerb__ blocks.
+       The accordion variant stacks the header + panel into a single fixed LEFT
+       column (smaqmd-aerw__col) so the form is the prominent element and the
+       scene sits to its right — the scene is secondary, and useless when the
+       user has no cleaner to check, so it must not dominate the page. -->
+  <div class="smaqmd-aerw__col">
   <div class="smaqmd-aerb__header">
     <slot name="header" />
   </div>
 
-  <!-- Inputs + result, stacked in the floating panel. -->
-  <div class="smaqmd-aerb__panel stack" data-gap="lg">
-      <EsaCard title="Your room" headingLevel={2}>
-        <div class="stack" data-gap="md">
-          <esa-radio-group
-            data-field="roomMethod"
-            label="How do you want to enter your room size?"
-            value="area"
-            options={JSON.stringify(roomMethods)}
-          ></esa-radio-group>
-          <div class="smaqmd-aerb__dims grid" data-gap="md">
-            <div data-room="dimensions" hidden>
-              <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
-            </div>
-            <div data-room="dimensions" hidden>
-              <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
-            </div>
-            <div data-room="area">
-              <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
-            </div>
-            <div data-room="dimensions area">
-              <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
-            </div>
-            <div data-room="volume" hidden>
-              <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
-            </div>
-          </div>
-        </div>
-      </EsaCard>
-
-      <EsaCard title="Your air cleaners" headingLevel={2}>
-        <div class="stack" data-gap="md">
-          <!-- Cleaner blocks stamped here by JS (template below) -->
-          <div class="stack" data-gap="lg" data-cleaners></div>
-
-          <div class="cluster" data-gap="sm">
-            <span data-add-cleaner>
-              <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
-                Add air cleaner
-              </EsaButton>
-            </span>
-            <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
-          </div>
-        </div>
-      </EsaCard>
-
-      <EsaCard title="Your target" headingLevel={2}>
-        <esa-text-field
-          data-field="target"
-          type="text"
-          inputmode="decimal"
-          label="Target air changes per hour"
-          value="2"
-          help-text="One air change means the cleaner has filtered a full room's worth of air. CARB recommends at least 2 per hour. This target applies to the whole room — all cleaners together."
-        ></esa-text-field>
-      </EsaCard>
+  <!-- Results card — its OWN card, above the form. Hidden until the first
+       "See my result"; from then on it stays on top of the (still-usable) form and
+       updates live as inputs change, so the user can experiment. The [data-result]
+       subtree is relocated into [data-result-host] on boot (see the script) rather
+       than duplicated in markup. -->
+  <div class="smaqmd-aerb__result-panel" data-result-panel hidden>
+    <EsaCard>
+      <div data-result-host></div>
+    </EsaCard>
   </div>
 
-  <!-- Result — lifted OUT of the scrolling input panel into its own fixed card,
-       pinned to the LEFT of the inputs so the verdict stays visible while you
-       edit and scroll the inputs. Same [data-result] subtree the calc script
-       writes to; only its position in the tree changed, so no JS touched. -->
-  <div class="smaqmd-aerb__result">
-      <EsaCard variant="outlined" title="Your result" headingLevel={2}>
-        <div class="stack" data-gap="md" data-result>
-          <!-- ACH group: shown when a full room size + at least one cleaner are entered -->
-          <div class="stack" data-gap="md" data-group="ach">
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="ach"><EsaStat value="—" label="Air changes per hour" accent /></div>
-              <div data-metric="volume"><EsaStat value="—" label="Room volume" /></div>
+  <!-- Sections: one scrolling form of collapsible smaqmd-form-section disclosures.
+       bcn-lego-checked: esa-collapsible is the same native <details> primitive but
+       its summary is title-only — no slot for the live entered-values recap, the
+       completion status marker, or the Edit affordance this progressive-disclosure
+       form needs (a missing slot on the lego — a candidate /request-lego). Every CONTROL
+       inside each section stays an esa-* lego, and the fields + [data-result]
+       subtree are byte-for-byte the classic/wizard view's, so the SAME calc engine
+       drives all three — only the chrome differs. -->
+  <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
+    <EsaCard>
+      <div class="smaqmd-aer-sections" data-accordion>
+        <!-- Section 1 — room. Opens expanded; collapses to its recap once a valid
+             room size is entered and you advance. -->
+        <SmaqmdFormSection title="Room size" step={1} open>
+            <esa-radio-group
+              data-field="roomMethod"
+              aria-label="Choose how to enter your room size"
+              value="area"
+              options={JSON.stringify(roomMethods)}
+            ></esa-radio-group>
+            <div class="smaqmd-aerb__dims grid" data-gap="md">
+              <div data-room="dimensions" hidden>
+                <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
+              </div>
+              <div data-room="dimensions" hidden>
+                <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+              </div>
+              <div data-room="area">
+                <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
+              </div>
+              <div data-room="dimensions area">
+                <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
+              </div>
+              <div data-room="volume" hidden>
+                <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
+              </div>
             </div>
-            <div data-verdict="pass" hidden>
-              <EsaAlertBox variant="success" title="Meets your target">
-                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
-                at or above your target of <strong data-r="target">2</strong>.
-              </EsaAlertBox>
+            <div data-room-hint hidden>
+              <EsaAlertBox variant="info">Enter your room size to continue.</EsaAlertBox>
             </div>
-            <div data-verdict="fail" hidden>
-              <EsaAlertBox variant="warning" title="Below your target">
-                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
-                short of your target of <strong data-r="target">2</strong>. Try a
-                higher-CADR cleaner, adding <strong data-r="moreunits">—</strong> more
-                like yours, or a smaller room.
-              </EsaAlertBox>
+            <div data-section-advance>
+              <EsaButton type="button">Continue</EsaButton>
             </div>
-          </div>
+        </SmaqmdFormSection>
 
-          <!-- Buy guidance: the minimum CADR a SINGLE air cleaner needs to hit the
-               target in this room (target × volume ÷ 60). Shown whenever a room +
-               target are entered — the key number for choosing a cleaner you don't
-               own yet, independent of any cleaner already listed. -->
-          <div class="stack" data-gap="sm" data-group="need" hidden>
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="need"><EsaStat value="—" label="Minimum CADR to look for" sub="for a single air cleaner" /></div>
+        <!-- Section 2 — air cleaners. Opens with the intent fork: a shopper answers
+             "No" and the entry UI stays hidden (result → what to buy); a checker
+             answers "Yes" and the cleaner form unfolds in place. -->
+        <SmaqmdFormSection title="Air cleaners" step={2}>
+            <esa-radio-group
+              data-field="hasCleaner"
+              label="Do you have an air cleaner to check?"
+              value="yes"
+              options={JSON.stringify(cleanerChoice)}
+            ></esa-radio-group>
+            <!-- Cleaner entry — revealed only on "Yes". -->
+            <div class="stack" data-gap="md" data-cleaner-entry>
+              <!-- Cleaner blocks stamped here by JS (template below) -->
+              <div class="stack" data-gap="lg" data-cleaners></div>
+              <div class="cluster" data-gap="sm">
+                <span data-add-cleaner>
+                  <EsaButton color="ghost" appearance="outline" icon="plus" type="button">
+                    Add air cleaner
+                  </EsaButton>
+                </span>
+                <p class="type-caption" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
+              </div>
             </div>
-            <!-- Filled by setNeedNote(): adapts to the number of (assumed-equal)
-                 cleaners and whether the shortfall is "no cleaner yet" or "entered
-                 cleaners miss the target". -->
-            <p class="type-caption smaqmd-aerb__need-note" data-need-note>
-              To reach your target, look for an air cleaner with a high enough CADR.
-            </p>
+            <div data-section-advance>
+              <EsaButton type="button">Continue</EsaButton>
+            </div>
+        </SmaqmdFormSection>
+
+        <!-- Section 3 — target. -->
+        <SmaqmdFormSection title="Target" step={3}>
+            <esa-text-field
+              data-field="target"
+              type="text"
+              inputmode="decimal"
+              label="Target air changes per hour"
+              value="2"
+              help-text="One air change means the cleaner has filtered a full room's worth of air. The California Air Resources Board (CARB) recommends at least 2 per hour. This target applies to the whole room — all cleaners together."
+            ></esa-text-field>
+            <!-- Shown by recompute() only when the entered target drops below the
+                 CARB-recommended 2, so a low target is an explicit choice. -->
+            <div data-target-warn hidden role="alert">
+              <EsaAlertBox variant="warning" title="Below the recommended minimum">
+                The California Air Resources Board recommends at least <strong>2</strong>
+                air changes per hour. A lower target may not clear the air enough.
+              </EsaAlertBox>
+            </div>
+            <!-- A target of 0 (or less) is not a real goal — no cleaning at all. The
+                 result is blocked until it's a positive number. -->
+            <div data-target-invalid hidden role="alert">
+              <EsaAlertBox variant="danger" title="Enter a target above 0">
+                A target of 0 means no air cleaning at all. Enter how many times per
+                hour you want the room's air replaced — at least <strong>1</strong>,
+                ideally <strong>2</strong> or more.
+              </EsaAlertBox>
+            </div>
+            <div data-section-advance="result">
+              <EsaButton icon="check" type="button">See my result</EsaButton>
+            </div>
+        </SmaqmdFormSection>
+
+        <!-- Live-experiment hint, shown once the result card appears: the form
+             stays usable so the user can tweak any section and watch the result
+             (in the card above) change. -->
+        <p class="type-body-small smaqmd-aer-sections__tweak-note" data-tweak-note hidden>
+          Adjust any section above and your result updates live.
+        </p>
+
+        <!-- Result subtree — RELOCATED on boot into the result card above the form
+             (see the script's [data-result-host] move). Marked hidden here so it
+             never flashes at the form's foot before the move; the result card owns
+             its visibility thereafter. The SAME [data-result] subtree the
+             classic/wizard views use. -->
+        <div class="smaqmd-aer-sections__result stack" data-gap="sm" hidden>
+          <p class="type-section-title smaqmd-aer-sections__result-title">Your result</p>
+        <div class="stack" data-gap="md" data-result>
+          <!-- ANSWER + hero metrics — the direct yes/no, then the two numbers that
+               matter at EQUAL weight: the problem (ACH the setup delivers) and the
+               fix (the combined CADR to reach). A fail shows both side by side — "here's the
+               issue, here's what fixes it". Pass shows only ACH; shop only the CADR. -->
+          <div class="stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
+            <p class="type-section-title smaqmd-aerb__answer-title" data-answer-title tabindex="-1">—</p>
+
+            <!-- INFORMATION CARD — the verdict spelled out, colored by state
+                 (warning / info), sitting BETWEEN the headline and the metrics it
+                 introduces. On a fail it carries the fix (the CADR below); in shop
+                 mode it explains what CADR is. JS shows exactly one via
+                 [data-verdict-card] and fills the readouts. Pass shows none. -->
+            <div data-verdict-card="fail" hidden>
+              <EsaAlertBox variant="warning" title="Below your target">
+                This room needs more clean air than your setup delivers. Add
+                <strong data-r="moreunits">—</strong> more like yours — or swap in
+                stronger cleaners — so their combined CADR reaches the number below and
+                hits your target of <strong data-r="target">2</strong> air changes per hour.
+              </EsaAlertBox>
+            </div>
+            <div data-verdict-card="shop" hidden>
+              <EsaAlertBox variant="info">
+                CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
+                cleaner's box. Match or beat the number below to reach your target.
+              </EsaAlertBox>
+            </div>
+
+            <div class="smaqmd-aerb__heroes">
+              <div data-metric="ach" hidden>
+                <EsaStat value="—" label="air changes per hour" accent />
+              </div>
+              <div data-metric="fix" hidden>
+                <EsaStat value="—" label="minimum combined CADR" accent />
+              </div>
+            </div>
             <!-- Over-700 caution: most consumer air cleaners top out around 700
-                 ft³/min; a required CADR above that isn't reachable with one unit. -->
+                 ft³/min, so a required CADR above that isn't reachable with a single
+                 unit. Shown by recompute() whenever the CADR-to-buy exceeds 700. -->
             <p class="type-body-small smaqmd-aerb__caution" data-cadr-high hidden>
               That's more than most air cleaners deliver (they top out around
               <strong>700 ft³/min</strong>), so you'll likely need more than one.
             </p>
-          </div>
-
-          <!-- Capacity group: shown whenever combined flow > 0, regardless of room -->
-          <div class="stack" data-gap="sm" data-group="capacity" hidden>
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
-              <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
+            <!-- SECONDARY — the evidence for the number, as one legend sentence: what
+                 the cleaner(s) cover vs how big the room is (floor area, the relatable
+                 unit). Nested INSIDE the answer block (sm gap) so it reads as part of
+                 the same result. Only shown with a cleaner delivering flow, so the
+                 comparison is always complete. -->
+            <div class="smaqmd-aerb__context" data-group="secondary" hidden>
+              <p class="type-body-small"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
+              <esa-button-toggle
+                class="smaqmd-aerb__units"
+                data-field="units"
+                size="xs"
+                label="Units"
+                value="ft2"
+                options={JSON.stringify(unitToggle)}
+              ></esa-button-toggle>
             </div>
           </div>
 
           <div data-prompt="empty" hidden>
             <EsaAlertBox variant="info">
-              Enter your room size and an air cleaner rating to see your result.
+              Fill in your room size and a target above 0 — to see your result.
             </EsaAlertBox>
           </div>
 
@@ -338,7 +445,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                after a 600 ms debounce so drag gestures do not chatter. -->
           <p class="smaqmd-aerb__sr" aria-live="polite" data-announce></p>
         </div>
-      </EsaCard>
+        </div>
+      </div>
+    </EsaCard>
+  </div>
   </div>
 
   <!-- Cleaner-block template — cloned per cleaner. data-cleaner is stamped with
@@ -349,7 +459,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   <template data-cleaner-template>
     <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
       <div class="smaqmd-aerb__cleaner-head repel">
-        <p class="type-card-title smaqmd-aerb__cleaner-title">Air cleaner</p>
+        <p class="type-body smaqmd-aerb__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
           <EsaIconButton icon="trash-2" label="Remove this air cleaner" size="sm" />
         </span>
@@ -357,7 +467,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <esa-radio-group
         data-field="unit"
         data-cleaner
-        label="What does the manufacturer report?"
+        label="What does the box or manual list?"
         value="airflow"
         options={JSON.stringify(unitOptions)}
       ></esa-radio-group>
@@ -369,7 +479,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           type="text"
           inputmode="decimal"
           label="Air flow rate or CADR (ft³/min)"
-          help-text="Use the highest air flow, or the lowest CADR if three are listed."
+          help-text="CADR means Clean Air Delivery Rate. Use the highest air flow, or the lowest CADR if three are listed."
         ></esa-text-field>
       </div>
 
@@ -381,7 +491,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           inputmode="decimal"
           label="Air changes per hour (ACH)"
         ></esa-text-field>
-        <p class="type-caption smaqmd-aerb__cleaner-note">
+        <p class="type-body-small smaqmd-aerb__cleaner-note">
           In what size room was that measured?
         </p>
         <div class="smaqmd-aerb__ref grid" data-gap="md">
@@ -398,8 +508,29 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb [hidden] { display: none !important; }
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
-  .smaqmd-aerb__cleaner-note,
-  .smaqmd-aerb__need-note { color: var(--color-text-tertiary); }
+  /* Prompt labelling the reference-room fields (ACH mode). A question the user
+     must answer → a real label: body-small (14px) + secondary + semibold, not a
+     faint 12px caption. */
+  .smaqmd-aerb__cleaner-note {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .smaqmd-aerb__context {
+    color: var(--color-text-secondary);
+    display: flex; flex-direction: column;
+    gap: var(--spacing-200, 0.5rem);
+    align-items: flex-start;
+  }
+
+  /* Answer headline — the direct yes/no, tinted by verdict: green pass, orange
+     fail (matching the scene), neutral while only shopping for a rating. */
+  .smaqmd-aerb__answer-title { color: var(--color-text-primary); }
+  /* The answer headline is a programmatic focus target (tabindex=-1) so advancing
+     to the result moves focus there for screen readers — not a tab stop, so
+     suppress the ring that would otherwise flash on it. */
+  .smaqmd-aerb__answer-title:focus { outline: none; }
+  .smaqmd-aerb__answer[data-verdict="pass"] .smaqmd-aerb__answer-title { color: var(--color-primary); }
+  .smaqmd-aerb__answer[data-verdict="fail"] .smaqmd-aerb__answer-title { color: var(--color-warning); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
@@ -429,13 +560,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     border-block-start: 0;
   }
   .smaqmd-aerb__cleaner-head { align-items: center; }
-  .smaqmd-aerb__cleaner-title { color: var(--color-text-secondary); }
-  .smaqmd-aerb__metrics {
+  /* Group label for each cleaner block: type-body baseline (15px, not oversized
+     per the design-principles skill) carried to semibold so it reads as a label,
+     not body copy — subordinate to the step's section-title above it. Primary
+     text so the block's own name reads as the strongest label inside the block. */
+  .smaqmd-aerb__cleaner-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+  /* The two hero stats (the ACH problem + the CADR fix) sit at EQUAL weight, side
+     by side, wrapping only when the panel is too narrow. */
+  .smaqmd-aerb__heroes {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-500, 1.5rem);
+    gap: var(--spacing-400, 1rem) var(--spacing-600, 2rem);
   }
-  /* Unit appended to a stat number (e.g. "32 ft³/min") — quieter + about half the
+  /* Unit appended to a hero number (e.g. "32 ft³/min") — quieter + about half the
      size of the number so the value stays the focus. The span is injected at
      runtime (innerHTML), so it never gets Astro's scope attribute — match it via
      :global() anchored under the (scoped) root. */
@@ -444,22 +584,29 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     font-weight: var(--font-weight-medium, 500);
     color: var(--color-text-secondary);
   }
-  /* Caution note under the CADR guidance (e.g. the >700 ft³/min warning). */
+  /* Caution note under the CADR hero (e.g. the >700 ft³/min warning). */
   .smaqmd-aerb__caution { color: var(--color-warning, #d9822b); }
-  /* Below target: recolor the accent ACH value from its brand tint to warning.
-     esa-stat exposes --stat-accent-color as the consumer hook for its value. */
-  .smaqmd-aerb__metrics [data-metric="ach"][data-below] {
+  /* Hero numbers → the BRAND color. esa-stat's accent defaults to the spoke's
+     SECONDARY (green) — wrong here; the heroes should read in the primary brand
+     hue like the pass headline. --stat-accent-color is the consumer hook. */
+  .smaqmd-aerb [data-metric="ach"],
+  .smaqmd-aerb [data-metric="fix"] {
+    --stat-accent-color: var(--color-primary);
+  }
+  /* Below target: the ACH hero shifts to warning, matching the orange fail
+     headline + scene. The CADR fix stays brand — it's the positive action. */
+  .smaqmd-aerb [data-metric="ach"][data-below] {
     --stat-accent-color: var(--color-warning, #d9822b);
   }
 
   .smaqmd-aerb {
     position: relative; min-block-size: 100dvh;
-    /* Wide-screen frame: cap the composition width so the scene + the header/inputs/
-       result stack stay a consistent, centered band on ultrawide monitors instead
-       of the graphic ballooning full-bleed. --aer-gutter is the margin from the
-       viewport edge to the frame; below --aer-frame it collapses to the normal
-       spacing-500, so narrower desktops (and mobile) are unchanged. Every fixed
-       child anchors to this gutter rather than the raw viewport edge. */
+    /* Wide-screen frame: cap the composition width so the scene + column stay a
+       consistent, centered band on ultrawide monitors instead of the graphic
+       ballooning full-bleed. --aer-gutter is the margin from the viewport edge to
+       the frame; below --aer-frame it collapses to the normal spacing-500, so
+       narrower desktops (and mobile) are unchanged. Every fixed child anchors to
+       this gutter rather than the raw viewport edge. */
     --aer-frame: 90rem;
     --aer-gutter: max(var(--spacing-500, 1.5rem), calc((100vw - var(--aer-frame)) / 2));
   }
@@ -482,11 +629,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
   /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
-  /* Right inset clears BOTH the inputs panel (24rem) and the result card (20rem)
-     stacked to its left, plus the three gaps between them and the scene. */
+  /* Wizard puts its column on the LEFT, so the buildings live to the RIGHT: the
+     left inset clears the column (32rem) + gaps; the other insets are small. */
   .smaqmd-cityview__safe {
     position: absolute;
-    inset: 9rem calc(44rem + 3 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
+    inset: var(--spacing-500, 1.5rem) var(--spacing-600, 2rem) 4.5rem calc(32rem + 2 * var(--spacing-500, 1.5rem));
     visibility: hidden;
   }
 
@@ -616,6 +763,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-primary, #159a86); }
   .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-primary-hover, #0f7e6e); }
 
+  /* Cohesive FAIL palette — when below target, the capacity "ghost" (the largest
+     room the cleaners could actually cover) and the air-cleaner buildings shift
+     from brand to the spoke's warning ORANGE, matching the orange flow waves + ACH
+     readout so the whole scene reads "not passing" as one. The MAIN room stays
+     neutral — it's the fixed reference; the ghost is what comes up short. */
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face { stroke: color-mix(in srgb, var(--color-warning, #d9822b) 55%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 8%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-warning, #d9822b) 10%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-warning, #d9822b) 12%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face { stroke: var(--color-orange-10, #c15d10); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 72%, #fff); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-orange-10, #c15d10); }
+
   .smaqmd-cityview__dim {
     fill: var(--color-text-secondary, #555);
     font-size: 13px;
@@ -674,17 +836,27 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--color-text-tertiary);
   }
 
-  .smaqmd-aerb__header {
+  /* The wizard's fixed LEFT column: header on top, wizard card below it. Sized to
+     be the prominent element on the page; the scene fits into what's left (right). */
+  .smaqmd-aerw__col {
     position: fixed; z-index: 1;
-    inset-block-start: var(--spacing-500); inset-inline-start: var(--aer-gutter);
-    max-inline-size: 34rem;
+    inset-block: var(--spacing-500);
+    inset-inline-start: var(--aer-gutter);
+    inline-size: 32rem;
+    max-inline-size: calc(100vw - 2 * var(--spacing-500, 1.5rem));
+    display: flex; flex-direction: column;
+    gap: var(--spacing-400, 1rem);
+    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
   }
 
+  /* Header + panel are now static children of the fixed column above. */
+  .smaqmd-aerb__header { max-inline-size: none; }
+
   .smaqmd-aerb__panel {
-    position: fixed; z-index: 1;
-    inset-block-start: var(--spacing-500); inset-inline-end: var(--aer-gutter);
-    inline-size: 24rem;
-    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
+    /* Fills only the height it needs and scrolls when the step is tall; the
+       min-block-size:0 lets this flex child shrink below its content so the
+       inner scroll (not the page) takes the overflow. */
+    flex: 0 1 auto; min-block-size: 0;
     overflow-y: auto; overscroll-behavior: contain;
     /* esa-card draws its outline as an OUTSET box-shadow ring (0 0 0 1px), which a
        zero-padding scroll container clips at the padding box — slicing the card
@@ -695,6 +867,29 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook, inherits into cards */
     --card-border-color: var(--color-border-strong);  /* visible hairline over the scene (default #cecece reads too faint) */
   }
+  /* Width comes from the column now; the panel just fills it. */
+  .smaqmd-aerw__panel { inline-size: auto; }
+
+  /* smaqmd-aer-sections — the accordion form. The collapsible sections ARE the
+     smaqmd-form-section component (its own file, composing esa-* controls inside);
+     only the per-section advance row and the always-on result footer live here. */
+  /* Advance row: the forward action (Continue / See my result) sits right, like a
+     wizard's Next — one affordance per section, at the foot of its body. */
+  [data-section-advance] {
+    display: flex;
+    justify-content: flex-end;
+    margin-block-start: var(--spacing-100, 0.25rem);
+  }
+  /* Result body — lives in its OWN card (smaqmd-aerb__result-panel) above the form,
+     so no footer divider here; the card provides the separation. */
+  .smaqmd-aer-sections__result-title { color: var(--color-text-primary); }
+  /* Live-experiment hint at the foot of the form card, shown after the first submit. */
+  .smaqmd-aer-sections__tweak-note {
+    color: var(--color-text-tertiary);
+    padding-block-start: var(--spacing-300, 0.75rem);
+    border-block-start: 1px solid var(--color-border);
+  }
+
   /* The panel is a .stack (flex column) with a max height: without this, short
      viewports shrink the cards (esa-card's overflow:hidden zeroes their flex
      minimum) and clip fields instead of letting the panel scroll. */
@@ -703,80 +898,82 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
-  /* Result card — its own fixed pane pinned to the LEFT of the inputs panel, so
-     the verdict is always on screen while the inputs scroll independently. Right
-     edge sits one gap left of the inputs panel; same glass chrome as the panel. */
-  .smaqmd-aerb__result {
-    position: fixed; z-index: 1;
-    inset-block-start: var(--spacing-500);
-    inset-inline-end: calc(24rem + var(--spacing-500, 1.5rem) + var(--aer-gutter));
-    inline-size: 20rem;
-    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
+  /* Results card — its own glass card at the TOP of the column (above the form),
+     shown after the first submit. Takes its natural height, capped so a tall result
+     doesn't crowd out the form; scrolls internally past the cap. Same glass chrome
+     as the form panel. */
+  .smaqmd-aerb__result-panel {
+    flex: 0 0 auto; min-block-size: 0;
+    max-block-size: 50vh;
     overflow-y: auto; overscroll-behavior: contain;
     padding: var(--spacing-100, 0.25rem);  /* room for esa-card's outset box-shadow ring — see .smaqmd-aerb__panel */
     --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook */
     --card-border-color: var(--color-border-strong);
   }
-  .smaqmd-aerb__result :global(.esa-card) {
+  .smaqmd-aerb__result-panel :global(.esa-card) {
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .smaqmd-aerb__panel,
-    .smaqmd-aerb__result { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
+    .smaqmd-aerb__result-panel { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
   }
 
   @media (max-width: 68rem) {
-    .smaqmd-aerb { position: relative; min-block-size: 0; padding-block-end: var(--spacing-500); }
-    /* Mobile flow: the script moves the page header ABOVE the graphic; header, then
-       a 30dvh graphic band, then the input + result cards. The page scrolls. */
+    .smaqmd-aerb { position: relative; min-block-size: 0; }
+    /* Mobile flow: the script moves the page header ABOVE the graphic; header,
+       then a 30dvh graphic band, then the cards (at least ~70dvh) — the page
+       scrolls. */
     .smaqmd-aerb__header {
-      position: relative; inset: auto; max-inline-size: none;
       padding: var(--spacing-400, 1rem) var(--spacing-400, 1rem) 0;
+      max-inline-size: none;
     }
     .smaqmd-cityview {
       display: block; position: relative; inset: auto; z-index: auto;
       block-size: 30dvh;
     }
+    /* Buildings fill the short band with a little breathing room. */
     .smaqmd-cityview__safe { inset: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); }
     .smaqmd-cityview__cap { display: none; }
-    .smaqmd-aerb__panel {
-      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
-      padding-inline: var(--spacing-400);
+    .smaqmd-aerw__col {
+      position: relative; inset: auto;
+      inline-size: auto; max-inline-size: none; max-block-size: none;
+      min-block-size: 70dvh;
+      gap: var(--spacing-400, 1rem);
+      padding: var(--spacing-400, 1rem);
     }
-    .smaqmd-aerb__result {
-      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
-      margin-block-start: var(--spacing-500);
-      padding-inline: var(--spacing-400);
-    }
+    .smaqmd-aerb__panel { max-block-size: none; overflow: visible; }
+    .smaqmd-aerb__result-panel { max-block-size: none; overflow: visible; }
   }
 </style>
 
 <script>
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-button-toggle';
 
-  const root = document.querySelector<HTMLElement>('[data-aerb]');
+  const root = document.querySelector<HTMLElement>('[data-aerb-accordion]');
   if (root) {
     // ---- responsive header placement ----
-    // Mobile moves the page header ABOVE the graphic; desktop restores it before
-    // the input panel (where it's fixed-positioned, so DOM order doesn't matter).
-    // A DOM move, not duplicate markup, so its listeners ride along.
+    // Desktop keeps the page header atop the card column; mobile moves it ABOVE
+    // the graphic (its DOM node is relocated, not duplicated, so its listeners
+    // ride along). Runs now (before paint) and on every breakpoint crossing.
     {
       const headerEl = root.querySelector<HTMLElement>('.smaqmd-aerb__header');
-      const panelEl = root.querySelector<HTMLElement>('.smaqmd-aerb__panel');
+      const colEl = root.querySelector<HTMLElement>('.smaqmd-aerw__col');
       const mqMobile = window.matchMedia('(max-width: 68rem)');
       const placeHeader = () => {
         if (!headerEl) return;
         if (mqMobile.matches) {
           if (root.firstElementChild !== headerEl) root.prepend(headerEl);
-        } else if (panelEl && headerEl.nextElementSibling !== panelEl) {
-          root.insertBefore(headerEl, panelEl);
+        } else if (colEl && colEl.firstElementChild !== headerEl) {
+          colEl.prepend(headerEl);
         }
       };
       placeHeader();
       mqMobile.addEventListener('change', placeHeader);
     }
+
     // ---- input plumbing (shared with the city drawing) ----
     // Namespaced field lookup: a bare name matches the shared (no data-cleaner)
     // field; passing a cleaner id matches that cleaner's per-block field. Grips
@@ -1156,7 +1353,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Label near the ghost's far-back top corner, nudged up-right and out of the room.
         const [cx, cy] = w(gx0, gy0, H);
         const prefix = capClamped ? '≥' : '';
-        setLabel('capacity', [cx + 6, cy - 8], `cleaners cover up to ${prefix}${fmt(capMaxVol, 0)} ft³`);
+        // Match the results card's unit toggle: ft² floor area (default) or ft³ volume.
+        const capFt3 = raw('units') === 'ft3';
+        const capText = capFt3 ? `${fmt(capMaxVol, 0)} ft³` : `${fmt(capMaxVol / 8, 0)} ft²`;
+        setLabel('capacity', [cx + 6, cy - 8], `covers a room up to ${prefix}${capText}`);
       }
 
       // Per cleaner: its street + lanes group (behind the room) and its building
@@ -1347,6 +1547,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         default:           return NaN;
       }
     };
+    // roomArea(): the room's FLOOR AREA in ft² — the relatable unit for the result
+    // (people picture square feet, not cubic feet). Exact from L×W or an entered
+    // area; in volume-only mode there's no footprint, so approximate at a standard
+    // 8 ft ceiling (the same assumption the coverage figure uses).
+    const roomArea = (): number => {
+      switch (raw('roomMethod')) {
+        case 'dimensions': { const a = pos('length') * pos('width'); return a > 0 ? a : NaN; }
+        case 'area':       return pos('area');
+        case 'volume':     { const v = pos('volume'); return v > 0 ? v / 8 : NaN; }
+        default:           return NaN;
+      }
+    };
     const sceneBox = (): { L: number; W: number; H: number } => {
       const method = raw('roomMethod');
       if (method === 'area') {
@@ -1451,6 +1663,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Entry-mode flag drives the CSS grip gate (dimensions-only draggable edges).
       container.dataset.entryMode = method;
 
+      // Step-2 fork: hide the whole cleaner-entry UI when the user says they have
+      // none ("No"). combinedFlow() below reads the same flag, so hidden cleaners
+      // contribute nothing and the result falls through to shop mode.
+      showEl(root.querySelector('[data-cleaner-entry]'), raw('hasCleaner') !== 'no');
+
       // Per-cleaner: renumber the title + remove-button label, show Remove only
       // when >1 cleaner. Then toggle the Add button + cap note against the cap.
       const blocks = cleanerBlocks();
@@ -1484,9 +1701,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const setReadout = (name: string, text: string) =>
       block.querySelectorAll(`[data-r="${name}"]`).forEach((el) => (el.textContent = text));
     const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
-    const setVerdict = (state: string | null) =>
-      block.querySelectorAll<HTMLElement>('[data-verdict]').forEach((el) =>
-        show(el, el.dataset.verdict === state));
 
     // Clean-air flow (ft³/min) for one cleaner block; blank/partial → 0 so empty
     // rows never block the result. Combined flow sums the live (non-removing)
@@ -1504,35 +1718,41 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       }
       return Number.isFinite(f) && f > 0 ? f : 0;
     };
+    // "No cleaner to check" (step-2 fork) → zero flow regardless of any stale
+    // values in the hidden blocks, so the result falls through to shop mode.
+    const hasCleaners = (): boolean => raw('hasCleaner') !== 'no';
     const combinedFlow = (): number =>
-      cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0);
+      hasCleaners()
+        ? cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0)
+        : 0;
 
     const showGroup = (name: string, on: boolean) =>
       show(block.querySelector(`[data-group="${name}"]`), on);
 
-    // Min-CADR guidance copy: adapts to the count of (assumed-identical) cleaners
-    // and whether the shortfall is "no cleaner yet" (hasFlow false) or "entered
-    // cleaners miss the target" (hasFlow true). Numbers bolded to match the alerts.
-    const needSub = root.querySelector<HTMLElement>('[data-metric="need"] .esa-stat__sub');
-    const needNote = root.querySelector<HTMLElement>('[data-need-note]');
-    const cadrHighEl = root.querySelector<HTMLElement>('[data-cadr-high]');
-    const setNeedNote = (n: number, cadrEach: number, target: number, hasFlow: boolean) => {
-      if (needSub) needSub.textContent = n > 1 ? `for each of ${n} equal air cleaners` : 'for a single air cleaner';
-      if (!needNote) return;
-      const b = (s: string | number) => `<strong>${s}</strong>`;
-      const cadr = `${b(fmt(cadrEach, 0))} ft³/min`;
-      const tgt = b(fmt(target, 2));
-      let msg: string;
-      if (!hasFlow) {
-        msg = n > 1
-          ? `To reach ${tgt} air changes per hour with ${b(n)} equal air cleaners, look for a CADR of at least ${cadr} each.`
-          : `To reach ${tgt} air changes per hour in this room, look for an air cleaner with a CADR of at least ${cadr}.`;
-      } else {
-        msg = n > 1
-          ? `Your cleaners fall short. Assuming ${b(n)} equal cleaners, each needs a CADR of at least ${cadr} to together reach ${tgt} air changes per hour.`
-          : `Your cleaner falls short. Look for a CADR of at least ${cadr} to reach ${tgt} air changes per hour in this room.`;
+    // Information card — show exactly one verdict alert (pass / fail / shop), or
+    // none. Separate from the answer headline's own data-verdict (which tints the
+    // heading); these are the boxed callouts under the hero.
+    const setVerdictCard = (state: string | null) =>
+      block.querySelectorAll<HTMLElement>('[data-verdict-card]').forEach((el) =>
+        show(el, el.dataset.verdictCard === state));
+
+    // Result "answer" section — the direct yes/no + hero metric refs + setter.
+    const answerG = block.querySelector<HTMLElement>('[data-group="answer"]');
+    const answerTitle = block.querySelector<HTMLElement>('[data-answer-title]');
+    // Target alerts live on the target STEP (outside [data-result]), so query them
+    // on root — not block, which is the result subtree (they'd never resolve).
+    const targetWarn = root.querySelector<HTMLElement>('[data-target-warn]');
+    const targetInvalid = root.querySelector<HTMLElement>('[data-target-invalid]');
+    const achWrap = block.querySelector<HTMLElement>('[data-metric="ach"]');
+    const fixWrap = block.querySelector<HTMLElement>('[data-metric="fix"]');
+    const cadrHighEl = block.querySelector<HTMLElement>('[data-cadr-high]');
+    const setAnswer = (title: string, verdict: 'pass' | 'fail' | 'shop' | null) => {
+      if (answerTitle) answerTitle.textContent = title;
+      if (answerG) {
+        if (verdict) answerG.setAttribute('data-verdict', verdict);
+        else answerG.removeAttribute('data-verdict');
+        show(answerG, verdict != null);
       }
-      needNote.innerHTML = msg;
     };
 
     // Debounced polite announcer: a one-sentence summary written 600 ms after the
@@ -1552,50 +1772,47 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       syncVisibility();
 
       const blocks = cleanerBlocks();
+      // Effective cleaner count: how many the CADR-to-buy is split across. A shopper
+      // with no cleaner ("No") is buying ONE, so the divisor is 1 no matter how many
+      // stale blocks linger; a checker splits across the blocks they entered.
+      const cleanerCount = hasCleaners() ? Math.max(1, blocks.length) : 1;
       sceneN = Math.min(Math.max(1, blocks.length), MAX_CLEANERS);
       const target = pos('target') || 2;
       setReadout('target', fmt(target, 2));
+      // A target of 0 (or less) is not a real goal — it's blocked (invalid). A
+      // positive target below the CARB-recommended 2 is allowed but flagged.
+      const enteredTarget = num('target');
+      const targetIsInvalid = Number.isFinite(enteredTarget) && enteredTarget <= 0;
+      show(targetInvalid, targetIsInvalid);
+      show(targetWarn, Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
 
       const flow = combinedFlow();
       const vol = roomVolume();
       const hasFlow = flow > 0;
       const hasRoom = Number.isFinite(vol) && vol > 0;
 
-      const vols = hasRoom ? vol : NaN;
-      setMetric('volume', hasRoom ? `${fmt(vols, 0)} ft³` : '—');
+      // Secondary readouts — room + coverage, in the unit picked by the inline
+      // toggle (ft² floor area by default, ft³ volume for those who think that way).
+      // Coverage volume = largest room the setup covers at target; ÷8 → floor area.
+      const area = roomArea();
+      const coverVol = hasFlow ? (flow * 60) / target : NaN;
+      const asFt3 = raw('units') === 'ft3';
+      // Count-aware subject so the legend reads "Your cleaner covers" / "Your
+      // cleaners cover" (this line only shows with flow, so ≥ 1 cleaner).
+      setReadout('coversubj', blocks.length > 1 ? 'Your cleaners cover' : 'Your cleaner covers');
+      setReadout('roomarea', hasRoom && Number.isFinite(area)
+        ? (asFt3 ? `${fmt(vol, 0)} ft³` : `${fmt(area, 0)} ft²`) : '—');
+      setReadout('coverarea', hasFlow
+        ? (asFt3 ? `${fmt(coverVol, 0)} ft³` : `${fmt(coverVol / 8, 0)} ft²`) : '—');
+      // Secondary is the coverage-vs-room COMPARISON — only meaningful with a cleaner
+      // delivering flow (pass/fail). In shop mode "Your room is about X" would stand
+      // alone, echoing an input with nothing to compare it to, so the group is hidden.
+      showGroup('secondary', hasRoom && hasFlow);
 
       // ACH the current setup delivers + whether it meets the target. Computed once
       // here so the min-CADR guidance and the verdict below stay in agreement.
       const ach = hasFlow && hasRoom ? (flow / vol) * 60 : NaN;
       const pass = hasFlow && hasRoom && ach >= target;
-
-      // Minimum CADR guidance — the CADR to shop for when there's no solution yet:
-      // either no cleaner entered, OR the entered cleaners miss the target. Air
-      // cleaners are assumed identical, so the number is PER cleaner across the N
-      // cleaner blocks: (target × volume ÷ 60) ÷ N. Hidden once the target is met.
-      if (hasRoom && !pass) {
-        const nUnits = Math.max(1, blocks.length);
-        const needEach = (target * vol) / 60 / nUnits;
-        setMetric('need', `${fmt(needEach, 0)}${unit('ft³/min')}`);
-        setNeedNote(nUnits, needEach, target, hasFlow);
-        // Over-700 caution: most single air cleaners can't hit this rating.
-        show(cadrHighEl, needEach > 700);
-        // Buy-N-more: only when they already HAVE a cleaner that's short — how many
-        // more of that (assumed-identical) unit would reach the target.
-        if (hasFlow) {
-          // Weakest-unit basis so "N more like yours" reaches the target even with
-          // mixed cleaners: adding stronger units only does better.
-          const neededFlow = (target * vol) / 60;
-          const flows = blocks.map((b) => cleanerFlow(b.dataset.cleanerBlock!)).filter((f) => f > 0);
-          const weakest = flows.length ? Math.min(...flows) : 0;
-          const moreUnits = weakest > 0 ? Math.max(1, Math.ceil((neededFlow - flow) / weakest)) : 0;
-          setReadout('moreunits', fmt(moreUnits, 0));
-        }
-        showGroup('need', true);
-      } else {
-        show(cadrHighEl, false);
-        showGroup('need', false);
-      }
 
       // Capacity ghost — the largest room the cleaners cover at the target,
       // overlaid on the actual room. Only meaningful with both a flow and a room
@@ -1632,66 +1849,112 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         else laneG.removeAttribute('data-lane-idle');
       }
 
-      // Capacity — shown whenever combined flow > 0, regardless of room.
-      if (hasFlow) {
-        const maxVol = (flow * 60) / target;
-        setMetric('maxvol', `${fmt(maxVol, 0)} ft³`);
-        setMetric('maxarea', `${fmt(maxVol / 8, 0)} ft²`);
-        showGroup('capacity', true);
-      } else {
-        setMetric('maxvol', '—');
-        setMetric('maxarea', '—');
-        showGroup('capacity', false);
-      }
-
-      // ACH + verdict + wave — needs both a room size and a flow.
+      // ANSWER + hero metric + wave. Three result states, all with a room present
+      // (the wizard gates leaving step 0 without one): a cleaner that PASSES, one
+      // that FAILS, or no cleaner yet (SHOP for a rating). The hero ACH shows only
+      // when there's a cleaner to measure; the fix note (need group, set above)
+      // carries the shopping guidance in the fail + shop states.
+      // The minimum COMBINED CADR — the total clean-air delivery all the cleaners
+      // together must add up to. A CADR isn't "bought" per unit; it's the sum the
+      // setup reaches, so this is independent of how many cleaners share the load.
+      const needCadr = (target * vol) / 60;
       const setPrompt = (on: boolean) => show(block.querySelector('[data-prompt="empty"]'), on);
-      if (hasFlow && hasRoom) {
+      if (targetIsInvalid) {
+        // Invalid target (≤ 0): block the verdict rather than compute one from the
+        // silent default. The target-step alert tells the user how to fix it.
+        show(achWrap, false);
+        show(fixWrap, false);
+        setAnswer('', null);
+        setVerdictCard(null);
+        showGroup('secondary', false);
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        setPrompt(true);
+        announce('');
+      } else if (hasFlow && hasRoom) {
+        // Pass/fail: the ACH the setup delivers is the hero (vs. the target). On a
+        // FAIL, the CADR-to-buy joins it as a co-equal hero — problem + fix.
         setMetric('ach', fmt(ach, 1));
         setReadout('ach', fmt(ach, 1));
-        setVerdict(pass ? 'pass' : 'fail');
+        // No target restated here — the verdict headline + card already carry the
+        // comparison; the ACH number stands on its own as the delivered rate.
+        show(achWrap, true);
         // Tint the ACH readout warning when it falls short of the target.
-        root.querySelector('[data-metric="ach"]')?.toggleAttribute('data-below', !pass);
-        showGroup('ach', true);
+        achWrap?.toggleAttribute('data-below', !pass);
+        setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
+        show(fixWrap, !pass);
+        // Fail remedies: how many MORE of the user's current (assumed-identical)
+        // cleaner would reach the target, and a caution when the CADR-to-buy is
+        // beyond a typical single unit (~700 ft³/min). Pass shows neither.
+        if (!pass) {
+          // "Add N more" sizes N off the WEAKEST cleaner entered, so N units like
+          // yours are guaranteed to reach the target even when your cleaners differ
+          // (adding stronger ones only does better). For 1 or identical cleaners
+          // it's just that cleaner's own flow.
+          const neededFlow = (target * vol) / 60;                 // total ft³/min to hit target
+          const flows = blocks.map((b) => cleanerFlow(b.dataset.cleanerBlock!)).filter((f) => f > 0);
+          const weakest = flows.length ? Math.min(...flows) : 0;
+          const moreUnits = weakest > 0 ? Math.max(1, Math.ceil((neededFlow - flow) / weakest)) : 0;
+          setReadout('moreunits', fmt(moreUnits, 0));
+          show(cadrHighEl, needCadr > 700);
+        } else {
+          show(cadrHighEl, false);
+        }
+        // "Powerful enough", not "big enough" — adequacy here is airflow (CADR), not
+        // physical size; the size metaphor feeds the very misconception the tool corrects.
+        const subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
+        const subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
+        setAnswer(pass ? `${subj} powerful enough for this room` : `${subjNeg} powerful enough for this room`, pass ? 'pass' : 'fail');
+        setVerdictCard(pass ? 'pass' : 'fail');
         setPrompt(false);
         stateNow = pass ? 'pass' : 'fail';
         container.dataset.state = stateNow;
         announce(
           `This setup delivers ${fmt(ach, 1)} air changes per hour, ` +
-          `${pass ? 'at or above' : 'below'} your target of ${fmt(target, 2)}.`,
+          `${pass ? 'at or above' : 'below'} your target of ${fmt(target, 1)}.`,
         );
         startLoop();
-      } else {
-        setMetric('ach', '—');
-        setVerdict(null);
-        showGroup('ach', false);
+      } else if (hasRoom) {
+        // Shop mode (no cleaner yet): the combined CADR to reach IS the result, so it takes
+        // the hero slot alone; the ACH hero has nothing to measure yet.
+        show(achWrap, false);
+        achWrap?.removeAttribute('data-below');
+        setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
+        show(fixWrap, true);
+        // Same over-700 caution in shop mode: no single typical cleaner reaches it.
+        show(cadrHighEl, needCadr > 700);
+        setAnswer('Shop for this rating', 'shop');
+        setVerdictCard('shop');
+        setPrompt(false);
         stateNow = 'idle';
         container.dataset.state = 'idle';
-        // Empty prompt only when neither a cleaner rating nor a room is entered.
-        setPrompt(!hasFlow && !hasRoom);
-        if (hasFlow) {
-          const maxVol = (flow * 60) / target;
-          announce(
-            `Your ${blocks.length > 1 ? `${blocks.length} air cleaners can` : 'air cleaner can'} ` +
-            `cover a room up to ${fmt(maxVol, 0)} cubic feet at ${fmt(target, 2)} air changes per hour.`,
-          );
-        } else if (hasRoom) {
-          const n = Math.max(1, blocks.length);
-          const needEach = (target * vol) / 60 / n;
-          announce(
-            n > 1
-              ? `To reach ${fmt(target, 2)} air changes per hour with ${n} equal air cleaners, ` +
-                `look for a CADR of at least ${fmt(needEach, 0)} cubic feet per minute each.`
-              : `To reach ${fmt(target, 2)} air changes per hour in this room, look for an ` +
-                `air cleaner with a CADR of at least ${fmt(needEach, 0)} cubic feet per minute.`,
-          );
-        } else {
-          announce('');
-        }
+        const n = cleanerCount;
+        announce(
+          n > 1
+            ? `To reach ${fmt(target, 1)} air changes per hour, your cleaners' combined ` +
+              `CADR needs to be at least ${fmt(needCadr, 0)}.`
+            : `To reach ${fmt(target, 1)} air changes per hour in this room, look for an ` +
+              `air cleaner with a CADR of at least ${fmt(needCadr, 0)}.`,
+        );
+      } else {
+        // No room (defensive — the wizard shouldn't reach results without one).
+        show(achWrap, false);
+        show(fixWrap, false);
+        setAnswer('', null);
+        setVerdictCard(null);
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        setPrompt(true);
+        announce('');
         // Wake the loop if the ghost still has residual scale to ease away (it was
         // showing, then flow/room cleared) — otherwise it'd freeze mid-shrink.
         if (capS > 0.01) startLoop();
       }
+
+      // Refresh each section's completion check + collapsed recap. Defined in the
+      // accordion controller below; a const, but only ever CALLED after module
+      // eval (events / the async boot), by which time it's initialised.
+      updateSections();
     };
 
     // Numbers only (no stepper, so no negative spinning): strip to digits + one dot.
@@ -1795,6 +2058,193 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     svg.addEventListener('pointerup', endDrag);
     svg.addEventListener('pointercancel', endDrag);
 
+    // ---- accordion section controller ----
+    // One scrolling form of collapsible sections (0 room / 1 cleaners / 2 target),
+    // each a native <details data-section>. Behaviour: single-open (opening one
+    // closes the siblings), auto-advancing (a section's Continue button collapses
+    // it and opens the next), gated on a valid room size at section 0. The result
+    // region below is ALWAYS visible — the engine writes it regardless of what's
+    // open. Every field lives in the DOM at once, so the scene + result reflect
+    // every input no matter which section is expanded. A live recap + completion
+    // check is written into each summary by updateSections() (called from
+    // recompute()), so a collapsed section still shows what you entered.
+    const roomValid = () => { const v = roomVolume(); return Number.isFinite(v) && v > 0; };
+    const sections = qa('[data-section]') as HTMLDetailsElement[];
+    const roomHint = root.querySelector<HTMLElement>('[data-room-hint]');
+    const resultRegion = root.querySelector<HTMLElement>('.smaqmd-aer-sections__result');
+    const summaryOf = (d: HTMLDetailsElement) =>
+      d.querySelector<HTMLElement>('.smaqmd-form-section__summary');
+
+    // Relocate the result subtree out of the form and into its own card above it,
+    // then reveal that card only after the first submit — from then on the form
+    // stays usable and the result updates live (recompute writes to it every input).
+    const resultPanel = root.querySelector<HTMLElement>('[data-result-panel]');
+    const resultHost = root.querySelector<HTMLElement>('[data-result-host]');
+    const tweakNote = root.querySelector<HTMLElement>('[data-tweak-note]');
+    if (resultHost && resultRegion) {
+      resultHost.appendChild(resultRegion);
+      resultRegion.hidden = false;              // the card owns visibility now
+    }
+    const revealResult = () => {
+      if (resultPanel) resultPanel.hidden = false;
+      if (tweakNote) tweakNote.hidden = false;
+    };
+
+    // Animated open/close via the Web Animations API — a height tween on the
+    // section body that works in EVERY current browser (Chrome, Safari, Firefox),
+    // unlike the CSS ::details-content route. The <details> stays open through a
+    // close animation and flips shut only on finish; reduced-motion skips the tween
+    // and snaps to the target state.
+    const EASE = 'cubic-bezier(0.645, 0.045, 0.355, 1)';  // ecology house ease-in-out
+    const DUR = 260;
+    const anims = new WeakMap<HTMLDetailsElement, Animation>();
+    const bodyOf = (d: HTMLDetailsElement) =>
+      d.querySelector<HTMLElement>('.smaqmd-form-section__body');
+    const clearInline = (body: HTMLElement) => {
+      body.style.removeProperty('overflow');
+      body.style.removeProperty('overflow-clip-margin');
+      body.style.removeProperty('box-sizing');
+    };
+    // Clip the growing/shrinking height, but with a small margin so the content's
+    // OWN outset box-shadow rings (esa-alert-box, esa-card) and focus rings still
+    // paint on the left/right instead of being sliced flush — `overflow: hidden`
+    // clips them, `overflow: clip` + overflow-clip-margin doesn't.
+    const clipForAnim = (body: HTMLElement) => {
+      body.style.overflow = 'clip';
+      body.style.overflowClipMargin = '6px';
+      body.style.boxSizing = 'border-box';
+    };
+    const setOpen = (d: HTMLDetailsElement, open: boolean) => {
+      if (d.open === open && !anims.has(d)) return;     // already in the target state
+      anims.get(d)?.cancel();
+      const body = bodyOf(d);
+      if (!body) { d.open = open; return; }
+      if (reduced) { clearInline(body); d.open = open; return; }
+      if (open) {
+        d.open = true;                                  // render content, then tween up
+        const full = body.getBoundingClientRect().height;  // exact sub-pixel border-box height
+        clipForAnim(body);
+        const a = body.animate(
+          // Height only — NO opacity: an opacity tween promotes a compositor layer
+          // and tears it down on finish, re-rasterising the text (a visible end
+          // "stutter"). The clipped height reveal carries the animation on its own.
+          [{ height: '0px' }, { height: `${full}px` }],
+          { duration: DUR, easing: EASE },
+        );
+        anims.set(d, a);
+        a.onfinish = a.oncancel = () => { anims.delete(d); clearInline(body); };
+      } else {
+        if (!d.open) return;
+        const full = body.getBoundingClientRect().height;  // exact current height (mid-anim if any)
+        clipForAnim(body);
+        const a = body.animate(
+          [{ height: `${full}px` }, { height: '0px' }],
+          { duration: DUR, easing: EASE },
+        );
+        anims.set(d, a);
+        a.onfinish = () => { anims.delete(d); d.open = false; clearInline(body); };
+        a.oncancel = () => { anims.delete(d); clearInline(body); };
+      }
+    };
+    // Single-open: opening one section closes the rest (all animated together).
+    const openOnly = (target: HTMLDetailsElement | null) => {
+      sections.forEach((d) => setOpen(d, d === target));
+    };
+    // Own the toggle: intercept the summary activation (mouse click AND keyboard
+    // Enter/Space both dispatch a click on <summary>) so the tween runs instead of
+    // the instant native snap. preventDefault cancels the native toggle; the open
+    // state is then driven through setOpen.
+    sections.forEach((d) => {
+      d.querySelector('summary')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (d.open) setOpen(d, false);
+        else openOnly(d);
+      });
+    });
+
+    // Advance: Continue / See my result. Section 0 gates on a valid room size
+    // (mirrors the wizard). The last section (or an explicit "result" advance)
+    // collapses every section — the payoff is the result region, which we scroll
+    // to and move focus into.
+    const focusResult = () => {
+      resultPanel?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+      if (answerTitle && !answerTitle.hidden) answerTitle.focus();
+    };
+    const advanceFrom = (d: HTMLDetailsElement, mode?: string) => {
+      const idx = sections.indexOf(d);
+      if (idx === 0 && !roomValid()) {          // room gate
+        if (roomHint) show(roomHint, true);
+        return;
+      }
+      if (mode === 'result' || idx >= sections.length - 1) {
+        revealResult();                          // first submit → the result card appears above
+        openOnly(null);                          // collapse all → the result is the focus
+        recompute();
+        focusResult();
+        return;
+      }
+      const next = sections[idx + 1];
+      openOnly(next);
+      summaryOf(next)?.focus();
+    };
+    root.addEventListener('click', (e) => {
+      const adv = (e.target as HTMLElement).closest<HTMLElement>('[data-section-advance]');
+      if (!adv) return;
+      e.preventDefault();
+      const d = adv.closest<HTMLDetailsElement>('[data-section]');
+      if (d) advanceFrom(d, adv.dataset.sectionAdvance);
+    });
+    // Clear the room-required hint the moment a valid room is entered.
+    root.addEventListener('input', () => {
+      if (roomHint && roomValid()) show(roomHint, false);
+    });
+
+    // ---- per-section completion + "what you entered" recap ----
+    // A section is COMPLETE when its inputs are answered (→ a check in the marker);
+    // the recap is the compact value line shown while the section is collapsed.
+    const recapEl = (d: HTMLDetailsElement) => d.querySelector<HTMLElement>('[data-recap]');
+    const roomRecap = (): string => {
+      const method = raw('roomMethod');
+      const vol = roomVolume();
+      const volTxt = Number.isFinite(vol) && vol > 0 ? ` · ${fmt(vol, 0)} ft³` : '';
+      if (method === 'area') {
+        const a = pos('area'); const h = pos('height') || 8;
+        return Number.isFinite(a) ? `${fmt(a, 0)} ft² floor · ${fmt(h, 0)} ft ceiling${volTxt}` : '';
+      }
+      if (method === 'volume') {
+        const v = pos('volume');
+        return Number.isFinite(v) ? `${fmt(v, 0)} ft³` : '';
+      }
+      const L = pos('length'), W = pos('width'), H = pos('height');
+      return [L, W, H].every((n) => Number.isFinite(n))
+        ? `${fmt(L, 1)} × ${fmt(W, 1)} × ${fmt(H, 1)} ft${volTxt}` : '';
+    };
+    const cleanersRecap = (): string => {
+      if (!hasCleaners()) return 'No cleaner yet — showing what to buy';
+      const n = cleanerBlocks().length;
+      const flow = combinedFlow();
+      const s = n > 1 ? 's' : '';
+      if (flow <= 0) return `${n} air cleaner${s} — not entered yet`;
+      return `${n} air cleaner${s} · ${fmt(flow, 0)} ft³/min total`;
+    };
+    const targetRecap = (): string => {
+      const t = num('target');
+      return Number.isFinite(t) && t > 0 ? `${fmt(t, 2)} air changes per hour` : '';
+    };
+    const sectionComplete = [
+      () => roomValid(),
+      () => !hasCleaners() || combinedFlow() > 0,
+      () => { const t = num('target'); return Number.isFinite(t) && t > 0; },
+    ];
+    const sectionRecap = [roomRecap, cleanersRecap, targetRecap];
+    const updateSections = () => {
+      sections.forEach((d, i) => {
+        d.toggleAttribute('data-complete', !!sectionComplete[i]?.());
+        const el = recapEl(d);
+        if (el) el.textContent = sectionRecap[i]?.() ?? '';
+      });
+    };
+
     // Boot: stamp the (blank) first cleaner and draw the default scene immediately
     // (cur/tgt default to 12×10×8). Once the legos upgrade — so field .value
     // getters read entered attributes — sync the mode wrappers/entry-mode flag,
@@ -1809,6 +2259,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       syncVisibility();
       morphScene();
       recompute();
+      updateSections();
     });
   }
 </script>

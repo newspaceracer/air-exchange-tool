@@ -5,7 +5,7 @@
 // step 0 room → step 1 cleaners → step 2 target → step 3 result. Every field and
 // the whole [data-result] subtree are byte-for-byte the classic view's, so the
 // SAME calc/scene script drives both — the ONLY differences are (a) the root is
-// [data-aerb-wizard], (b) the inputs are wrapped in a bcn-wizard step shell, and
+// [data-aerb-wizard], (b) the inputs are wrapped in a smaqmd-wizard step shell, and
 // (c) a step-navigation block appended to the script. Keep the two in sync by
 // porting engine changes across; presentation diverges on purpose.
 //
@@ -19,8 +19,8 @@
 //
 // Composition: esa-card panels, esa-text-field inputs, esa-stat readouts,
 // esa-alert-box verdict. The one bespoke part is the isometric city drawing —
-// no esa-* lego renders a to-scale 3D scene, so it's a documented bcn- concern
-// (see the bcn-lego-checked note on the .bcn-cityview markup). The scene is
+// no esa-* lego renders a to-scale 3D scene, so it's a documented smaqmd- concern
+// (see the bcn-lego-checked note on the .smaqmd-cityview markup). The scene is
 // drawn from an array of cleaners (streets to each), fed a single cleaner for
 // now; flow is animated with plain CSS stroke-dashoffset (no animation library
 // yet) so GSAP/WAAPI can take over the motion later without touching the
@@ -36,13 +36,25 @@ const CLEANER_IDS = [1, 2, 3, 4];
 const WINDOW_SLOTS = Array.from({ length: 24 }, (_, i) => i + 1); // per-wall window pool: 3 rows × 8 columns
 const RTU_IDS = [1, 2, 3];                      // rooftop-unit pool
 const roomMethods = [
-  { label: 'Length × width × height', value: 'dimensions' },
   { label: 'Floor area + ceiling height', value: 'area' },
+  { label: 'Length × width × height', value: 'dimensions' },
   { label: 'Room volume directly', value: 'volume' },
 ];
 const unitOptions = [
   { label: 'Air flow rate / CADR (ft³/min)', value: 'airflow' },
   { label: 'Air changes per hour (ACH)', value: 'ach' },
+];
+// Step-2 fork: a shopper with no cleaner takes the "No" path straight to the
+// minimum-CADR-to-buy result; a checker takes "Yes" and enters their cleaner(s).
+const cleanerChoice = [
+  { label: "Yes, I'll enter it", value: 'yes' },
+  { label: 'No, show me what to buy', value: 'no' },
+];
+// Display-unit toggle for the result legend + diagram capacity label. Floor area
+// (ft²) is the default relatable unit; ft³ is there for people who think in volume.
+const unitToggle = [
+  { label: 'ft²', value: 'ft2' },
+  { label: 'ft³', value: 'ft3' },
 ];
 
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
@@ -60,14 +72,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
        esa- lego provides a full-viewport fixed illustration backdrop. This SVG
        projection is the reusable home for "see the air exchange", so it lives in
-       its own bcn- block, driven from the shared calc script below. -->
-  <div class="smaqmd-aerb__stage bcn-cityview" data-cityview data-state="idle">
-    <svg class="bcn-cityview__svg" viewBox="0 0 480 380" role="img"
+       its own smaqmd- block, driven from the shared calc script below. -->
+  <div class="smaqmd-aerb__stage smaqmd-cityview" data-cityview data-state="idle">
+    <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img"
          aria-label="Isometric city scene: your room as a building with windows and a door, and each air cleaner as its own smaller building on a street carrying used air out and clean air back. A dashed outline shows the largest room the cleaners could cover.">
       <defs>
-        <pattern id="bcn-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
-          <circle class="bcn-cityview__dot" cx="0" cy="0" r="1.1"></circle>
-          <circle class="bcn-cityview__dot" cx={A} cy={B} r="1.1"></circle>
+        <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
+          <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle>
+          <circle class="smaqmd-cityview__dot" cx={A} cy={B} r="1.1"></circle>
         </pattern>
         <!-- Air-change waves — one return + one intake gradient PER cleaner, so
              each lane scrolls at its own cadence (tied to that cleaner's ACH
@@ -78,27 +90,27 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
              neutral used-air color. -->
         {CLEANER_IDS.map((i) => (
           <>
-            <linearGradient id={`bcn-return-grad-${i}`} data-return-grad={i}
+            <linearGradient id={`smaqmd-return-grad-${i}`} data-return-grad={i}
                             gradientUnits="userSpaceOnUse" spreadMethod="repeat"
                             x1="0" y1="0" x2="1" y2="0">
-              <stop class="bcn-cityview__gstop" offset="0" stop-opacity="0"></stop>
-              <stop class="bcn-cityview__gstop" offset="0.8" stop-opacity="1"></stop>
-              <stop class="bcn-cityview__gstop" offset="1" stop-opacity="0"></stop>
+              <stop class="smaqmd-cityview__gstop" offset="0" stop-opacity="0"></stop>
+              <stop class="smaqmd-cityview__gstop" offset="0.8" stop-opacity="1"></stop>
+              <stop class="smaqmd-cityview__gstop" offset="1" stop-opacity="0"></stop>
             </linearGradient>
-            <linearGradient id={`bcn-out-grad-${i}`} data-out-grad={i}
+            <linearGradient id={`smaqmd-out-grad-${i}`} data-out-grad={i}
                             gradientUnits="userSpaceOnUse" spreadMethod="repeat"
                             x1="0" y1="0" x2="1" y2="0">
-              <stop class="bcn-cityview__gstop-out" offset="0" stop-opacity="0"></stop>
-              <stop class="bcn-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop>
-              <stop class="bcn-cityview__gstop-out" offset="1" stop-opacity="0"></stop>
+              <stop class="smaqmd-cityview__gstop-out" offset="0" stop-opacity="0"></stop>
+              <stop class="smaqmd-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop>
+              <stop class="smaqmd-cityview__gstop-out" offset="1" stop-opacity="0"></stop>
             </linearGradient>
           </>
         ))}
       </defs>
       <!-- Isometric dot paper — the lattice the whole drawing sits on. -->
-      <rect class="bcn-cityview__paper" x="0" y="0" width="100%" height="100%" fill="url(#bcn-iso-dots)"></rect>
+      <rect class="smaqmd-cityview__paper" x="0" y="0" width="100%" height="100%" fill="url(#smaqmd-iso-dots)"></rect>
 
-      <polygon class="bcn-cityview__ground" data-ground></polygon>
+      <polygon class="smaqmd-cityview__ground" data-ground></polygon>
 
       <!-- Streets — one per cleaner. Each carries a road surface, the out lane,
            and the return lane's base track + bright wave. All sit BELOW the
@@ -107,19 +119,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            strokes are inline `url(#…)` per cleaner (inline beats the scoped
            stylesheet's presentation attributes). Groups i>1 start hidden. -->
       {CLEANER_IDS.map((i) => (
-        <g class="bcn-cityview__lanes" data-lanes={i} style={i > 1 ? 'visibility:hidden' : undefined}>
-          <polyline class="bcn-cityview__road" data-road></polyline>
-          <polyline class="bcn-cityview__track" data-flow="out-track"></polyline>
-          <polyline class="bcn-cityview__wave" data-flow="out-wave" style={`stroke: url(#bcn-out-grad-${i})`}></polyline>
-          <polyline class="bcn-cityview__track" data-flow="return-track"></polyline>
-          <polyline class="bcn-cityview__wave" data-flow="wave" style={`stroke: url(#bcn-return-grad-${i})`}></polyline>
+        <g class="smaqmd-cityview__lanes" data-lanes={i} style={i > 1 ? 'visibility:hidden' : undefined}>
+          <polyline class="smaqmd-cityview__road" data-road></polyline>
+          <polyline class="smaqmd-cityview__track" data-flow="out-track"></polyline>
+          <polyline class="smaqmd-cityview__wave" data-flow="out-wave" style={`stroke: url(#smaqmd-out-grad-${i})`}></polyline>
+          <polyline class="smaqmd-cityview__track" data-flow="return-track"></polyline>
+          <polyline class="smaqmd-cityview__wave" data-flow="wave" style={`stroke: url(#smaqmd-return-grad-${i})`}></polyline>
         </g>
       ))}
 
       <!-- Room building (large). -->
-      <polygon class="bcn-cityview__room-face" data-room="left"></polygon>
-      <polygon class="bcn-cityview__room-face" data-room="right"></polygon>
-      <polygon class="bcn-cityview__room-face" data-room="top"></polygon>
+      <polygon class="smaqmd-cityview__room-face" data-room="left"></polygon>
+      <polygon class="smaqmd-cityview__room-face" data-room="right"></polygon>
+      <polygon class="smaqmd-cityview__room-face" data-room="top"></polygon>
 
       <!-- Architectural details on the room building — part of the same
            bcn-lego-checked cityview block (windows on both visible walls whose
@@ -127,32 +139,32 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            Pre-rendered pools only; JS toggles style.visibility (NOT display — the
            same WebKit paint-server quirk noted on the lanes/ghost) and sets
            points every draw so details morph in lockstep with the eased room. -->
-      <g class="bcn-cityview__details" data-room-details style="visibility:hidden">
-        <polygon class="bcn-cityview__parapet" data-parapet></polygon>
+      <g class="smaqmd-cityview__details" data-room-details style="visibility:hidden">
+        <polygon class="smaqmd-cityview__parapet" data-parapet></polygon>
         {WINDOW_SLOTS.map((i) => (
-          <polygon class="bcn-cityview__win" data-win-l={i} style="visibility:hidden"></polygon>
+          <polygon class="smaqmd-cityview__win" data-win-l={i} style="visibility:hidden"></polygon>
         ))}
         {WINDOW_SLOTS.map((i) => (
-          <polygon class="bcn-cityview__win" data-win-r={i} style="visibility:hidden"></polygon>
+          <polygon class="smaqmd-cityview__win" data-win-r={i} style="visibility:hidden"></polygon>
         ))}
-        <polygon class="bcn-cityview__door" data-door style="visibility:hidden"></polygon>
+        <polygon class="smaqmd-cityview__door" data-door style="visibility:hidden"></polygon>
         {RTU_IDS.map((i) => (
-          <g class="bcn-cityview__rtu" data-rtu={i} style="visibility:hidden">
-            <polygon class="bcn-cityview__rtu-face" data-rtu-face="top"></polygon>
-            <polygon class="bcn-cityview__rtu-face" data-rtu-face="left"></polygon>
-            <polygon class="bcn-cityview__rtu-face" data-rtu-face="right"></polygon>
+          <g class="smaqmd-cityview__rtu" data-rtu={i} style="visibility:hidden">
+            <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="top"></polygon>
+            <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="left"></polygon>
+            <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="right"></polygon>
           </g>
         ))}
-        <g class="bcn-cityview__tower" data-tower style="visibility:hidden">
-          <line class="bcn-cityview__tower-leg" data-tower-leg="1"></line>
-          <line class="bcn-cityview__tower-leg" data-tower-leg="2"></line>
-          <polygon class="bcn-cityview__tower-face" data-tower-face="top"></polygon>
-          <polygon class="bcn-cityview__tower-face" data-tower-face="left"></polygon>
-          <polygon class="bcn-cityview__tower-face" data-tower-face="right"></polygon>
+        <g class="smaqmd-cityview__tower" data-tower style="visibility:hidden">
+          <line class="smaqmd-cityview__tower-leg" data-tower-leg="1"></line>
+          <line class="smaqmd-cityview__tower-leg" data-tower-leg="2"></line>
+          <polygon class="smaqmd-cityview__tower-face" data-tower-face="top"></polygon>
+          <polygon class="smaqmd-cityview__tower-face" data-tower-face="left"></polygon>
+          <polygon class="smaqmd-cityview__tower-face" data-tower-face="right"></polygon>
         </g>
-        <g class="bcn-cityview__mast" data-mast style="visibility:hidden">
-          <line class="bcn-cityview__mast-line" data-mast-line></line>
-          <circle class="bcn-cityview__mast-tip" data-mast-tip r="1.8"></circle>
+        <g class="smaqmd-cityview__mast" data-mast style="visibility:hidden">
+          <line class="smaqmd-cityview__mast-line" data-mast-line></line>
+          <circle class="smaqmd-cityview__mast-tip" data-mast-tip r="1.8"></circle>
         </g>
       </g>
 
@@ -162,26 +174,26 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            toggles visibility (NOT display — same WebKit paint-server quirk noted
            on the lanes). Paints after the room faces; the data-cap-compare swap on
            the container makes the bigger box the more transparent one. -->
-      <g class="bcn-cityview__capg" data-capg style="visibility:hidden">
-        <polygon class="bcn-cityview__cap-face" data-cap="left"></polygon>
-        <polygon class="bcn-cityview__cap-face" data-cap="right"></polygon>
-        <polygon class="bcn-cityview__cap-face" data-cap="top"></polygon>
-        <text class="bcn-cityview__dim bcn-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
+      <g class="smaqmd-cityview__capg" data-capg style="visibility:hidden">
+        <polygon class="smaqmd-cityview__cap-face" data-cap="left"></polygon>
+        <polygon class="smaqmd-cityview__cap-face" data-cap="right"></polygon>
+        <polygon class="smaqmd-cityview__cap-face" data-cap="top"></polygon>
+        <text class="smaqmd-cityview__dim smaqmd-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
       </g>
 
       <!-- Air-cleaner buildings (small) — one per cleaner, AFTER the room faces so
            they paint in front. Groups i>1 start hidden. -->
       {CLEANER_IDS.map((i) => (
-        <g class="bcn-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
-          <polygon class="bcn-cityview__unit-face" data-unit="left"></polygon>
-          <polygon class="bcn-cityview__unit-face" data-unit="right"></polygon>
-          <polygon class="bcn-cityview__unit-face" data-unit="top"></polygon>
+        <g class="smaqmd-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
         </g>
       ))}
 
-      <text class="bcn-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
-      <text class="bcn-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text>
-      <text class="bcn-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text>
+      <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
+      <text class="smaqmd-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text>
+      <text class="smaqmd-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text>
 
       <!-- Drag grips — part of the same bcn-lego-checked cityview block: each edge
            drags its dimension and types into the form fields (inputs stay the
@@ -192,19 +204,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            Interleaving (not hit,hit,hit,handle,handle,handle) is what prevents one
            edge's hover from darkening every chevron. -->
       <g data-grips>
-        <line class="bcn-cityview__hit" data-grip="length"></line>
-        <g class="bcn-cityview__handle" data-grip="length"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
-        <line class="bcn-cityview__hit" data-grip="width"></line>
-        <g class="bcn-cityview__handle" data-grip="width"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
-        <line class="bcn-cityview__hit" data-grip="height"></line>
-        <g class="bcn-cityview__handle" data-grip="height"><path class="bcn-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <line class="smaqmd-cityview__hit" data-grip="length"></line>
+        <g class="smaqmd-cityview__handle" data-grip="length"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <line class="smaqmd-cityview__hit" data-grip="width"></line>
+        <g class="smaqmd-cityview__handle" data-grip="width"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
+        <line class="smaqmd-cityview__hit" data-grip="height"></line>
+        <g class="smaqmd-cityview__handle" data-grip="height"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
       </g>
     </svg>
     <!-- Invisible safe-area sentinel: CSS declares (per breakpoint) where the
          buildings may live, clear of the panel + header; JS observes this rect
          and feeds it to the fit math. -->
-    <div class="bcn-cityview__safe" data-safe aria-hidden="true"></div>
-    <p class="type-caption bcn-cityview__cap">
+    <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
+    <p class="type-caption smaqmd-cityview__cap">
       Air leaves your room, passes through the cleaner, and returns. When
       entering length × width, drag the room's edges — or type — to resize it.
     </p>
@@ -215,7 +227,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        floating overlay); esa-dialog/esa-side-dialog are wrong here — their modal
        scrim would hide the scene and their focus trap is wrong for an
        always-open form. Panel chrome stays esa-card via the --card-bg hook; only
-       the positioning is bespoke, so it lives in these smaqmd-aerb__ blocks. -->
+       the positioning is bespoke, so it lives in these smaqmd-aerb__ blocks.
+       The wizard variant stacks the header + panel into a single fixed LEFT
+       column (smaqmd-aerw__col) so the flow is the prominent element and the
+       scene sits to its right — the scene is secondary, and useless when the
+       user has no cleaner to check, so it must not dominate the page. -->
+  <div class="smaqmd-aerw__col">
   <div class="smaqmd-aerb__header">
     <slot name="header" />
   </div>
@@ -224,71 +241,80 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        is a multi-step wizard/stepper (checked the catalog — esa-tab-layout is
        user-driven tabs, not a gated linear flow; esa-progress-bar is a bare bar;
        Beacon has no equivalent). The step shell + numbered progress dots are the
-       bespoke bcn-wizard concern; every CONTROL inside stays an esa-* lego, and
+       bespoke smaqmd-wizard concern; every CONTROL inside stays an esa-* lego, and
        the fields + [data-result] subtree are byte-for-byte the classic view's, so
        the SAME calc engine drives both — only the chrome differs. -->
   <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
     <EsaCard>
-      <div class="bcn-wizard stack" data-gap="lg" data-wizard>
+      <div class="smaqmd-wizard stack" data-gap="lg" data-wizard>
         <!-- Progress head: numbered dots (the 3 input steps) + counter + title. -->
-        <div class="bcn-wizard__head stack" data-gap="sm">
-          <div class="bcn-wizard__dots cluster" data-gap="xs" aria-hidden="true">
-            <span class="bcn-wizard__dot" data-dot="0">1</span>
-            <span class="bcn-wizard__dot" data-dot="1">2</span>
-            <span class="bcn-wizard__dot" data-dot="2">3</span>
+        <div class="smaqmd-wizard__head stack" data-gap="sm">
+          <div class="smaqmd-wizard__dots cluster" data-gap="xs" aria-hidden="true">
+            <span class="smaqmd-wizard__dot" data-dot="0">1</span>
+            <span class="smaqmd-wizard__dot" data-dot="1">2</span>
+            <span class="smaqmd-wizard__dot" data-dot="2">3</span>
           </div>
-          <p class="type-caption bcn-wizard__count" data-step-count>Step 1 of 3</p>
-          <h2 class="type-card-title bcn-wizard__title" data-step-title>Your room</h2>
+          <p class="type-caption smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
+          <h2 class="type-section-title smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</h2>
         </div>
 
         <!-- Step bodies — all present in the DOM (the engine reads every field on
              every recompute); only the active step is shown. -->
-        <div class="bcn-wizard__body">
+        <div class="smaqmd-wizard__body">
           <!-- Step 0 — room -->
           <section class="stack" data-gap="md" data-step="0">
             <esa-radio-group
               data-field="roomMethod"
-              label="How do you want to enter your room size?"
-              value="dimensions"
+              aria-label="Choose how to enter your room size"
+              value="area"
               options={JSON.stringify(roomMethods)}
             ></esa-radio-group>
             <div class="smaqmd-aerb__dims grid" data-gap="md">
-              <div data-room="dimensions">
+              <div data-room="dimensions" hidden>
                 <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
               </div>
-              <div data-room="dimensions">
+              <div data-room="dimensions" hidden>
                 <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+              </div>
+              <div data-room="area">
+                <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
               </div>
               <div data-room="dimensions area">
                 <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
-              </div>
-              <div data-room="area" hidden>
-                <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
               </div>
               <div data-room="volume" hidden>
                 <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
               </div>
             </div>
-            <div data-room-hint hidden>
+            <div data-room-hint hidden role="alert">
               <EsaAlertBox variant="info">Enter your room size to continue.</EsaAlertBox>
             </div>
           </section>
 
-          <!-- Step 1 — air cleaners -->
+          <!-- Step 1 — air cleaners. Opens with the intent fork: a shopper answers
+               "No" and the entry UI stays hidden (result → what to buy); a checker
+               answers "Yes" and the cleaner form unfolds in place. Replaces the old
+               pre-stamped blank block, which read as "fill this in" to people who
+               had nothing to enter. -->
           <section class="stack" data-gap="md" data-step="1" hidden>
-            <p class="type-body bcn-wizard__lede">
-              Add the air cleaners you own — or skip ahead to see the minimum
-              rating to shop for.
-            </p>
-            <!-- Cleaner blocks stamped here by JS (template below) -->
-            <div class="stack" data-gap="lg" data-cleaners></div>
-            <div class="cluster" data-gap="sm">
-              <span data-add-cleaner>
-                <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
-                  Add another air cleaner
-                </EsaButton>
-              </span>
-              <p class="type-caption" data-cap-note hidden>This view shows up to {MAX_CLEANERS} cleaners.</p>
+            <esa-radio-group
+              data-field="hasCleaner"
+              label="Do you have an air cleaner to check?"
+              value="yes"
+              options={JSON.stringify(cleanerChoice)}
+            ></esa-radio-group>
+            <!-- Cleaner entry — revealed only on "Yes". -->
+            <div class="stack" data-gap="md" data-cleaner-entry>
+              <!-- Cleaner blocks stamped here by JS (template below) -->
+              <div class="stack" data-gap="lg" data-cleaners></div>
+              <div class="cluster" data-gap="sm">
+                <span data-add-cleaner>
+                  <EsaButton color="ghost" appearance="outline" icon="plus" type="button">
+                    Add air cleaner
+                  </EsaButton>
+                </span>
+                <p class="type-caption" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
+              </div>
             </div>
           </section>
 
@@ -300,62 +326,94 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               inputmode="decimal"
               label="Target air changes per hour"
               value="2"
-              help-text="CARB recommends at least 2. This target applies to the whole room — all cleaners together."
+              help-text="One air change means the cleaner has filtered a full room's worth of air. The California Air Resources Board (CARB) recommends at least 2 per hour. This target applies to the whole room — all cleaners together."
             ></esa-text-field>
+            <!-- Shown by recompute() only when the entered target drops below the
+                 CARB-recommended 2, so a low target is an explicit choice. -->
+            <div data-target-warn hidden role="alert">
+              <EsaAlertBox variant="warning" title="Below the recommended minimum">
+                The California Air Resources Board recommends at least <strong>2</strong>
+                air changes per hour. A lower target may not clear the air enough.
+              </EsaAlertBox>
+            </div>
+            <!-- A target of 0 (or less) is not a real goal — no cleaning at all. The
+                 result is blocked until it's a positive number. -->
+            <div data-target-invalid hidden role="alert">
+              <EsaAlertBox variant="danger" title="Enter a target above 0">
+                A target of 0 means no air cleaning at all. Enter how many times per
+                hour you want the room's air replaced — at least <strong>1</strong>,
+                ideally <strong>2</strong> or more.
+              </EsaAlertBox>
+            </div>
           </section>
 
           <!-- Step 3 — result. The SAME [data-result] subtree the classic view
                uses; the engine writes here regardless of which step is shown. -->
           <section class="stack" data-gap="md" data-step="3" hidden>
         <div class="stack" data-gap="md" data-result>
-          <!-- ACH group: shown when a full room size + at least one cleaner are entered -->
-          <div class="stack" data-gap="md" data-group="ach">
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="ach"><EsaStat value="—" label="Air changes per hour" sub="in your room" accent /></div>
-              <div data-metric="volume"><EsaStat value="—" label="Room volume" /></div>
-            </div>
-            <div data-verdict="pass" hidden>
-              <EsaAlertBox variant="success" title="Meets your target">
-                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
-                at or above your target of <strong data-r="target">2</strong>.
-              </EsaAlertBox>
-            </div>
-            <div data-verdict="fail" hidden>
+          <!-- ANSWER + hero metrics — the direct yes/no, then the two numbers that
+               matter at EQUAL weight: the problem (ACH the setup delivers) and the
+               fix (the combined CADR to reach). A fail shows both side by side — "here's the
+               issue, here's what fixes it". Pass shows only ACH; shop only the CADR. -->
+          <div class="stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
+            <h2 class="type-section-title smaqmd-aerb__answer-title" data-answer-title tabindex="-1">—</h2>
+
+            <!-- INFORMATION CARD — the verdict spelled out, colored by state
+                 (warning / info), sitting BETWEEN the headline and the metrics it
+                 introduces. On a fail it carries the fix (the CADR below); in shop
+                 mode it explains what CADR is. JS shows exactly one via
+                 [data-verdict-card] and fills the readouts. Pass shows none. -->
+            <div data-verdict-card="fail" hidden>
               <EsaAlertBox variant="warning" title="Below your target">
-                This setup delivers <strong data-r="ach">—</strong> air changes per hour,
-                short of your target of <strong data-r="target">2</strong>. Try a
-                higher-CADR cleaner, another unit, or a smaller room.
+                This room needs more clean air than your setup delivers. Add
+                <strong data-r="moreunits">—</strong> more like yours — or swap in
+                stronger cleaners — so their combined CADR reaches the number below and
+                hits your target of <strong data-r="target">2</strong> air changes per hour.
               </EsaAlertBox>
             </div>
-          </div>
-
-          <!-- Buy guidance: the minimum CADR a SINGLE air cleaner needs to hit the
-               target in this room (target × volume ÷ 60). Shown whenever a room +
-               target are entered — the key number for choosing a cleaner you don't
-               own yet, independent of any cleaner already listed. -->
-          <div class="stack" data-gap="sm" data-group="need" hidden>
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="need"><EsaStat value="—" label="Minimum CADR to look for" sub="for a single air cleaner" /></div>
+            <div data-verdict-card="shop" hidden>
+              <EsaAlertBox variant="info">
+                CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
+                cleaner's box. Match or beat the number below to reach your target.
+              </EsaAlertBox>
             </div>
-            <!-- Filled by setNeedNote(): adapts to the number of (assumed-equal)
-                 cleaners and whether the shortfall is "no cleaner yet" or "entered
-                 cleaners miss the target". -->
-            <p class="type-caption smaqmd-aerb__need-note" data-need-note>
-              To reach your target, look for an air cleaner with a high enough CADR.
-            </p>
-          </div>
 
-          <!-- Capacity group: shown whenever combined flow > 0, regardless of room -->
-          <div class="stack" data-gap="sm" data-group="capacity" hidden>
-            <div class="smaqmd-aerb__metrics">
-              <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
-              <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
+            <div class="smaqmd-aerb__heroes">
+              <div data-metric="ach" hidden>
+                <EsaStat value="—" label="air changes per hour" accent />
+              </div>
+              <div data-metric="fix" hidden>
+                <EsaStat value="—" label="minimum combined CADR" accent />
+              </div>
+            </div>
+            <!-- Over-700 caution: most consumer air cleaners top out around 700
+                 ft³/min, so a required CADR above that isn't reachable with a single
+                 unit. Shown by recompute() whenever the CADR-to-buy exceeds 700. -->
+            <p class="type-body-small smaqmd-aerb__caution" data-cadr-high hidden>
+              That's more than most air cleaners deliver (they top out around
+              <strong>700 ft³/min</strong>), so you'll likely need more than one.
+            </p>
+            <!-- SECONDARY — the evidence for the number, as one legend sentence: what
+                 the cleaner(s) cover vs how big the room is (floor area, the relatable
+                 unit). Nested INSIDE the answer block (sm gap) so it reads as part of
+                 the same result. Only shown with a cleaner delivering flow, so the
+                 comparison is always complete. -->
+            <div class="smaqmd-aerb__context" data-group="secondary" hidden>
+              <p class="type-body-small"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
+              <esa-button-toggle
+                class="smaqmd-aerb__units"
+                data-field="units"
+                size="xs"
+                label="Units"
+                value="ft2"
+                options={JSON.stringify(unitToggle)}
+              ></esa-button-toggle>
             </div>
           </div>
 
           <div data-prompt="empty" hidden>
             <EsaAlertBox variant="info">
-              Enter your room size and an air cleaner rating to see your result.
+              Complete each step — a room size and a target above 0 — to see your result.
             </EsaAlertBox>
           </div>
 
@@ -368,22 +426,23 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
         <!-- Nav — Back sits left (margin-auto), the forward action right. Which
              forward button shows depends on the step; the script toggles them. -->
-        <div class="bcn-wizard__nav">
+        <div class="smaqmd-wizard__nav">
           <span data-nav="back" hidden>
-            <EsaButton color="ghost" appearance="outline" size="sm" icon="arrow-left" type="button">Back</EsaButton>
+            <EsaButton color="ghost" appearance="outline" type="button">Back</EsaButton>
           </span>
           <span data-nav="next">
-            <EsaButton size="sm" type="button">Next</EsaButton>
+            <EsaButton type="button">Next</EsaButton>
           </span>
           <span data-nav="result" hidden>
-            <EsaButton size="sm" icon="check" type="button">See my result</EsaButton>
+            <EsaButton icon="check" type="button">See my result</EsaButton>
           </span>
           <span data-nav="restart" hidden>
-            <EsaButton color="ghost" appearance="outline" size="sm" icon="rotate-ccw" type="button">Start over</EsaButton>
+            <EsaButton color="ghost" appearance="outline" icon="rotate-ccw" type="button">Start over</EsaButton>
           </span>
         </div>
       </div>
     </EsaCard>
+  </div>
   </div>
 
   <!-- Cleaner-block template — cloned per cleaner. data-cleaner is stamped with
@@ -394,7 +453,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   <template data-cleaner-template>
     <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
       <div class="smaqmd-aerb__cleaner-head repel">
-        <p class="type-card-title smaqmd-aerb__cleaner-title">Air cleaner</p>
+        <p class="type-body smaqmd-aerb__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
           <EsaIconButton icon="trash-2" label="Remove this air cleaner" size="sm" />
         </span>
@@ -402,7 +461,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <esa-radio-group
         data-field="unit"
         data-cleaner
-        label="What does the manufacturer report?"
+        label="What does the box or manual list?"
         value="airflow"
         options={JSON.stringify(unitOptions)}
       ></esa-radio-group>
@@ -414,7 +473,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           type="text"
           inputmode="decimal"
           label="Air flow rate or CADR (ft³/min)"
-          help-text="Use the highest air flow, or the lowest CADR if three are listed."
+          help-text="CADR means Clean Air Delivery Rate. Use the highest air flow, or the lowest CADR if three are listed."
         ></esa-text-field>
       </div>
 
@@ -426,7 +485,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           inputmode="decimal"
           label="Air changes per hour (ACH)"
         ></esa-text-field>
-        <p class="type-caption smaqmd-aerb__cleaner-note">
+        <p class="type-body-small smaqmd-aerb__cleaner-note">
           In what size room was that measured?
         </p>
         <div class="smaqmd-aerb__ref grid" data-gap="md">
@@ -443,8 +502,30 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb [hidden] { display: none !important; }
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
-  .smaqmd-aerb__cleaner-note,
-  .smaqmd-aerb__need-note { color: var(--color-text-tertiary); }
+  /* Prompt labelling the reference-room fields (ACH mode). A question the user
+     must answer → a real label: body-small (14px) + secondary + semibold, not a
+     faint 12px caption. */
+  .smaqmd-aerb__cleaner-note {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .smaqmd-aerb__context {
+    color: var(--color-text-secondary);
+    display: flex; flex-direction: column;
+    gap: var(--spacing-200, 0.5rem);
+    align-items: flex-start;
+  }
+
+  /* Answer headline — the direct yes/no, tinted by verdict: green pass, orange
+     fail (matching the scene), neutral while only shopping for a rating. */
+  .smaqmd-aerb__answer-title { color: var(--color-text-primary); }
+  /* Step headings are programmatic focus targets (tabindex=-1) for step-change
+     announcement, not tab stops — suppress the ring that would flash on them after
+     navigating (keyboard users never Tab here; the SR just reads the heading). */
+  [data-step-title]:focus,
+  .smaqmd-aerb__answer-title:focus { outline: none; }
+  .smaqmd-aerb__answer[data-verdict="pass"] .smaqmd-aerb__answer-title { color: var(--color-primary); }
+  .smaqmd-aerb__answer[data-verdict="fail"] .smaqmd-aerb__answer-title { color: var(--color-warning); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
@@ -474,57 +555,94 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     border-block-start: 0;
   }
   .smaqmd-aerb__cleaner-head { align-items: center; }
-  .smaqmd-aerb__cleaner-title { color: var(--color-text-secondary); }
-  .smaqmd-aerb__metrics {
+  /* Group label for each cleaner block: type-body baseline (15px, not oversized
+     per the design-principles skill) carried to semibold so it reads as a label,
+     not body copy — subordinate to the step's section-title above it. Primary
+     text so the block's own name reads as the strongest label inside the block. */
+  .smaqmd-aerb__cleaner-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+  /* The two hero stats (the ACH problem + the CADR fix) sit at EQUAL weight, side
+     by side, wrapping only when the panel is too narrow. */
+  .smaqmd-aerb__heroes {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-500, 1.5rem);
+    gap: var(--spacing-400, 1rem) var(--spacing-600, 2rem);
   }
-  /* Below target: recolor the accent ACH value from its brand tint to warning.
-     esa-stat exposes --stat-accent-color as the consumer hook for its value. */
-  .smaqmd-aerb__metrics [data-metric="ach"][data-below] {
+  /* Unit appended to a hero number (e.g. "32 ft³/min") — quieter + about half the
+     size of the number so the value stays the focus. The span is injected at
+     runtime (innerHTML), so it never gets Astro's scope attribute — match it via
+     :global() anchored under the (scoped) root. */
+  .smaqmd-aerb :global(.smaqmd-aerb__unit) {
+    font-size: 0.5em;
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--color-text-secondary);
+  }
+  /* Caution note under the CADR hero (e.g. the >700 ft³/min warning). */
+  .smaqmd-aerb__caution { color: var(--color-warning, #d9822b); }
+  /* Hero numbers → the BRAND color. esa-stat's accent defaults to the spoke's
+     SECONDARY (green) — wrong here; the heroes should read in the primary brand
+     hue like the pass headline. --stat-accent-color is the consumer hook. */
+  .smaqmd-aerb [data-metric="ach"],
+  .smaqmd-aerb [data-metric="fix"] {
+    --stat-accent-color: var(--color-primary);
+  }
+  /* Below target: the ACH hero shifts to warning, matching the orange fail
+     headline + scene. The CADR fix stays brand — it's the positive action. */
+  .smaqmd-aerb [data-metric="ach"][data-below] {
     --stat-accent-color: var(--color-warning, #d9822b);
   }
 
-  .smaqmd-aerb { position: relative; min-block-size: 100dvh; }
+  .smaqmd-aerb {
+    position: relative; min-block-size: 100dvh;
+    /* Wide-screen frame: cap the composition width so the scene + column stay a
+       consistent, centered band on ultrawide monitors instead of the graphic
+       ballooning full-bleed. --aer-gutter is the margin from the viewport edge to
+       the frame; below --aer-frame it collapses to the normal spacing-500, so
+       narrower desktops (and mobile) are unchanged. Every fixed child anchors to
+       this gutter rather than the raw viewport edge. */
+    --aer-frame: 90rem;
+    --aer-gutter: max(var(--spacing-500, 1.5rem), calc((100vw - var(--aer-frame)) / 2));
+  }
 
-  /* bcn-cityview — the isometric city scene. bcn-lego-checked: bespoke SVG
+  /* smaqmd-cityview — the isometric city scene. bcn-lego-checked: bespoke SVG
      volume + flow drawing, no esa-/Beacon equivalent (see markup note); the
      fixed-inset full-viewport stage + invisible safe-area sentinel are likewise
      bespoke (no layouts.css primitive or esa- lego provides a fixed illustration
      backdrop). Token-driven fills: value-layered neutrals for the ground/room,
      brand accent for the cleaner building + clean-air return lane, --color-border
      for edges. */
-  .bcn-cityview {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  .smaqmd-cityview {
+    position: fixed; inset-block: 0; inset-inline: var(--aer-gutter); z-index: 0; pointer-events: none;
     /* wave tints — clean-air return is brand (green when meeting target); the
        used-air intake is a neutral gray. */
     --pulse-color: var(--color-primary, #159a86);
     --out-color: var(--color-text-tertiary, #6b7280);
   }
-  .bcn-cityview[data-state="fail"] { --pulse-color: var(--color-warning, #d9822b); }
-  .bcn-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+  .smaqmd-cityview[data-state="fail"] { --pulse-color: var(--color-warning, #d9822b); }
+  .smaqmd-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
   /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
-  /* Wizard has a SINGLE panel (26rem) on the right, so the right inset only needs
-     to clear that one panel + a gap (the classic view cleared two stacked panels). */
-  .bcn-cityview__safe {
+  /* Wizard puts its column on the LEFT, so the buildings live to the RIGHT: the
+     left inset clears the column (32rem) + gaps; the other insets are small. */
+  .smaqmd-cityview__safe {
     position: absolute;
-    inset: 9rem calc(26rem + 2 * var(--spacing-500, 1.5rem)) 4.5rem var(--spacing-600, 2rem);
+    inset: var(--spacing-500, 1.5rem) var(--spacing-600, 2rem) 4.5rem calc(32rem + 2 * var(--spacing-500, 1.5rem));
     visibility: hidden;
   }
 
   /* Dot paper sits under everything; the translucent ground lets it show
      through faintly so the scene reads as drawn ON the iso lattice. */
-  .bcn-cityview__dot { fill: var(--color-border, #cfcfcf); }
-  .bcn-cityview__ground {
+  .smaqmd-cityview__dot { fill: var(--color-border, #cfcfcf); }
+  .smaqmd-cityview__ground {
     fill: color-mix(in srgb, var(--color-surface-sunken, #f0f0f0) 45%, transparent);
     stroke: var(--color-border-light, #e0e0e0);
     stroke-width: 1;
     stroke-linejoin: round;
   }
 
-  .bcn-cityview__road {
+  .smaqmd-cityview__road {
     fill: none;
     stroke: var(--color-surface-sunken, #eaeaea);
     stroke-width: 13;
@@ -534,22 +652,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   /* Consistent base track each wave rides on — a light, always-present tint,
      slightly wider than the wave so the path reads the same whether or not a
      bright wave is passing over it. Return tints brand; intake tints neutral. */
-  .bcn-cityview__track {
+  .smaqmd-cityview__track {
     fill: none;
     stroke-width: 5;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .bcn-cityview__track[data-flow="return-track"] { stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
-  .bcn-cityview__track[data-flow="out-track"]    { stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
+  .smaqmd-cityview__track[data-flow="return-track"] { stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
+  .smaqmd-cityview__track[data-flow="out-track"]    { stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
 
   /* The air-change wave — a repeating full→transparent gradient scrolled by JS.
      One repeat travels the lane per air change (cadence tied to ACH). The return
      lane carries the clean-air (pulse) color, the intake the used-air color.
      Sits idle until there's a valid result. */
-  .bcn-cityview__gstop     { stop-color: var(--pulse-color); }
-  .bcn-cityview__gstop-out { stop-color: var(--out-color); }
-  .bcn-cityview__wave {
+  .smaqmd-cityview__gstop     { stop-color: var(--pulse-color); }
+  .smaqmd-cityview__gstop-out { stop-color: var(--out-color); }
+  .smaqmd-cityview__wave {
     fill: none;
     stroke-width: 4;
     stroke-linecap: round;
@@ -557,23 +675,23 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     opacity: 0;
     transition: opacity 220ms ease;
   }
-  /* Wave strokes are set inline per cleaner (url(#bcn-return-grad-i) /
-     url(#bcn-out-grad-i)) so each lane scrolls its own gradient. */
-  .bcn-cityview[data-state="pass"] .bcn-cityview__wave,
-  .bcn-cityview[data-state="fail"] .bcn-cityview__wave { opacity: 1; }
+  /* Wave strokes are set inline per cleaner (url(#smaqmd-return-grad-i) /
+     url(#smaqmd-out-grad-i)) so each lane scrolls its own gradient. */
+  .smaqmd-cityview[data-state="pass"] .smaqmd-cityview__wave,
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__wave { opacity: 1; }
   /* A cleaner with no (or zero) flow shows faint tracks but no wave — JS marks
      that lane group idle. */
-  .bcn-cityview__lanes[data-lane-idle] .bcn-cityview__wave { opacity: 0 !important; }
+  .smaqmd-cityview__lanes[data-lane-idle] .smaqmd-cityview__wave { opacity: 0 !important; }
 
-  .bcn-cityview__room-face {
+  .smaqmd-cityview__room-face {
     stroke: var(--color-border, #d0d0d0);
     stroke-width: 1.5;
     stroke-linejoin: round;
     transition: fill 200ms ease;
   }
-  .bcn-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 80%, transparent); }
-  .bcn-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 78%, transparent); }
-  .bcn-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 78%, transparent); }
+  .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 80%, transparent); }
+  .smaqmd-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 78%, transparent); }
+  .smaqmd-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 78%, transparent); }
 
   /* Capacity ghost — dashed brand-tinted outline of the largest coverable room,
      drawn over the real room to compare sizes. Near-transparent brand fills so
@@ -583,23 +701,23 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  the solid room reads inside it.
        smaller → the user's room is larger: room faces drop to more-transparent
                  fills and the cap fills strengthen so the ghost reads inside. */
-  .bcn-cityview__cap-face {
+  .smaqmd-cityview__cap-face {
     stroke: color-mix(in srgb, var(--color-primary, #159a86) 55%, transparent);
     stroke-dasharray: 5 4;
     stroke-width: 1.5;
     stroke-linejoin: round;
   }
-  .bcn-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 8%, transparent); }
-  .bcn-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-primary, #159a86) 10%, transparent); }
-  .bcn-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-primary, #159a86) 12%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 8%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-primary, #159a86) 10%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-primary, #159a86) 12%, transparent); }
 
   /* smaller: the user's room is the bigger box, so make IT the more transparent
      one. The ghost keeps its default (low-alpha) fills in both cases. */
-  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 40%, transparent); }
-  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 38%, transparent); }
-  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 38%, transparent); }
+  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 40%, transparent); }
+  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 38%, transparent); }
+  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 38%, transparent); }
 
-  .bcn-cityview__cap-label { fill: var(--color-primary, #159a86); }
+  .smaqmd-cityview__cap-label { fill: var(--color-primary, #159a86); }
 
   /* Architectural details on the room building — quiet, token-driven fills and
      thin --color-border strokes so windows/door/RTUs/parapet/tower/mast read as
@@ -607,40 +725,55 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      stack by story as the building grows tall (1 row short, up to 3 rows tall);
      a water tower and antenna mast appear on very tall roofs. No pointer-events
      rules: details inherit pointer-events:none from the stage. */
-  .bcn-cityview__details { transition: opacity 200ms ease; }
-  .bcn-cityview__win {
+  .smaqmd-cityview__details { transition: opacity 200ms ease; }
+  .smaqmd-cityview__win {
     fill: color-mix(in srgb, var(--color-primary, #159a86) 11%, transparent);
     stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
-  .bcn-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-primary, #159a86) 15%, transparent); }
-  .bcn-cityview__door {
+  .smaqmd-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-primary, #159a86) 15%, transparent); }
+  .smaqmd-cityview__door {
     fill: color-mix(in srgb, var(--smaqmd-gray-6, #d9d9d9) 85%, transparent);
     stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
-  .bcn-cityview__parapet { fill: none; stroke: var(--color-border-light, #d9d9d9); stroke-width: 1; stroke-linejoin: round; }
-  .bcn-cityview__rtu-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
-  .bcn-cityview__rtu-face[data-rtu-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
-  .bcn-cityview__rtu-face[data-rtu-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
-  .bcn-cityview__rtu-face[data-rtu-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
-  .bcn-cityview__tower-leg { stroke: var(--color-border, #cecece); stroke-width: 1.5; stroke-linecap: round; }
-  .bcn-cityview__tower-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
-  .bcn-cityview__tower-face[data-tower-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
-  .bcn-cityview__tower-face[data-tower-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
-  .bcn-cityview__tower-face[data-tower-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
-  .bcn-cityview__mast-line { stroke: var(--color-text-tertiary, #6b7280); stroke-width: 1.5; stroke-linecap: round; }
-  .bcn-cityview__mast-tip { fill: var(--pulse-color, var(--color-primary, #159a86)); opacity: 0.9; }
-  .bcn-cityview[data-cap-compare="smaller"] .bcn-cityview__details { opacity: 0.45; }
+  .smaqmd-cityview__parapet { fill: none; stroke: var(--color-border-light, #d9d9d9); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__rtu-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__rtu-face[data-rtu-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .smaqmd-cityview__rtu-face[data-rtu-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
+  .smaqmd-cityview__rtu-face[data-rtu-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  .smaqmd-cityview__tower-leg { stroke: var(--color-border, #cecece); stroke-width: 1.5; stroke-linecap: round; }
+  .smaqmd-cityview__tower-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__tower-face[data-tower-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .smaqmd-cityview__tower-face[data-tower-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
+  .smaqmd-cityview__tower-face[data-tower-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  .smaqmd-cityview__mast-line { stroke: var(--color-text-tertiary, #6b7280); stroke-width: 1.5; stroke-linecap: round; }
+  .smaqmd-cityview__mast-tip { fill: var(--pulse-color, var(--color-primary, #159a86)); opacity: 0.9; }
+  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__details { opacity: 0.45; }
 
-  .bcn-cityview__unit-face {
+  .smaqmd-cityview__unit-face {
     stroke: var(--color-primary-hover, #0f7e6e);
     stroke-width: 1;
     stroke-linejoin: round;
   }
-  .bcn-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 72%, #fff); }
-  .bcn-cityview__unit-face[data-unit="left"]  { fill: var(--color-primary, #159a86); }
-  .bcn-cityview__unit-face[data-unit="right"] { fill: var(--color-primary-hover, #0f7e6e); }
+  .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 72%, #fff); }
+  .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-primary, #159a86); }
+  .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-primary-hover, #0f7e6e); }
 
-  .bcn-cityview__dim {
+  /* Cohesive FAIL palette — when below target, the capacity "ghost" (the largest
+     room the cleaners could actually cover) and the air-cleaner buildings shift
+     from brand to the spoke's warning ORANGE, matching the orange flow waves + ACH
+     readout so the whole scene reads "not passing" as one. The MAIN room stays
+     neutral — it's the fixed reference; the ghost is what comes up short. */
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face { stroke: color-mix(in srgb, var(--color-warning, #d9822b) 55%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 8%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-warning, #d9822b) 10%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-warning, #d9822b) 12%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face { stroke: var(--color-orange-10, #c15d10); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 72%, #fff); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-orange-10, #c15d10); }
+
+  .smaqmd-cityview__dim {
     fill: var(--color-text-secondary, #555);
     font-size: 13px;
     font-weight: var(--font-weight-medium, 500);
@@ -649,16 +782,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   /* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
      edge drags its dimension and writes back into the esa-text-field legos. */
-  .bcn-cityview__hit {
+  .smaqmd-cityview__hit {
     stroke: transparent; stroke-width: 28; stroke-linecap: round;
     pointer-events: stroke; cursor: grab; touch-action: none;
   }
-  .bcn-cityview__dim[data-grip] {
+  .smaqmd-cityview__dim[data-grip] {
     pointer-events: all; cursor: grab; touch-action: none;
     user-select: none; -webkit-user-select: none;
   }
-  .bcn-cityview__handle { pointer-events: all; cursor: grab; touch-action: none; }
-  .bcn-cityview__chev {
+  .smaqmd-cityview__handle { pointer-events: all; cursor: grab; touch-action: none; }
+  .smaqmd-cityview__chev {
     fill: none;
     stroke: var(--color-text-secondary, #555);
     stroke-width: 2;
@@ -669,46 +802,56 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   }
   /* Hover: `+` (adjacent sibling) scopes the highlight to the hovered edge's own
      handle — `~` would darken every following handle, i.e. all of them. */
-  .bcn-cityview__handle:hover .bcn-cityview__chev,
-  .bcn-cityview__hit:hover + .bcn-cityview__handle .bcn-cityview__chev {
+  .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
+  .smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev {
     stroke: var(--color-text, #1a1a1a); stroke-width: 2.5;
   }
   /* Active: press-down feedback (like a button :active) while the grip is held.
      Pointer capture keeps :active on the pressed hit/handle through the drag. */
-  .bcn-cityview__handle:active .bcn-cityview__chev,
-  .bcn-cityview__hit:active + .bcn-cityview__handle .bcn-cityview__chev {
+  .smaqmd-cityview__handle:active .smaqmd-cityview__chev,
+  .smaqmd-cityview__hit:active + .smaqmd-cityview__handle .smaqmd-cityview__chev {
     stroke: var(--color-text, #1a1a1a); transform: scale(0.97);
   }
-  .bcn-cityview[data-dragging] .bcn-cityview__hit,
-  .bcn-cityview[data-dragging] .bcn-cityview__handle,
-  .bcn-cityview[data-dragging] .bcn-cityview__dim[data-grip] { cursor: grabbing; }
+  .smaqmd-cityview[data-dragging] .smaqmd-cityview__hit,
+  .smaqmd-cityview[data-dragging] .smaqmd-cityview__handle,
+  .smaqmd-cityview[data-dragging] .smaqmd-cityview__dim[data-grip] { cursor: grabbing; }
 
   /* Grips only make sense while entering length × width — the other room-entry
      modes have no draggable edges, so hide the handles and neutralize the
      label-drag affordance. The pointerdown handler guards the same condition. */
-  .bcn-cityview:not([data-entry-mode="dimensions"]) [data-grips] { display: none; }
-  .bcn-cityview:not([data-entry-mode="dimensions"]) .bcn-cityview__dim[data-grip] {
+  .smaqmd-cityview:not([data-entry-mode="dimensions"]) [data-grips] { display: none; }
+  .smaqmd-cityview:not([data-entry-mode="dimensions"]) .smaqmd-cityview__dim[data-grip] {
     pointer-events: none; cursor: default;
   }
 
-  .bcn-cityview__cap {
+  .smaqmd-cityview__cap {
     position: absolute;
     inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
     max-inline-size: 26rem; text-align: start;
     color: var(--color-text-tertiary);
   }
 
-  .smaqmd-aerb__header {
+  /* The wizard's fixed LEFT column: header on top, wizard card below it. Sized to
+     be the prominent element on the page; the scene fits into what's left (right). */
+  .smaqmd-aerw__col {
     position: fixed; z-index: 1;
-    inset-block-start: var(--spacing-500); inset-inline-start: var(--spacing-500);
-    max-inline-size: 34rem;
+    inset-block: var(--spacing-500);
+    inset-inline-start: var(--aer-gutter);
+    inline-size: 32rem;
+    max-inline-size: calc(100vw - 2 * var(--spacing-500, 1.5rem));
+    display: flex; flex-direction: column;
+    gap: var(--spacing-400, 1rem);
+    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
   }
 
+  /* Header + panel are now static children of the fixed column above. */
+  .smaqmd-aerb__header { max-inline-size: none; }
+
   .smaqmd-aerb__panel {
-    position: fixed; z-index: 1;
-    inset-block-start: var(--spacing-500); inset-inline-end: var(--spacing-500);
-    inline-size: 24rem;
-    max-block-size: calc(100dvh - 2 * var(--spacing-500, 1.5rem));
+    /* Fills only the height it needs and scrolls when the step is tall; the
+       min-block-size:0 lets this flex child shrink below its content so the
+       inner scroll (not the page) takes the overflow. */
+    flex: 0 1 auto; min-block-size: 0;
     overflow-y: auto; overscroll-behavior: contain;
     /* esa-card draws its outline as an OUTSET box-shadow ring (0 0 0 1px), which a
        zero-padding scroll container clips at the padding box — slicing the card
@@ -719,15 +862,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook, inherits into cards */
     --card-border-color: var(--color-border-strong);  /* visible hairline over the scene (default #cecece reads too faint) */
   }
-  /* Wizard uses ONE panel and gives each step room to breathe, so it runs a touch
-     wider than the classic inputs panel. */
-  .smaqmd-aerw__panel { inline-size: 26rem; }
+  /* Width comes from the column now; the panel just fills it. */
+  .smaqmd-aerw__panel { inline-size: auto; }
 
-  /* bcn-wizard — the step shell. bcn-lego-checked: no esa- lego is a gated linear
+  /* smaqmd-wizard — the step shell. bcn-lego-checked: no esa- lego is a gated linear
      wizard/stepper (see the markup note); the numbered dots + step chrome are the
      bespoke home, composing esa-button / esa-* controls inside. Token-driven. */
-  .bcn-wizard__dots { --cluster-align: center; }
-  .bcn-wizard__dot {
+  .smaqmd-wizard__dots { --cluster-align: center; }
+  .smaqmd-wizard__dot {
     display: inline-grid; place-items: center;
     inline-size: 1.5rem; block-size: 1.5rem;
     border-radius: 999px;
@@ -738,25 +880,77 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
   /* Completed steps: filled brand; current step: brand ring + brand text. */
-  .bcn-wizard__dot[data-done] {
+  .smaqmd-wizard__dot[data-done] {
     background: var(--color-primary);
     color: var(--button-on-primary, #fff);
     box-shadow: none;
   }
-  .bcn-wizard__dot[data-active] {
+  .smaqmd-wizard__dot[data-active] {
     color: var(--color-primary);
     background: var(--color-primary-subtle, #eef);
     box-shadow: inset 0 0 0 1.5px var(--color-primary);
   }
-  .bcn-wizard__count { color: var(--color-text-tertiary); }
-  .bcn-wizard__lede { color: var(--color-text-secondary); }
-  /* Nav: forward action on the right, Back pushed to the left when present. */
-  .bcn-wizard__nav {
+  .smaqmd-wizard__count { color: var(--color-text-tertiary); }
+
+  /* Stable frame — a genuinely FIXED height (not a min: a floor still lets tall
+     states grow). Every step/result renders at this size, so the card never
+     resizes and the nav never jumps. The body flex-grows to absorb slack on short
+     steps (content top, nav pinned bottom) and scrolls internally when a state
+     overflows (e.g. several cleaners). Clamped to the viewport so short screens
+     shrink the frame rather than overflow it. */
+  .smaqmd-wizard { block-size: min(38rem, calc(100dvh - 14rem)); }
+  .smaqmd-wizard__body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: hidden auto;   /* clip the horizontal step-slide, scroll vertical overflow */
+    /* A scroll container clips the 1px OUTSET ring that nested cards (the alert /
+       info boxes) draw as their border. Bleed the clip box out by a hair with
+       padding + equal negative margin: gives the ring room without shifting the
+       content or misaligning it with the head/nav. The card's spacing-500 padding
+       absorbs the negative margin. */
+    padding: var(--spacing-100);
+    margin: calc(-1 * var(--spacing-100));
+  }
+  /* Nav: forward action on the right, Back pushed to the left when present.
+     justify-content handles the first step (no Back → no auto margin), where the
+     lone forward button would otherwise sit left; the auto margin still governs
+     once Back appears. */
+  .smaqmd-wizard__nav {
     display: flex; align-items: center;
+    justify-content: flex-end;
     gap: var(--spacing-300, 0.75rem);
     margin-block-start: var(--spacing-200, 0.5rem);
   }
-  .bcn-wizard__nav [data-nav="back"] { margin-inline-end: auto; }
+  .smaqmd-wizard__nav [data-nav="back"] { margin-inline-end: auto; }
+
+  /* Step-change motion: the incoming step slides in from the direction of travel
+     — from the right when moving forward (Next), from the left when moving back —
+     so the animation reads as advancing/retreating through the flow, not just a
+     generic content fade. Runs on the ecology house ease-in-out curve
+     (--easing-in-out, easeInOutCubic — the token's documented use is "on-screen
+     elements moving to a new position"). An animation (not a transition) is used
+     because steps swap via the hidden attribute (display:none), which can't be
+     transitioned; goStep() sets the direction class and re-triggers it. The card's
+     own overflow:hidden clips the off-screen start so no scrollbar flashes. */
+  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
+  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
+    animation: var(--duration-base, 200ms)
+      var(--easing-in-out, cubic-bezier(0.645, 0.045, 0.355, 1)) both;
+  }
+  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd  { animation-name: smaqmd-wizard-step-in-fwd; }
+  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation-name: smaqmd-wizard-step-in-back; }
+  @keyframes smaqmd-wizard-step-in-fwd {
+    from { opacity: 0; transform: translateX(1.5rem); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes smaqmd-wizard-step-in-back {
+    from { opacity: 0; transform: translateX(-1.5rem); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
+    .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation: none; }
+  }
   /* The panel is a .stack (flex column) with a max height: without this, short
      viewports shrink the cards (esa-card's overflow:hidden zeroes their flex
      minimum) and clip fields instead of letting the panel scroll. */
@@ -789,30 +983,57 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   }
 
   @media (max-width: 68rem) {
-    .smaqmd-aerb { padding-block-end: var(--spacing-700); }
-    .smaqmd-aerb__header { position: relative; inset: auto; max-inline-size: none; padding: var(--spacing-500) var(--spacing-400) 0; }
-    .smaqmd-aerb__panel {
-      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
-      margin-block-start: min(44svh, 26rem);   /* scene owns the first viewport */
-      padding-inline: var(--spacing-400);
+    .smaqmd-aerb { position: relative; min-block-size: 0; }
+    /* Mobile flow: the script moves the page header ABOVE the graphic; header,
+       then a 30dvh graphic band, then the card (at least ~70dvh) — the page scrolls. */
+    .smaqmd-aerb__header {
+      padding: var(--spacing-400, 1rem) var(--spacing-400, 1rem) 0;
+      max-inline-size: none;
     }
-    /* Result flows below the inputs (its place in the DOM) once stacked. */
-    .smaqmd-aerb__result {
-      position: relative; inset: auto; inline-size: auto; max-block-size: none; overflow: visible;
-      margin-block-start: var(--spacing-500);
-      padding-inline: var(--spacing-400);
+    .smaqmd-cityview {
+      display: block; position: relative; inset: auto; z-index: auto;
+      block-size: 30dvh;
     }
-    .bcn-cityview__safe { inset: 11rem var(--spacing-400) 54svh var(--spacing-400); }
-    .bcn-cityview__cap { display: none; }
+    .smaqmd-cityview__safe { inset: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); }
+    .smaqmd-cityview__cap { display: none; }
+    .smaqmd-aerw__col {
+      position: relative; inset: auto;
+      inline-size: auto; max-inline-size: none; max-block-size: none;
+      min-block-size: 70dvh;
+      gap: var(--spacing-400, 1rem);
+      padding: var(--spacing-400, 1rem);
+    }
+    .smaqmd-aerb__panel { max-block-size: none; overflow: visible; }
   }
 </style>
 
 <script>
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-button-toggle';
 
   const root = document.querySelector<HTMLElement>('[data-aerb-wizard]');
   if (root) {
+    // ---- responsive header placement ----
+    // Desktop keeps the page header atop the card column; mobile moves it ABOVE
+    // the graphic (its DOM node is relocated, not duplicated, so its listeners
+    // ride along). Runs now (before paint) and on every breakpoint crossing.
+    {
+      const headerEl = root.querySelector<HTMLElement>('.smaqmd-aerb__header');
+      const colEl = root.querySelector<HTMLElement>('.smaqmd-aerw__col');
+      const mqMobile = window.matchMedia('(max-width: 68rem)');
+      const placeHeader = () => {
+        if (!headerEl) return;
+        if (mqMobile.matches) {
+          if (root.firstElementChild !== headerEl) root.prepend(headerEl);
+        } else if (colEl && colEl.firstElementChild !== headerEl) {
+          colEl.prepend(headerEl);
+        }
+      };
+      placeHeader();
+      mqMobile.addEventListener('change', placeHeader);
+    }
+
     // ---- input plumbing (shared with the city drawing) ----
     // Namespaced field lookup: a bare name matches the shared (no data-cleaner)
     // field; passing a cleaner id matches that cleaner's per-block field. Grips
@@ -851,7 +1072,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       (x + y) * SIN30 - z,
     ];
 
-    const svg = root.querySelector<SVGElement>('.bcn-cityview__svg')!;
+    const svg = root.querySelector<SVGElement>('.smaqmd-cityview__svg')!;
     const container = root.querySelector<HTMLElement>('[data-cityview]')!;
     // px-per-projected-ft from the last fit; frozen at pointerdown for a drag so
     // the gesture's px→ft mapping stays stable while the scene re-fits.
@@ -1192,7 +1413,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Label near the ghost's far-back top corner, nudged up-right and out of the room.
         const [cx, cy] = w(gx0, gy0, H);
         const prefix = capClamped ? '≥' : '';
-        setLabel('capacity', [cx + 6, cy - 8], `cleaners cover up to ${prefix}${fmt(capMaxVol, 0)} ft³`);
+        // Match the results card's unit toggle: ft² floor area (default) or ft³ volume.
+        const capFt3 = raw('units') === 'ft3';
+        const capText = capFt3 ? `${fmt(capMaxVol, 0)} ft³` : `${fmt(capMaxVol / 8, 0)} ft²`;
+        setLabel('capacity', [cx + 6, cy - 8], `covers a room up to ${prefix}${capText}`);
       }
 
       // Per cleaner: its street + lanes group (behind the room) and its building
@@ -1205,8 +1429,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       returnPaths.length = 0;
       outPaths.length = 0;
       for (let i = 0; i < MAX_CLEANERS; i++) {
-        const laneG = svg.querySelector<SVGGElement>(`.bcn-cityview__lanes[data-lanes="${i + 1}"]`);
-        const unitG = svg.querySelector<SVGGElement>(`.bcn-cityview__unitg[data-unitg="${i + 1}"]`);
+        const laneG = svg.querySelector<SVGGElement>(`.smaqmd-cityview__lanes[data-lanes="${i + 1}"]`);
+        const unitG = svg.querySelector<SVGGElement>(`.smaqmd-cityview__unitg[data-unitg="${i + 1}"]`);
         const on = i < n;
         // Belt-and-braces for the same WebKit quirk: when a lane group goes
         // hidden→shown, re-assert each wave polyline's inline stroke so WebKit
@@ -1215,7 +1439,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         if (laneG) laneG.style.visibility = on ? '' : 'hidden';
         if (unitG) unitG.style.visibility = on ? '' : 'hidden';
         if (laneG && on && wasHidden) {
-          laneG.querySelectorAll<SVGElement>('.bcn-cityview__wave').forEach((wave) => {
+          laneG.querySelectorAll<SVGElement>('.smaqmd-cityview__wave').forEach((wave) => {
             wave.style.stroke = wave.style.stroke;
           });
         }
@@ -1263,13 +1487,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // the morphing room.
       const HANDLE_DEG: Record<string, number> = { length: 30, width: 150, height: 90 };
       const setLine = (dim: string, p: Pt, q: Pt) => {
-        const line = svg.querySelector(`.bcn-cityview__hit[data-grip="${dim}"]`);
+        const line = svg.querySelector(`.smaqmd-cityview__hit[data-grip="${dim}"]`);
         if (line) {
           line.setAttribute('x1', p[0].toFixed(1)); line.setAttribute('y1', p[1].toFixed(1));
           line.setAttribute('x2', q[0].toFixed(1)); line.setAttribute('y2', q[1].toFixed(1));
         }
         const [mx, my] = mid(p, q);
-        const handle = svg.querySelector(`.bcn-cityview__handle[data-grip="${dim}"]`);
+        const handle = svg.querySelector(`.smaqmd-cityview__handle[data-grip="${dim}"]`);
         if (handle) handle.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${HANDLE_DEG[dim]})`);
       };
       setLine('length', w(0, W, 0), w(L, W, 0));
@@ -1383,6 +1607,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         default:           return NaN;
       }
     };
+    // roomArea(): the room's FLOOR AREA in ft² — the relatable unit for the result
+    // (people picture square feet, not cubic feet). Exact from L×W or an entered
+    // area; in volume-only mode there's no footprint, so approximate at a standard
+    // 8 ft ceiling (the same assumption the coverage figure uses).
+    const roomArea = (): number => {
+      switch (raw('roomMethod')) {
+        case 'dimensions': { const a = pos('length') * pos('width'); return a > 0 ? a : NaN; }
+        case 'area':       return pos('area');
+        case 'volume':     { const v = pos('volume'); return v > 0 ? v / 8 : NaN; }
+        default:           return NaN;
+      }
+    };
     const sceneBox = (): { L: number; W: number; H: number } => {
       const method = raw('roomMethod');
       if (method === 'area') {
@@ -1415,7 +1651,41 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // Fields duplicated when copying a cleaner — air cleaners are assumed identical
     // by default, so an added one inherits the last one's reported values.
     const CLEANER_FIELDS = ['unit', 'airflow', 'ach', 'refLength', 'refWidth', 'refHeight'];
-    const addCleaner = (opts?: { copyLast?: boolean }) => {
+    // Reveal a newly added block with an ease-out expand — the enter mirror of
+    // removeCleaner's collapse. Collapse is applied synchronously (no full-height
+    // flash), then measured on the next frame (once the stamped esa-* fields have
+    // laid out) and expanded to that height. box-sizing:border-box + overflow:hidden
+    // clip the block's padding + top-border separator as it grows. Reduced motion →
+    // instant, matching remove.
+    const animateIn = (b: HTMLElement) => {
+      if (reduced) return;
+      b.style.overflow = 'hidden';
+      b.style.boxSizing = 'border-box';
+      b.style.blockSize = '0';
+      b.style.opacity = '0';
+      requestAnimationFrame(() => {
+        const target = b.scrollHeight;
+        const dur = 200;
+        b.style.transition = `block-size ${dur}ms ease-out, opacity ${dur}ms ease-out`;
+        b.style.blockSize = `${target}px`;
+        b.style.opacity = '1';
+        let done = false;
+        const clear = () => {
+          if (done) return;
+          done = true;
+          b.style.transition = '';
+          b.style.overflow = '';
+          b.style.boxSizing = '';
+          b.style.blockSize = '';
+          b.style.opacity = '';
+        };
+        b.addEventListener('transitionend', (e) => {
+          if ((e as TransitionEvent).propertyName === 'block-size') clear();
+        });
+        window.setTimeout(clear, dur + 80);
+      });
+    };
+    const addCleaner = (opts?: { copyLast?: boolean; animate?: boolean }) => {
       if (cleanerBlocks().length >= MAX_CLEANERS) return;
       // Copy from the last existing cleaner so its values replicate into the new
       // one. If that cleaner is blank (e.g. the initial one), the new one is blank
@@ -1437,6 +1707,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         });
       }
       cleanersHost.appendChild(frag);
+      if (opts?.animate) animateIn(b);
     };
     // The initial cleaner boots blank, so the tool opens on the "no cleaner yet →
     // here's the minimum CADR to look for" state.
@@ -1487,6 +1758,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Entry-mode flag drives the CSS grip gate (dimensions-only draggable edges).
       container.dataset.entryMode = method;
 
+      // Step-2 fork: hide the whole cleaner-entry UI when the user says they have
+      // none ("No"). combinedFlow() below reads the same flag, so hidden cleaners
+      // contribute nothing and the result falls through to shop mode.
+      showEl(root.querySelector('[data-cleaner-entry]'), raw('hasCleaner') !== 'no');
+
       // Per-cleaner: renumber the title + remove-button label, show Remove only
       // when >1 cleaner. Then toggle the Add button + cap note against the cap.
       const blocks = cleanerBlocks();
@@ -1509,16 +1785,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
     // ---- result + flow state ----
     const block = root.querySelector<HTMLElement>('[data-result]')!;
-    const setMetric = (name: string, text: string) => {
+    const setMetric = (name: string, html: string) => {
       const el = root.querySelector(`[data-metric="${name}"] .esa-stat__value`);
-      if (el) el.textContent = text;
+      // innerHTML: callers pass computed numbers + an optional unit <span>, never user input.
+      if (el) el.innerHTML = html;
     };
+    // A stat value's unit, rendered smaller than the number (leading space kept
+    // inside the span so screen readers still read "32 ft³/min").
+    const unit = (u: string) => `<span class="smaqmd-aerb__unit"> ${u}</span>`;
     const setReadout = (name: string, text: string) =>
       block.querySelectorAll(`[data-r="${name}"]`).forEach((el) => (el.textContent = text));
     const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
-    const setVerdict = (state: string | null) =>
-      block.querySelectorAll<HTMLElement>('[data-verdict]').forEach((el) =>
-        show(el, el.dataset.verdict === state));
 
     // Clean-air flow (ft³/min) for one cleaner block; blank/partial → 0 so empty
     // rows never block the result. Combined flow sums the live (non-removing)
@@ -1536,34 +1813,41 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       }
       return Number.isFinite(f) && f > 0 ? f : 0;
     };
+    // "No cleaner to check" (step-2 fork) → zero flow regardless of any stale
+    // values in the hidden blocks, so the result falls through to shop mode.
+    const hasCleaners = (): boolean => raw('hasCleaner') !== 'no';
     const combinedFlow = (): number =>
-      cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0);
+      hasCleaners()
+        ? cleanerBlocks().reduce((sum, b) => sum + cleanerFlow(b.dataset.cleanerBlock!), 0)
+        : 0;
 
     const showGroup = (name: string, on: boolean) =>
       show(block.querySelector(`[data-group="${name}"]`), on);
 
-    // Min-CADR guidance copy: adapts to the count of (assumed-identical) cleaners
-    // and whether the shortfall is "no cleaner yet" (hasFlow false) or "entered
-    // cleaners miss the target" (hasFlow true). Numbers bolded to match the alerts.
-    const needSub = root.querySelector<HTMLElement>('[data-metric="need"] .esa-stat__sub');
-    const needNote = root.querySelector<HTMLElement>('[data-need-note]');
-    const setNeedNote = (n: number, cadrEach: number, target: number, hasFlow: boolean) => {
-      if (needSub) needSub.textContent = n > 1 ? `for each of ${n} equal air cleaners` : 'for a single air cleaner';
-      if (!needNote) return;
-      const b = (s: string | number) => `<strong>${s}</strong>`;
-      const cadr = `${b(fmt(cadrEach, 0))} ft³/min`;
-      const tgt = b(fmt(target, 2));
-      let msg: string;
-      if (!hasFlow) {
-        msg = n > 1
-          ? `To reach ${tgt} air changes per hour with ${b(n)} equal air cleaners, look for a CADR of at least ${cadr} each.`
-          : `To reach ${tgt} air changes per hour in this room, look for an air cleaner with a CADR of at least ${cadr}.`;
-      } else {
-        msg = n > 1
-          ? `Your cleaners fall short. Assuming ${b(n)} equal cleaners, each needs a CADR of at least ${cadr} to together reach ${tgt} air changes per hour.`
-          : `Your cleaner falls short. Look for a CADR of at least ${cadr} to reach ${tgt} air changes per hour in this room.`;
+    // Information card — show exactly one verdict alert (pass / fail / shop), or
+    // none. Separate from the answer headline's own data-verdict (which tints the
+    // heading); these are the boxed callouts under the hero.
+    const setVerdictCard = (state: string | null) =>
+      block.querySelectorAll<HTMLElement>('[data-verdict-card]').forEach((el) =>
+        show(el, el.dataset.verdictCard === state));
+
+    // Result "answer" section — the direct yes/no + hero metric refs + setter.
+    const answerG = block.querySelector<HTMLElement>('[data-group="answer"]');
+    const answerTitle = block.querySelector<HTMLElement>('[data-answer-title]');
+    // Target alerts live on the target STEP (outside [data-result]), so query them
+    // on root — not block, which is the result subtree (they'd never resolve).
+    const targetWarn = root.querySelector<HTMLElement>('[data-target-warn]');
+    const targetInvalid = root.querySelector<HTMLElement>('[data-target-invalid]');
+    const achWrap = block.querySelector<HTMLElement>('[data-metric="ach"]');
+    const fixWrap = block.querySelector<HTMLElement>('[data-metric="fix"]');
+    const cadrHighEl = block.querySelector<HTMLElement>('[data-cadr-high]');
+    const setAnswer = (title: string, verdict: 'pass' | 'fail' | 'shop' | null) => {
+      if (answerTitle) answerTitle.textContent = title;
+      if (answerG) {
+        if (verdict) answerG.setAttribute('data-verdict', verdict);
+        else answerG.removeAttribute('data-verdict');
+        show(answerG, verdict != null);
       }
-      needNote.innerHTML = msg;
     };
 
     // Debounced polite announcer: a one-sentence summary written 600 ms after the
@@ -1583,36 +1867,47 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       syncVisibility();
 
       const blocks = cleanerBlocks();
+      // Effective cleaner count: how many the CADR-to-buy is split across. A shopper
+      // with no cleaner ("No") is buying ONE, so the divisor is 1 no matter how many
+      // stale blocks linger; a checker splits across the blocks they entered.
+      const cleanerCount = hasCleaners() ? Math.max(1, blocks.length) : 1;
       sceneN = Math.min(Math.max(1, blocks.length), MAX_CLEANERS);
       const target = pos('target') || 2;
       setReadout('target', fmt(target, 2));
+      // A target of 0 (or less) is not a real goal — it's blocked (invalid). A
+      // positive target below the CARB-recommended 2 is allowed but flagged.
+      const enteredTarget = num('target');
+      const targetIsInvalid = Number.isFinite(enteredTarget) && enteredTarget <= 0;
+      show(targetInvalid, targetIsInvalid);
+      show(targetWarn, Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
 
       const flow = combinedFlow();
       const vol = roomVolume();
       const hasFlow = flow > 0;
       const hasRoom = Number.isFinite(vol) && vol > 0;
 
-      const vols = hasRoom ? vol : NaN;
-      setMetric('volume', hasRoom ? `${fmt(vols, 0)} ft³` : '—');
+      // Secondary readouts — room + coverage, in the unit picked by the inline
+      // toggle (ft² floor area by default, ft³ volume for those who think that way).
+      // Coverage volume = largest room the setup covers at target; ÷8 → floor area.
+      const area = roomArea();
+      const coverVol = hasFlow ? (flow * 60) / target : NaN;
+      const asFt3 = raw('units') === 'ft3';
+      // Count-aware subject so the legend reads "Your cleaner covers" / "Your
+      // cleaners cover" (this line only shows with flow, so ≥ 1 cleaner).
+      setReadout('coversubj', blocks.length > 1 ? 'Your cleaners cover' : 'Your cleaner covers');
+      setReadout('roomarea', hasRoom && Number.isFinite(area)
+        ? (asFt3 ? `${fmt(vol, 0)} ft³` : `${fmt(area, 0)} ft²`) : '—');
+      setReadout('coverarea', hasFlow
+        ? (asFt3 ? `${fmt(coverVol, 0)} ft³` : `${fmt(coverVol / 8, 0)} ft²`) : '—');
+      // Secondary is the coverage-vs-room COMPARISON — only meaningful with a cleaner
+      // delivering flow (pass/fail). In shop mode "Your room is about X" would stand
+      // alone, echoing an input with nothing to compare it to, so the group is hidden.
+      showGroup('secondary', hasRoom && hasFlow);
 
       // ACH the current setup delivers + whether it meets the target. Computed once
       // here so the min-CADR guidance and the verdict below stay in agreement.
       const ach = hasFlow && hasRoom ? (flow / vol) * 60 : NaN;
       const pass = hasFlow && hasRoom && ach >= target;
-
-      // Minimum CADR guidance — the CADR to shop for when there's no solution yet:
-      // either no cleaner entered, OR the entered cleaners miss the target. Air
-      // cleaners are assumed identical, so the number is PER cleaner across the N
-      // cleaner blocks: (target × volume ÷ 60) ÷ N. Hidden once the target is met.
-      if (hasRoom && !pass) {
-        const nUnits = Math.max(1, blocks.length);
-        const needEach = (target * vol) / 60 / nUnits;
-        setMetric('need', `${fmt(needEach, 0)} ft³/min`);
-        setNeedNote(nUnits, needEach, target, hasFlow);
-        showGroup('need', true);
-      } else {
-        showGroup('need', false);
-      }
 
       // Capacity ghost — the largest room the cleaners cover at the target,
       // overlaid on the actual room. Only meaningful with both a flow and a room
@@ -1642,69 +1937,110 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         laneAch[i] = hasRoom && f > 0 ? (f / vol) * 60 : 0;
       });
       for (let i = 0; i < MAX_CLEANERS; i++) {
-        const laneG = svg.querySelector<SVGGElement>(`.bcn-cityview__lanes[data-lanes="${i + 1}"]`);
+        const laneG = svg.querySelector<SVGGElement>(`.smaqmd-cityview__lanes[data-lanes="${i + 1}"]`);
         if (!laneG) continue;
         const idle = !(i < sceneN && laneAch[i] > 0);
         if (idle) laneG.setAttribute('data-lane-idle', '');
         else laneG.removeAttribute('data-lane-idle');
       }
 
-      // Capacity — shown whenever combined flow > 0, regardless of room.
-      if (hasFlow) {
-        const maxVol = (flow * 60) / target;
-        setMetric('maxvol', `${fmt(maxVol, 0)} ft³`);
-        setMetric('maxarea', `${fmt(maxVol / 8, 0)} ft²`);
-        showGroup('capacity', true);
-      } else {
-        setMetric('maxvol', '—');
-        setMetric('maxarea', '—');
-        showGroup('capacity', false);
-      }
-
-      // ACH + verdict + wave — needs both a room size and a flow.
+      // ANSWER + hero metric + wave. Three result states, all with a room present
+      // (the wizard gates leaving step 0 without one): a cleaner that PASSES, one
+      // that FAILS, or no cleaner yet (SHOP for a rating). The hero ACH shows only
+      // when there's a cleaner to measure; the fix note (need group, set above)
+      // carries the shopping guidance in the fail + shop states.
+      // The minimum COMBINED CADR — the total clean-air delivery all the cleaners
+      // together must add up to. A CADR isn't "bought" per unit; it's the sum the
+      // setup reaches, so this is independent of how many cleaners share the load.
+      const needCadr = (target * vol) / 60;
       const setPrompt = (on: boolean) => show(block.querySelector('[data-prompt="empty"]'), on);
-      if (hasFlow && hasRoom) {
+      if (targetIsInvalid) {
+        // Invalid target (≤ 0): block the verdict rather than compute one from the
+        // silent default. The target-step alert tells the user how to fix it.
+        show(achWrap, false);
+        show(fixWrap, false);
+        setAnswer('', null);
+        setVerdictCard(null);
+        showGroup('secondary', false);
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        setPrompt(true);
+        announce('');
+      } else if (hasFlow && hasRoom) {
+        // Pass/fail: the ACH the setup delivers is the hero (vs. the target). On a
+        // FAIL, the CADR-to-buy joins it as a co-equal hero — problem + fix.
         setMetric('ach', fmt(ach, 1));
         setReadout('ach', fmt(ach, 1));
-        setVerdict(pass ? 'pass' : 'fail');
+        // No target restated here — the verdict headline + card already carry the
+        // comparison; the ACH number stands on its own as the delivered rate.
+        show(achWrap, true);
         // Tint the ACH readout warning when it falls short of the target.
-        root.querySelector('[data-metric="ach"]')?.toggleAttribute('data-below', !pass);
-        showGroup('ach', true);
+        achWrap?.toggleAttribute('data-below', !pass);
+        setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
+        show(fixWrap, !pass);
+        // Fail remedies: how many MORE of the user's current (assumed-identical)
+        // cleaner would reach the target, and a caution when the CADR-to-buy is
+        // beyond a typical single unit (~700 ft³/min). Pass shows neither.
+        if (!pass) {
+          // "Add N more" sizes N off the WEAKEST cleaner entered, so N units like
+          // yours are guaranteed to reach the target even when your cleaners differ
+          // (adding stronger ones only does better). For 1 or identical cleaners
+          // it's just that cleaner's own flow.
+          const neededFlow = (target * vol) / 60;                 // total ft³/min to hit target
+          const flows = blocks.map((b) => cleanerFlow(b.dataset.cleanerBlock!)).filter((f) => f > 0);
+          const weakest = flows.length ? Math.min(...flows) : 0;
+          const moreUnits = weakest > 0 ? Math.max(1, Math.ceil((neededFlow - flow) / weakest)) : 0;
+          setReadout('moreunits', fmt(moreUnits, 0));
+          show(cadrHighEl, needCadr > 700);
+        } else {
+          show(cadrHighEl, false);
+        }
+        // "Powerful enough", not "big enough" — adequacy here is airflow (CADR), not
+        // physical size; the size metaphor feeds the very misconception the tool corrects.
+        const subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
+        const subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
+        setAnswer(pass ? `${subj} powerful enough for this room` : `${subjNeg} powerful enough for this room`, pass ? 'pass' : 'fail');
+        setVerdictCard(pass ? 'pass' : 'fail');
         setPrompt(false);
         stateNow = pass ? 'pass' : 'fail';
         container.dataset.state = stateNow;
         announce(
           `This setup delivers ${fmt(ach, 1)} air changes per hour, ` +
-          `${pass ? 'at or above' : 'below'} your target of ${fmt(target, 2)}.`,
+          `${pass ? 'at or above' : 'below'} your target of ${fmt(target, 1)}.`,
         );
         startLoop();
-      } else {
-        setMetric('ach', '—');
-        setVerdict(null);
-        showGroup('ach', false);
+      } else if (hasRoom) {
+        // Shop mode (no cleaner yet): the combined CADR to reach IS the result, so it takes
+        // the hero slot alone; the ACH hero has nothing to measure yet.
+        show(achWrap, false);
+        achWrap?.removeAttribute('data-below');
+        setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
+        show(fixWrap, true);
+        // Same over-700 caution in shop mode: no single typical cleaner reaches it.
+        show(cadrHighEl, needCadr > 700);
+        setAnswer('Shop for this rating', 'shop');
+        setVerdictCard('shop');
+        setPrompt(false);
         stateNow = 'idle';
         container.dataset.state = 'idle';
-        // Empty prompt only when neither a cleaner rating nor a room is entered.
-        setPrompt(!hasFlow && !hasRoom);
-        if (hasFlow) {
-          const maxVol = (flow * 60) / target;
-          announce(
-            `Your ${blocks.length > 1 ? `${blocks.length} air cleaners can` : 'air cleaner can'} ` +
-            `cover a room up to ${fmt(maxVol, 0)} cubic feet at ${fmt(target, 2)} air changes per hour.`,
-          );
-        } else if (hasRoom) {
-          const n = Math.max(1, blocks.length);
-          const needEach = (target * vol) / 60 / n;
-          announce(
-            n > 1
-              ? `To reach ${fmt(target, 2)} air changes per hour with ${n} equal air cleaners, ` +
-                `look for a CADR of at least ${fmt(needEach, 0)} cubic feet per minute each.`
-              : `To reach ${fmt(target, 2)} air changes per hour in this room, look for an ` +
-                `air cleaner with a CADR of at least ${fmt(needEach, 0)} cubic feet per minute.`,
-          );
-        } else {
-          announce('');
-        }
+        const n = cleanerCount;
+        announce(
+          n > 1
+            ? `To reach ${fmt(target, 1)} air changes per hour, your cleaners' combined ` +
+              `CADR needs to be at least ${fmt(needCadr, 0)}.`
+            : `To reach ${fmt(target, 1)} air changes per hour in this room, look for an ` +
+              `air cleaner with a CADR of at least ${fmt(needCadr, 0)}.`,
+        );
+      } else {
+        // No room (defensive — the wizard shouldn't reach results without one).
+        show(achWrap, false);
+        show(fixWrap, false);
+        setAnswer('', null);
+        setVerdictCard(null);
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        setPrompt(true);
+        announce('');
         // Wake the loop if the ghost still has residual scale to ease away (it was
         // showing, then flow/room cleared) — otherwise it'd freeze mid-shrink.
         if (capS > 0.01) startLoop();
@@ -1759,7 +2095,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Air cleaners are assumed identical: a new one copies the last cleaner's
         // values (blank if that one is still blank), so you only re-enter what
         // differs between them.
-        addCleaner({ copyLast: true });
+        addCleaner({ copyLast: true, animate: true });
         morphScene();
         recompute();
         return;
@@ -1819,7 +2155,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // gates leaving the room step on a valid room size. The scene backdrop already
     // reflects every input regardless of the step shown.
     const INPUT_STEPS = 3;
-    const TITLES = ['Your room', 'Your air cleaners', 'Your target', 'Your result'];
+    const TITLES = ['What size is your room?', 'What air cleaners do you have?', "What's your air-change target?", 'Your result'];
     const stepSections = qa('[data-step]');
     const dots = qa('[data-dot]');
     const stepCountEl = root.querySelector('[data-step-count]');
@@ -1829,15 +2165,33 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const roomValid = () => { const v = roomVolume(); return Number.isFinite(v) && v > 0; };
     let stepIdx = 0;
 
-    const renderStep = () => {
+    // dir: +1 advancing (Next), -1 retreating (Back), 0 no slide (initial paint).
+    const renderStep = (dir = 0) => {
       const isResult = stepIdx >= INPUT_STEPS;
       stepSections.forEach((s) => show(s, Number(s.dataset.step) === stepIdx));
+      // Replay the enter animation on the now-visible step, sliding in from the
+      // direction of travel. Removing both direction classes + forcing a reflow
+      // before re-adding restarts the animation each step change (it would
+      // otherwise only run once); the step is display:block by now.
+      const active = stepSections.find((s) => Number(s.dataset.step) === stepIdx);
+      if (active) {
+        active.classList.remove('smaqmd-wizard__step--enter-fwd', 'smaqmd-wizard__step--enter-back');
+        if (dir !== 0) {
+          void active.offsetWidth;
+          active.classList.add(dir < 0 ? 'smaqmd-wizard__step--enter-back' : 'smaqmd-wizard__step--enter-fwd');
+        }
+      }
       dots.forEach((d, i) => {
         d.toggleAttribute('data-active', i === stepIdx && !isResult);
         d.toggleAttribute('data-done', i < stepIdx);
       });
       if (stepCountEl) stepCountEl.textContent = isResult ? 'Result' : `Step ${stepIdx + 1} of ${INPUT_STEPS}`;
-      if (stepTitleEl) stepTitleEl.textContent = TITLES[stepIdx];
+      // On the result step the verdict headline is the title — the generic
+      // "Your result" h2 would just duplicate the eyebrow + verdict, so hide it.
+      if (stepTitleEl) {
+        (stepTitleEl as HTMLElement).hidden = isResult;
+        if (!isResult) stepTitleEl.textContent = TITLES[stepIdx];
+      }
       show(navEl('back'), stepIdx > 0);
       show(navEl('next'), stepIdx < INPUT_STEPS - 1);
       show(navEl('result'), stepIdx === INPUT_STEPS - 1);
@@ -1846,6 +2200,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Re-fit the scene: the panel height changes between steps, which moves the
       // safe-area sentinel; a sync recentres the buildings for the new frame.
       syncViewport();
+      // A11y: on a real navigation (not the initial paint), move focus to the new
+      // step's heading so screen-reader + keyboard users land in — and hear — the
+      // step they advanced to, instead of focus being stranded on the old button.
+      // On the result step the h2 is hidden, so the verdict headline is the target.
+      if (dir !== 0) {
+        const heading = isResult ? answerTitle : (stepTitleEl as HTMLElement | null);
+        heading?.focus();
+      }
     };
 
     const goStep = (i: number) => {
@@ -1855,8 +2217,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         if (roomHint) show(roomHint, true);
         return;
       }
+      const dir = next === stepIdx ? 0 : next > stepIdx ? 1 : -1;
       stepIdx = next;
-      renderStep();
+      renderStep(dir);
     };
 
     root.addEventListener('click', (e) => {

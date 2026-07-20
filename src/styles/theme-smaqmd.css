@@ -80,6 +80,14 @@
   --color-ai:       var(--color-copper-9); /* __FILL__ hub AI hue is copper */
   --color-ai-hover: var(--color-copper-10);/* __FILL__ */
 
+  /* esa-alert-box fix — the hub hookify default pins --alert-box-bg/-border-color
+     to the INFO (blue) tint for EVERY variant (a zero-regression-rule miss), so
+     success/warning alerts render blue. Reset to `initial` so the lego falls back
+     to its per-variant accent context (bg = --color-accent-a-2, border = a-6),
+     which re-resolves on each alert from the data-accent the variant sets. */
+  --alert-box-bg: initial;
+  --alert-box-border-color: initial;
+
   /* ===== (5) FORM SIZING + RADIUS — match this spoke's control heights =====
      The hub defaults to xs 28 / sm 32 / md 40 / lg 48 and md/lg radius 8px.
      Re-point if this spoke runs more compact / flatter. */
@@ -152,6 +160,26 @@
 
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */
+}
+
+/* This spoke's warning is ORANGE (--color-warning = orange-9), but the hub maps
+   the warning ACCENT context to yellow. Realign it so warning-accented components
+   (alerts, badges) read orange — matching the fail scene. */
+[data-theme="smaqmd"] [data-accent="warning"] {
+  --color-accent-a-2: var(--color-orange-a-2);
+  --color-accent-a-6: var(--color-orange-a-6);
+  --color-accent-11: var(--color-orange-11);
+  --color-accent-12: var(--color-orange-12);
+}
+
+/* Alert text belongs to its card — for EVERY variant, not one. Pull the title +
+   body into the alert's OWN accent family (dark steps 12/11, legible on the light
+   a-2 tint): warning → orange-on-orange, success → green, info → blue. Set on the
+   element itself so --color-accent-* resolves in each alert's own accent context
+   (declaring it at :root would freeze to one hue). */
+.esa-alert-box {
+  --alert-box-title-color: var(--color-accent-12);
+  --alert-box-text-color: var(--color-accent-11);
 }
 
 /* Wide-gamut (P3) upgrade for the brand ramp — same Radix blue scale in oklch,

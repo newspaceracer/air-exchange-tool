@@ -67,7 +67,7 @@ internals.**
 Example from this repo — the label is yours, right here:
 ```astro
 <EsaButton color="ghost" appearance="dashed" size="sm" icon="plus" type="button">
-  Add another air cleaner   <!-- this text lives in this repo; edit it freely -->
+  Add air cleaner   <!-- this text lives in this repo; edit it freely -->
 </EsaButton>
 ```
 
