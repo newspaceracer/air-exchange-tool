@@ -15,9 +15,13 @@ interface Props {
 }
 const { active } = Astro.props;
 
-const CLASSIC_URL = '/prototypes/air-exchange-rate-b';
-const WIZARD_URL = '/prototypes/air-exchange-rate-b-wizard';
-const ACCORDION_URL = '/prototypes/air-exchange-rate-b-accordion';
+// Hand-written internal links — Astro won't rewrite these, so prefix the
+// configured `base` ourselves (root in dev, /air-exchange-tool/ in prod).
+// Without this the toggle navigates to a base-less path and 404s in production.
+import { withBase } from '../lib/base';
+const CLASSIC_URL = withBase('/prototypes/air-exchange-rate-b');
+const WIZARD_URL = withBase('/prototypes/air-exchange-rate-b-wizard');
+const ACCORDION_URL = withBase('/prototypes/air-exchange-rate-b-accordion');
 ---
 <div class="smaqmd-version-toggle" data-version-toggle
      data-classic-url={CLASSIC_URL} data-wizard-url={WIZARD_URL}
@@ -64,7 +68,10 @@ const ACCORDION_URL = '/prototypes/air-exchange-rate-b-accordion';
     toggle.addEventListener('change', (e) => {
       const value = (e as CustomEvent<{ value: string }>).detail?.value;
       const url = urls[value ?? 'classic'] ?? urls.classic;
-      if (url && !window.location.pathname.endsWith(url)) window.location.assign(url);
+      // Compare with a trailing slash tolerated — deployed pages end in `/`,
+      // so a bare endsWith would re-navigate to the tab we're already on.
+      const here = window.location.pathname.replace(/\/$/, '');
+      if (url && here !== url.replace(/\/$/, '')) window.location.assign(url);
     });
   });
 </script>
