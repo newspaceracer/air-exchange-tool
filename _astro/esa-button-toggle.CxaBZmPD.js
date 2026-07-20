@@ -1,18 +1,18 @@
-import{A as d,E as c,i as u,b as a,a as h}from"./lit-element.DWovE5T-.js";/**
+import{A as l,E as d,i as c,b as i,a as h}from"./lit-element.DWovE5T-.js";/**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */const p={CHILD:2},f=i=>(...e)=>({_$litDirective$:i,values:e});class v{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,r){this._$Ct=e,this._$AM=t,this._$Ci=r}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}}/**
+ */const u={CHILD:2},p=a=>(...e)=>({_$litDirective$:a,values:e});class f{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,s){this._$Ct=e,this._$AM=t,this._$Ci=s}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}}/**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */class n extends v{constructor(e){if(super(e),this.it=d,e.type!==p.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(e){if(e===d||e==null)return this._t=void 0,this.it=e;if(e===c)return e;if(typeof e!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(e===this.it)return this._t;this.it=e;const t=[e];return t.raw=t,this._t={_$litType$:this.constructor.resultType,strings:t,values:[]}}}n.directiveName="unsafeHTML",n.resultType=1;/**
+ */class o extends f{constructor(e){if(super(e),this.it=l,e.type!==u.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(e){if(e===l||e==null)return this._t=void 0,this.it=e;if(e===d)return e;if(typeof e!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(e===this.it)return this._t;this.it=e;const t=[e];return t.raw=t,this._t={_$litType$:this.constructor.resultType,strings:t,values:[]}}}o.directiveName="unsafeHTML",o.resultType=1;/**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */class l extends n{}l.directiveName="unsafeSVG",l.resultType=2;const g=f(l);class b extends u{constructor(){super(),this.onKeydown=e=>{if(this.disabled)return;const t=this.options;if(t.length===0)return;const r=this.selectedIndex>=0?this.selectedIndex:0;let s;switch(e.key){case"ArrowRight":case"ArrowDown":s=(r+1)%t.length;break;case"ArrowLeft":case"ArrowUp":s=(r-1+t.length)%t.length;break;case"Home":s=0;break;case"End":s=t.length-1;break;case"Enter":case" ":e.preventDefault(),this.select(t[r]);return;default:return}e.preventDefault(),this.select(t[s]),this.focusButton(s)},this.label="",this.hint="",this.options=[],this.value="",this.size="md",this.disabled=!1,this.required=!1,this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},hint:{type:String},options:{type:Array},value:{type:String},size:{type:String,reflect:!0},disabled:{type:Boolean,reflect:!0},required:{type:Boolean}}}connectedCallback(){super.connectedCallback(),this.syncFormValue()}willUpdate(e){(e.has("value")||e.has("options"))&&this.syncFormValue()}get selectedIndex(){return this.options.findIndex(e=>e.value===this.value)}get focusIndex(){const e=this.selectedIndex;return e>=0?e:0}syncFormValue(){this.internals.setFormValue(this.value||null)}select(e){this.disabled||e.value===this.value||(this.value=e.value,this.syncFormValue(),this.dispatchEvent(new CustomEvent("change",{detail:{value:this.value},bubbles:!0,composed:!0})))}focusButton(e){this.renderRoot.querySelectorAll(".option")[e]?.focus()}render(){const e=!!this.label;return a`
-      ${e?a`<span class="label" id="label">
-            ${this.label}${this.required?a`<span class="required" aria-hidden="true">*</span>`:null}
+ */class n extends o{}n.directiveName="unsafeSVG",n.resultType=2;const v=p(n);class g extends c{constructor(){super(),this.onKeydown=e=>{if(this.disabled)return;const t=this.options;if(t.length===0)return;const s=this.selectedIndex>=0?this.selectedIndex:0;let r;switch(e.key){case"ArrowRight":case"ArrowDown":r=(s+1)%t.length;break;case"ArrowLeft":case"ArrowUp":r=(s-1+t.length)%t.length;break;case"Home":r=0;break;case"End":r=t.length-1;break;case"Enter":case" ":e.preventDefault(),this.select(t[s]);return;default:return}e.preventDefault(),this.select(t[r]),this.focusButton(r)},this.label="",this.hint="",this.options=[],this.value="",this.size="md",this.disabled=!1,this.required=!1,this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},hint:{type:String},options:{type:Array},value:{type:String},size:{type:String,reflect:!0},disabled:{type:Boolean,reflect:!0},required:{type:Boolean}}}connectedCallback(){super.connectedCallback(),this.syncFormValue()}willUpdate(e){(e.has("value")||e.has("options"))&&this.syncFormValue()}get selectedIndex(){return this.options.findIndex(e=>e.value===this.value)}get focusIndex(){const e=this.selectedIndex;return e>=0?e:0}syncFormValue(){this.internals.setFormValue(this.value||null)}select(e){this.disabled||e.value===this.value||(this.value=e.value,this.syncFormValue(),this.dispatchEvent(new CustomEvent("change",{detail:{value:this.value},bubbles:!0,composed:!0})))}focusButton(e){this.renderRoot.querySelectorAll(".option")[e]?.focus()}render(){const e=!!this.label;return i`
+      ${e?i`<span class="label" id="label">
+            ${this.label}${this.required?i`<span class="required" aria-hidden="true">*</span>`:null}
           </span>`:null}
       <div
         class="group"
@@ -22,17 +22,17 @@ import{A as d,E as c,i as u,b as a,a as h}from"./lit-element.DWovE5T-.js";/**
         aria-describedby=${this.hint?"hint":null}
         @keydown=${this.onKeydown}
       >
-        ${this.options.map((t,r)=>{const s=r===this.selectedIndex;return a`<button
+        ${this.options.map((t,s)=>{const r=s===this.selectedIndex;return i`<button
             type="button"
             role="radio"
-            class="option ${s?"option--selected":""}"
-            aria-checked=${s}
+            class="option ${r?"option--selected":""}"
+            aria-checked=${r}
             aria-label=${t.ariaLabel??(t.label?null:t.value)}
-            tabindex=${r===this.focusIndex?0:-1}
+            tabindex=${s===this.focusIndex?0:-1}
             ?disabled=${this.disabled}
             @click=${()=>this.select(t)}
           >
-            ${t.icon?a`<svg
+            ${t.icon?i`<svg
                   class="option__icon"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -42,12 +42,12 @@ import{A as d,E as c,i as u,b as a,a as h}from"./lit-element.DWovE5T-.js";/**
                   stroke-linejoin="round"
                   aria-hidden="true"
                 >
-                  ${g(t.icon)}
+                  ${v(t.icon)}
                 </svg>`:null}
-            ${t.label?a`<span class="option__label">${t.label}</span>`:null}
+            ${t.label?i`<span class="option__label">${t.label}</span>`:null}
           </button>`})}
       </div>
-      ${this.hint?a`<span class="hint" id="hint">${this.hint}</span>`:null}
+      ${this.hint?i`<span class="hint" id="hint">${this.hint}</span>`:null}
     `}static{this.styles=h`
     :host {
       display: flex;
@@ -171,4 +171,4 @@ import{A as d,E as c,i as u,b as a,a as h}from"./lit-element.DWovE5T-.js";/**
       font-size: var(--type-size-150, 12px);
       color: var(--form-help-color, #737373);
     }
-  `}}customElements.get("esa-button-toggle")||customElements.define("esa-button-toggle",b);document.querySelectorAll("[data-version-toggle]").forEach(i=>{const e=i.querySelector("[data-version-switch]");if(!e)return;const t=i.dataset.classicUrl,r=i.dataset.wizardUrl;customElements.whenDefined("esa-button-toggle").then(()=>{e.options=[{label:"Classic",value:"classic"},{label:"Wizard",value:"wizard"}]}),e.addEventListener("change",s=>{const o=s.detail?.value==="wizard"?r:t;o&&!window.location.pathname.endsWith(o)&&window.location.assign(o)})});
+  `}}customElements.get("esa-button-toggle")||customElements.define("esa-button-toggle",g);
