@@ -57,6 +57,19 @@ const unitToggle = [
   { label: 'ft³', value: 'ft3' },
 ];
 
+// MOBILE VARIANT. A fourth "view" that is this same wizard with two changes:
+// the isometric scene is not rendered at all (it needs width the phone has not
+// got, and it is secondary information), and every sizable esa-* lego steps up
+// to `lg` for touch. Everything else — markup, steps, and the whole calc engine
+// below — is shared, so the mobile view cannot drift from the wizard's maths.
+interface Props {
+  variant?: 'default' | 'mobile';
+}
+const { variant = 'default' } = Astro.props;
+const isMobile = variant === 'mobile';
+/** Control size for every lego that takes one. */
+const ctl = isMobile ? 'lg' : 'md';
+
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
 // of (2A × 2B) carries two lattice dots — (0,0) and (A,B) — which tiles into the
 // full 30° iso dot grid these illustrations sit on. Fixed in screen space, so
@@ -66,7 +79,12 @@ const A = +(Math.cos(Math.PI / 6) * DOT_SPACING).toFixed(3); // ≈ 22.5
 const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 ---
 
-<div class="smaqmd-aerb" data-aerb-wizard>
+<div class="smaqmd-aerb" data-aerb-wizard data-variant={variant}>
+  {/* The scene is omitted entirely on mobile — not hidden with CSS. It is a
+     large animated SVG with a rAF loop and a ResizeObserver, and shipping it
+     to a phone only to display:none it would cost the download and the work
+     for something the user never sees. The script below detects its absence. */}
+  {!isMobile && (
   <!-- The city. bcn-lego-checked: no esa- lego draws a to-scale isometric
        city/room scene with animated flow (checked the catalog — esa-* has
        cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
@@ -221,6 +239,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       entering length × width, drag the room's edges — or type — to resize it.
     </p>
   </div>
+  )}
 
   <!-- Full-bleed backdrop + floating overlay composition. bcn-lego-checked:
        layouts.css primitives are flow-only (no fixed full-viewport backdrop or
@@ -263,7 +282,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         <div class="smaqmd-wizard__body">
           <!-- Step 0 — room -->
           <section class="stack" data-gap="md" data-step="0">
-            <esa-radio-group
+            <esa-radio-group size={ctl}
               data-field="roomMethod"
               aria-label="Choose how to enter your room size"
               value="area"
@@ -271,19 +290,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             ></esa-radio-group>
             <div class="smaqmd-aerb__dims grid" data-gap="md">
               <div data-room="dimensions" hidden>
-                <esa-text-field data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
+                <esa-text-field size={ctl} data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
               </div>
               <div data-room="dimensions" hidden>
-                <esa-text-field data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+                <esa-text-field size={ctl} data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
               </div>
               <div data-room="area">
-                <esa-text-field data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
+                <esa-text-field size={ctl} data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
               </div>
               <div data-room="dimensions area">
-                <esa-text-field data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
+                <esa-text-field size={ctl} data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
               </div>
               <div data-room="volume" hidden>
-                <esa-text-field data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
+                <esa-text-field size={ctl} data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
               </div>
             </div>
             <div data-room-hint hidden data-alert>
@@ -297,7 +316,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                pre-stamped blank block, which read as "fill this in" to people who
                had nothing to enter. -->
           <section class="stack" data-gap="md" data-step="1" hidden>
-            <esa-radio-group
+            <esa-radio-group size={ctl}
               data-field="hasCleaner"
               label="Do you have an air cleaner to check?"
               value="yes"
@@ -309,7 +328,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <div class="stack" data-gap="lg" data-cleaners></div>
               <div class="cluster" data-gap="sm">
                 <span data-add-cleaner>
-                  <EsaButton variant="ghost" appearance="outline" icon="plus" type="button">
+                  <EsaButton size={ctl} variant="ghost" appearance="outline" icon="plus" type="button">
                     Add air cleaner
                   </EsaButton>
                 </span>
@@ -320,7 +339,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
           <!-- Step 2 — target -->
           <section class="stack" data-gap="md" data-step="2" hidden>
-            <esa-text-field
+            <esa-text-field size={ctl}
               data-field="target"
               type="text"
               inputmode="decimal"
@@ -403,7 +422,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <esa-button-toggle
                 class="smaqmd-aerb__units"
                 data-field="units"
-                size="xs"
+                size={isMobile ? 'lg' : 'xs'}
                 label="Units"
                 value="ft2"
                 options={JSON.stringify(unitToggle)}
@@ -427,16 +446,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
              forward button shows depends on the step; the script toggles them. -->
         <div class="smaqmd-wizard__nav">
           <span data-nav="back" hidden>
-            <EsaButton variant="ghost" appearance="outline" type="button">Back</EsaButton>
+            <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Back</EsaButton>
           </span>
           <span data-nav="next">
-            <EsaButton type="button">Next</EsaButton>
+            <EsaButton size={ctl} type="button">Next</EsaButton>
           </span>
           <span data-nav="result" hidden>
-            <EsaButton icon="check" type="button">See my result</EsaButton>
+            <EsaButton size={ctl} icon="check" type="button">See my result</EsaButton>
           </span>
           <span data-nav="restart" hidden>
-            <EsaButton variant="ghost" appearance="outline" icon="rotate-ccw" type="button">Start over</EsaButton>
+            <EsaButton size={ctl} variant="ghost" appearance="outline" icon="rotate-ccw" type="button">Start over</EsaButton>
           </span>
         </div>
       </div>
@@ -454,10 +473,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <div class="smaqmd-aerb__cleaner-head repel">
         <p class="typography-body-md smaqmd-aerb__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
-          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size="sm" />
+          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={isMobile ? 'lg' : 'sm'} />
         </span>
       </div>
-      <esa-radio-group
+      <esa-radio-group size={ctl}
         data-field="unit"
         data-cleaner
         label="What does the box or manual list?"
@@ -466,7 +485,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       ></esa-radio-group>
 
       <div data-unit-mode="airflow">
-        <esa-text-field
+        <esa-text-field size={ctl}
           data-field="airflow"
           data-cleaner
           type="text"
@@ -477,7 +496,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       </div>
 
       <div class="stack" data-gap="md" data-unit-mode="ach" hidden>
-        <esa-text-field
+        <esa-text-field size={ctl}
           data-field="ach"
           data-cleaner
           type="text"
@@ -488,9 +507,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           In what size room was that measured?
         </p>
         <div class="smaqmd-aerb__ref grid" data-gap="md">
-          <esa-text-field data-field="refLength" data-cleaner type="text" inputmode="decimal" label="Length (ft)"></esa-text-field>
-          <esa-text-field data-field="refWidth" data-cleaner type="text" inputmode="decimal" label="Width (ft)"></esa-text-field>
-          <esa-text-field data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
+          <esa-text-field size={ctl} data-field="refLength" data-cleaner type="text" inputmode="decimal" label="Length (ft)"></esa-text-field>
+          <esa-text-field size={ctl} data-field="refWidth" data-cleaner type="text" inputmode="decimal" label="Width (ft)"></esa-text-field>
+          <esa-text-field size={ctl} data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
         </div>
       </div>
     </div>
@@ -1015,6 +1034,37 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     }
     .smaqmd-aerb__panel { max-block-size: none; overflow: visible; }
   }
+
+  /* ===== MOBILE VARIANT =====
+     With the scene gone there is no backdrop to float over, so the whole
+     fixed-overlay composition collapses into ordinary document flow: one column,
+     natural height, the page itself scrolls. The desktop wizard keeps its fixed
+     frame (a card that never resizes as steps change); on a phone that same
+     fixed frame would strand the Next button below the fold on tall steps, so
+     the step card is allowed to grow and the page takes the overflow instead. */
+  .smaqmd-aerb[data-variant='mobile'] {
+    min-block-size: 0;
+    --aer-gutter: var(--spacing-400, 1rem);
+  }
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-aerw__col {
+    position: static; inset: auto; z-index: auto;
+    inline-size: auto; max-inline-size: none; max-block-size: none;
+    padding: var(--spacing-400, 1rem);
+    gap: var(--spacing-400, 1rem);
+  }
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard { block-size: auto; }
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard__body { overflow: visible; }
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-aerb__panel {
+    max-block-size: none; overflow: visible;
+  }
+  /* The step nav is the primary action on a phone — keep it reachable without a
+     scroll on every step by letting it sit at the end of the flowed card. */
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard__nav {
+    position: sticky; inset-block-end: 0;
+    background: var(--color-background-elevation-raised, #fcfcfc);
+    padding-block: var(--spacing-300, 0.75rem);
+  }
+
 </style>
 
 <script>
@@ -1086,8 +1136,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       (x + y) * SIN30 - z,
     ];
 
-    const svg = root.querySelector<SVGElement>('.smaqmd-cityview__svg')!;
-    const container = root.querySelector<HTMLElement>('[data-cityview]')!;
+    // THE SCENE IS OPTIONAL (the mobile variant omits it). Rather than thread a
+    // guard through the ~30 places the engine touches these three nodes, they
+    // fall back to DETACHED stand-ins: every querySelector against the stand-in
+    // returns null (each of those call sites already null-checks) and every
+    // dataset write lands off-document. The four places that would actually DO
+    // work — the fit/observe, the wave table, drawScene and the rAF loop — are
+    // gated on hasScene below, so nothing animates when there is nothing to draw.
+    const sceneSvg = root.querySelector<SVGElement>('.smaqmd-cityview__svg');
+    const sceneStage = root.querySelector<HTMLElement>('[data-cityview]');
+    const svg = sceneSvg ?? (document.createElementNS('http://www.w3.org/2000/svg', 'svg') as SVGElement);
+    const container = sceneStage ?? document.createElement('div');
     // px-per-projected-ft from the last fit; frozen at pointerdown for a drag so
     // the gesture's px→ft mapping stays stable while the scene re-fits.
     let fitScale = 1;
@@ -1104,7 +1163,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const CW_MIN = 2;        // ft — existing world floor
     const GAP_MAX = 10;      // ft — street width cap (keeps the ensemble compact)
     const UNIT_MIN_PX = 22;  // px — readability floor for the cleaner footprint on screen
-    const sentinel = root.querySelector<HTMLElement>('[data-safe]')!;
+    const sceneSentinel = root.querySelector<HTMLElement>('[data-safe]');
+    const sentinel = sceneSentinel ?? document.createElement('div');
+    const hasScene = !!(sceneSvg && sceneStage && sceneSentinel);
     const syncViewport = () => {
       viewW = container.clientWidth; viewH = container.clientHeight;
       svg.setAttribute('viewBox', `0 0 ${viewW} ${viewH}`);
@@ -1113,7 +1174,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       safe = { x: s.left - c.left, y: s.top - c.top, w: s.width, h: s.height };
       drawScene(cur.L, cur.W, cur.H);
     };
-    new ResizeObserver(syncViewport).observe(sentinel);
+    if (hasScene) new ResizeObserver(syncViewport).observe(sentinel);
     // One screen-coord lane path per cleaner, filled each draw. returnPaths[i]
     // runs cleaner i → room; outPaths[i] runs room → cleaner i.
     const returnPaths: Pt[][] = [];
@@ -1247,6 +1308,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // world point is projected, then the entire figure is scaled + centred to
     // fill the frame, so proportions stay truthful at any absolute size.
     const drawScene = (L: number, W: number, H: number) => {
+      if (!hasScene) return;
       const n = Math.min(Math.max(1, sceneN), MAX_CLEANERS);
       const det = layoutDetails(L, W, H);
 
@@ -1546,7 +1608,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       svg.querySelector<SVGElement>(`[${attr}="${i}"]`)!;
     type Wave = { grad: SVGElement; path: () => Pt[]; idx: number; phase: number };
     const waves: Wave[] = [];
-    for (let i = 0; i < MAX_CLEANERS; i++) {
+    for (let i = 0; hasScene && i < MAX_CLEANERS; i++) {
       waves.push({ grad: grad('data-return-grad', i + 1), path: () => returnPaths[i] || [], idx: i, phase: 0 });
       waves.push({ grad: grad('data-out-grad', i + 1), path: () => outPaths[i] || [], idx: i, phase: 0 });
     }
@@ -1602,7 +1664,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       else running = false;
     };
     const startLoop = () => {
-      if (running) return;
+      if (!hasScene || running) return;
       running = true;
       last = performance.now();
       requestAnimationFrame(frame);

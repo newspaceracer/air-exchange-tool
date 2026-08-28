@@ -1,0 +1,32 @@
+---
+// /prototypes/air-exchange-rate-mobile — the MOBILE presentation of Option B.
+// Not a fork: it is the same smaqmd-aer-wizard component in its `mobile` variant,
+// so the steps, the fields and the whole calc engine are literally the same code
+// as the wizard view and cannot drift from it. The variant drops the isometric
+// scene (it needs width a phone has not got, and it is secondary to the answer)
+// and steps every sizable esa-* lego up to `lg` for touch.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import SmaqmdAerWizard from '../../components/smaqmd-aer-wizard.astro';
+import SmaqmdVersionToggle from '../../components/smaqmd-version-toggle.astro';
+---
+<!-- manifest:
+  layout: single flowed column (component-owned, no fixed overlay)
+  sections:
+    - version toggle     -> smaqmd-version-toggle
+    - page header        -> esa-page-header
+    - wizard steps       -> smaqmd-aer-wizard variant="mobile" (no scene, lg controls)
+-->
+<BaseLayout title="Air Exchange Rate Tool (Mobile) — SMAQMD">
+  <main>
+    <SmaqmdAerWizard variant="mobile">
+      <div slot="header">
+        <SmaqmdVersionToggle active="mobile" />
+        <EsaPageHeader
+          title="Is your air cleaner powerful enough for your room?"
+          lede="Enter your room size and your air cleaner's rating to see how often it refreshes the air — and the minimum rating to shop for if it falls short."
+        />
+      </div>
+    </SmaqmdAerWizard>
+  </main>
+</BaseLayout>
