@@ -43,3 +43,14 @@ const { title = 'SMAQMD — Design System', activeHref = '' } = Astro.props;
 
   <slot />
 </DocsShell>
+
+<!-- bcn-lego-checked: not a new UI primitive — a one-rule contrast correction to a
+     lego this spoke cannot edit. @esa/docs' DocsShell paints the active nav link
+     with --color-background-brand (a BACKGROUND role used as text) over a 10% tint
+     of itself, which lands at 4.37:1 against this spoke's brand blue. The token is
+     the spoke's, but the rule lives in the hub, so it can only be corrected from
+     here. is:global because the markup belongs to the hub component and Astro's
+     scoping would not reach it. Hub fix requested separately (/request-lego). -->
+<style is:global>
+  .nav-link[aria-current='page'] { color: var(--color-content-brand); }
+</style>

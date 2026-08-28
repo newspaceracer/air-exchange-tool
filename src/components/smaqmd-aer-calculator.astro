@@ -64,7 +64,7 @@ const unitOptions = [
               <div data-metric="maxvol"><EsaStat value="—" label="Largest room covered" /></div>
               <div data-metric="maxarea"><EsaStat value="—" label="…or floor area" sub="at a standard 8 ft ceiling" /></div>
             </div>
-            <p class="type-caption smaqmd-aer__cap-note">
+            <p class="typography-meta smaqmd-aer__cap-note">
               <span data-r="setup">Your air cleaner</span> can maintain
               <strong data-r="target">2</strong> air changes per hour up to this size.
             </p>
@@ -84,7 +84,7 @@ const unitOptions = [
             </EsaAlertBox>
           </div>
 
-          <p class="type-caption smaqmd-aer__note">
+          <p class="typography-meta smaqmd-aer__note">
             The California Air Resources Board (CARB) recommends at least two air
             changes per hour for maximum health benefit.
           </p>
@@ -102,7 +102,7 @@ const unitOptions = [
 
           <div class="cluster" data-gap="sm">
             <span data-add-cleaner>
-              <EsaButton color="ghost" appearance="outline" size="sm" icon="plus" type="button">
+              <EsaButton variant="ghost" appearance="outline" size="sm" icon="plus" type="button">
                 Add air cleaner
               </EsaButton>
             </span>
@@ -124,7 +124,7 @@ const unitOptions = [
 
       <EsaCard title="Your room" headingLevel={2}>
         <div class="stack" data-gap="md">
-          <p class="type-caption smaqmd-aer__note">
+          <p class="typography-meta smaqmd-aer__note">
             Optional — leave blank to just see the largest room your cleaners can
             cover. Add it to check your own room against the target.
           </p>
@@ -152,7 +152,7 @@ const unitOptions = [
               <esa-text-field data-field="volume" type="text" label="Room volume (ft³)" placeholder="e.g. 960"></esa-text-field>
             </div>
           </div>
-          <p class="type-caption smaqmd-aer__hint" data-hint="height" hidden>
+          <p class="typography-meta smaqmd-aer__hint" data-hint="height" hidden>
             Most rooms have a ceiling of at least 7 ft 6 in — double-check if yours
             is lower.
           </p>
@@ -160,7 +160,7 @@ const unitOptions = [
       </EsaCard>
 
       <div class="cluster" data-gap="sm">
-        <EsaButton color="ghost" appearance="outline" type="reset">Reset</EsaButton>
+        <EsaButton variant="ghost" appearance="outline" type="reset">Reset</EsaButton>
       </div>
     </form>
   </div>
@@ -170,9 +170,9 @@ const unitOptions = [
   <template data-cleaner-template>
     <div class="smaqmd-aer__cleaner stack" data-gap="md" data-cleaner-block>
       <div class="smaqmd-aer__cleaner-head repel">
-        <p class="type-card-title smaqmd-aer__cleaner-title">Air cleaner</p>
+        <p class="typography-title smaqmd-aer__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
-          <EsaButton color="ghost" appearance="outline" size="sm" icon="trash-2" type="button">
+          <EsaButton variant="ghost" appearance="outline" size="sm" icon="trash-2" type="button">
             Remove
           </EsaButton>
         </span>
@@ -202,7 +202,7 @@ const unitOptions = [
           type="text"
           label="Air changes per hour (per hr)"
         ></esa-text-field>
-        <p class="type-caption smaqmd-aer__hint">
+        <p class="typography-meta smaqmd-aer__hint">
           Enter the room size the manufacturer used for that rating. Leave the
           height blank to assume a standard 8 ft ceiling.
         </p>
@@ -264,25 +264,25 @@ const unitOptions = [
   .smaqmd-aer__target { max-width: 22rem; }
   .smaqmd-aer__cleaner {
     padding-block-start: var(--spacing-300, 0.75rem);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
   .smaqmd-aer__cleaner:first-of-type {
     padding-block-start: 0;
     border-block-start: 0;
   }
   .smaqmd-aer__cleaner-head { align-items: center; }
-  .smaqmd-aer__cleaner-title { color: var(--color-text-secondary); }
+  .smaqmd-aer__cleaner-title { color: var(--color-content-default-secondary); }
   /* Captions/units use tertiary text (gray-11) — the quietest *valid* text step;
-     --color-text-muted maps to gray-10, which isn't a text step (11/12).
+     --color-content-default-secondary maps to gray-10, which isn't a text step (11/12).
      No hardcoded fallback: the theme owns the ramp (theme-smaqmd.css maps
      --color-text-* → --smaqmd-gray-*), so we reference the token, not a copy. */
-  .smaqmd-aer__note { color: var(--color-text-tertiary); }
+  .smaqmd-aer__note { color: var(--color-content-default-tertiary); }
   /* Unit sits right beside the metric value, quieter and smaller than the number. */
   .smaqmd-aer__unit {
     margin-inline-start: 0.2em;
-    font-size: var(--type-size-300, 1.125rem);
-    font-weight: var(--font-weight-medium, 450);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-300, 1.125rem);
+    font-weight: var(--typography-font-weight-medium, 450);
+    color: var(--color-content-default-tertiary);
   }
 </style>
 

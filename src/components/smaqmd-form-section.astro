@@ -35,10 +35,10 @@ const { title, step, open = false } = Astro.props;
       <EsaIcon name="check" size="sm" />
     </span>
     <span class="smaqmd-form-section__headings">
-      <span class="type-body smaqmd-form-section__title">{title}</span>
-      <span class="type-body-small smaqmd-form-section__recap" data-recap></span>
+      <span class="typography-body-md smaqmd-form-section__title">{title}</span>
+      <span class="typography-body-sm smaqmd-form-section__recap" data-recap></span>
     </span>
-    <span class="type-body-small smaqmd-form-section__edit">Edit</span>
+    <span class="typography-body-sm smaqmd-form-section__edit">Edit</span>
   </summary>
   <div class="smaqmd-form-section__body stack" data-gap="md">
     <slot />
@@ -49,7 +49,7 @@ const { title, step, open = false } = Astro.props;
   /* Flush stacked sections separated by a hairline — they live inside the panel's
      esa-card, so no nested card chrome; the divider is the only separator (first
      section resets it), matching the austere product-UI direction. */
-  .smaqmd-form-section { border-block-start: 1px solid var(--color-border); }
+  .smaqmd-form-section { border-block-start: 1px solid var(--color-border-default); }
   .smaqmd-form-section:first-of-type { border-block-start: 0; }
 
   .smaqmd-form-section__summary {
@@ -74,22 +74,22 @@ const { title, step, open = false } = Astro.props;
     block-size: 1.5rem;
     border-radius: 999px;
     font-size: 0.75rem;
-    font-weight: var(--font-weight-medium, 500);
-    color: var(--color-text-tertiary);
-    background: var(--color-surface-sunken);
-    box-shadow: inset 0 0 0 1px var(--color-border);
+    font-weight: var(--typography-font-weight-medium, 500);
+    color: var(--color-content-default-tertiary);
+    background: var(--color-background-elevation-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border-default);
     transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
   .smaqmd-form-section__marker :global(.esa-icon) { display: none; color: var(--button-on-primary, #fff); }
   /* Open but not yet complete → brand ring (this is the section you're on). */
   .smaqmd-form-section[open]:not([data-complete]) .smaqmd-form-section__marker {
-    color: var(--color-primary);
-    background: var(--color-primary-subtle);
-    box-shadow: inset 0 0 0 1.5px var(--color-primary);
+    color: var(--color-background-brand);
+    background: var(--color-background-brand-subtle);
+    box-shadow: inset 0 0 0 1.5px var(--color-background-brand);
   }
   /* Complete → filled brand + check, number hidden. */
   .smaqmd-form-section[data-complete] .smaqmd-form-section__marker {
-    background: var(--color-primary);
+    background: var(--color-background-brand);
     box-shadow: none;
     color: var(--button-on-primary, #fff);
   }
@@ -105,14 +105,14 @@ const { title, step, open = false } = Astro.props;
     flex-direction: column;
     gap: var(--spacing-3xs, 0.125rem);
   }
-  .smaqmd-form-section__title { color: var(--color-text-primary); font-weight: var(--font-weight-semibold, 600); }
-  .smaqmd-form-section__recap { color: var(--color-text-secondary); }
+  .smaqmd-form-section__title { color: var(--color-content-default); font-weight: var(--typography-font-weight-semibold, 600); }
+  .smaqmd-form-section__recap { color: var(--color-content-default-secondary); }
   .smaqmd-form-section__recap:empty { display: none; }
   .smaqmd-form-section[open] .smaqmd-form-section__recap { display: none; }
 
   /* Edit hint: only on a completed, collapsed section (an affordance to reopen it);
      when open, the caret alone signals collapse. */
-  .smaqmd-form-section__edit { color: var(--color-text-tertiary); display: none; flex-shrink: 0; }
+  .smaqmd-form-section__edit { color: var(--color-content-default-tertiary); display: none; flex-shrink: 0; }
   .smaqmd-form-section[data-complete]:not([open]) .smaqmd-form-section__edit { display: inline; }
 
   /* Right-aligned chevron caret; rotates when open. */
@@ -120,8 +120,8 @@ const { title, step, open = false } = Astro.props;
     content: '';
     inline-size: 8px;
     block-size: 8px;
-    border-right: 2px solid var(--color-text-tertiary);
-    border-bottom: 2px solid var(--color-text-tertiary);
+    border-right: 2px solid var(--color-content-default-tertiary);
+    border-bottom: 2px solid var(--color-content-default-tertiary);
     transform: rotate(-45deg);
     transition: transform 150ms ease;
     margin-inline-start: var(--spacing-100, 0.25rem);

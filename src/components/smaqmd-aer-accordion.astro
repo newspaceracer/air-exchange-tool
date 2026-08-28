@@ -35,7 +35,7 @@ import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import SmaqmdFormSection from './smaqmd-form-section.astro';
 
 const MAX_CLEANERS = 4;
@@ -223,7 +223,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
          buildings may live, clear of the panel + header; JS observes this rect
          and feeds it to the fit math. -->
     <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
-    <p class="type-caption smaqmd-cityview__cap">
+    <p class="typography-meta smaqmd-cityview__cap">
       Air leaves your room, passes through the cleaner, and returns. When
       entering length × width, drag the room's edges — or type — to resize it.
     </p>
@@ -316,11 +316,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <div class="stack" data-gap="lg" data-cleaners></div>
               <div class="cluster" data-gap="sm">
                 <span data-add-cleaner>
-                  <EsaButton color="ghost" appearance="outline" icon="plus" type="button">
+                  <EsaButton variant="ghost" appearance="outline" icon="plus" type="button">
                     Add air cleaner
                   </EsaButton>
                 </span>
-                <p class="type-caption" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
+                <p class="typography-meta" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
               </div>
             </div>
             <div data-section-advance>
@@ -340,7 +340,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             ></esa-text-field>
             <!-- Shown by recompute() only when the entered target drops below the
                  CARB-recommended 2, so a low target is an explicit choice. -->
-            <div data-target-warn hidden role="alert">
+            <div data-target-warn hidden data-alert>
               <EsaAlertBox variant="warning" title="Below the recommended minimum">
                 The California Air Resources Board recommends at least <strong>2</strong>
                 air changes per hour. A lower target may not clear the air enough.
@@ -348,7 +348,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             </div>
             <!-- A target of 0 (or less) is not a real goal — no cleaning at all. The
                  result is blocked until it's a positive number. -->
-            <div data-target-invalid hidden role="alert">
+            <div data-target-invalid hidden data-alert="assertive">
               <EsaAlertBox variant="danger" title="Enter a target above 0">
                 A target of 0 means no air cleaning at all. Enter how many times per
                 hour you want the room's air replaced — at least <strong>1</strong>,
@@ -363,7 +363,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         <!-- Live-experiment hint, shown once the result card appears: the form
              stays usable so the user can tweak any section and watch the result
              (in the card above) change. -->
-        <p class="type-body-small smaqmd-aer-sections__tweak-note" data-tweak-note hidden>
+        <p class="typography-body-sm smaqmd-aer-sections__tweak-note" data-tweak-note hidden>
           Adjust any section above and your result updates live.
         </p>
 
@@ -373,14 +373,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
              its visibility thereafter. The SAME [data-result] subtree the
              classic/wizard views use. -->
         <div class="smaqmd-aer-sections__result stack" data-gap="sm" hidden>
-          <p class="type-section-title smaqmd-aer-sections__result-title">Your result</p>
+          <p class="typography-heading-md smaqmd-aer-sections__result-title">Your result</p>
         <div class="stack" data-gap="md" data-result>
           <!-- ANSWER + hero metrics — the direct yes/no, then the two numbers that
                matter at EQUAL weight: the problem (ACH the setup delivers) and the
                fix (the combined CADR to reach). A fail shows both side by side — "here's the
                issue, here's what fixes it". Pass shows only ACH; shop only the CADR. -->
           <div class="stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
-            <p class="type-section-title smaqmd-aerb__answer-title" data-answer-title tabindex="-1">—</p>
+            <p class="typography-heading-md smaqmd-aerb__answer-title" data-answer-title tabindex="-1">—</p>
 
             <!-- INFORMATION CARD — the verdict spelled out, colored by state
                  (warning / info), sitting BETWEEN the headline and the metrics it
@@ -413,7 +413,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <!-- Over-700 caution: most consumer air cleaners top out around 700
                  ft³/min, so a required CADR above that isn't reachable with a single
                  unit. Shown by recompute() whenever the CADR-to-buy exceeds 700. -->
-            <p class="type-body-small smaqmd-aerb__caution" data-cadr-high hidden>
+            <p class="typography-body-sm smaqmd-aerb__caution" data-cadr-high hidden>
               That's more than most air cleaners deliver (they top out around
               <strong>700 ft³/min</strong>), so you'll likely need more than one.
             </p>
@@ -423,7 +423,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  the same result. Only shown with a cleaner delivering flow, so the
                  comparison is always complete. -->
             <div class="smaqmd-aerb__context" data-group="secondary" hidden>
-              <p class="type-body-small"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
+              <p class="typography-body-sm"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
               <esa-button-toggle
                 class="smaqmd-aerb__units"
                 data-field="units"
@@ -443,7 +443,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
           <!-- Polite announcer: a visually-hidden live region written by recompute()
                after a 600 ms debounce so drag gestures do not chatter. -->
-          <p class="smaqmd-aerb__sr" aria-live="polite" data-announce></p>
         </div>
         </div>
       </div>
@@ -459,9 +458,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   <template data-cleaner-template>
     <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
       <div class="smaqmd-aerb__cleaner-head repel">
-        <p class="type-body smaqmd-aerb__cleaner-title">Air cleaner</p>
+        <p class="typography-body-md smaqmd-aerb__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
-          <EsaIconButton icon="trash-2" label="Remove this air cleaner" size="sm" />
+          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size="sm" />
         </span>
       </div>
       <esa-radio-group
@@ -491,7 +490,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           inputmode="decimal"
           label="Air changes per hour (ACH)"
         ></esa-text-field>
-        <p class="type-body-small smaqmd-aerb__cleaner-note">
+        <p class="typography-body-sm smaqmd-aerb__cleaner-note">
           In what size room was that measured?
         </p>
         <div class="smaqmd-aerb__ref grid" data-gap="md">
@@ -512,11 +511,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      must answer → a real label: body-small (14px) + secondary + semibold, not a
      faint 12px caption. */
   .smaqmd-aerb__cleaner-note {
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .smaqmd-aerb__context {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     display: flex; flex-direction: column;
     gap: var(--spacing-200, 0.5rem);
     align-items: flex-start;
@@ -524,27 +523,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   /* Answer headline — the direct yes/no, tinted by verdict: green pass, orange
      fail (matching the scene), neutral while only shopping for a rating. */
-  .smaqmd-aerb__answer-title { color: var(--color-text-primary); }
+  .smaqmd-aerb__answer-title { color: var(--color-content-default); }
   /* The answer headline is a programmatic focus target (tabindex=-1) so advancing
      to the result moves focus there for screen readers — not a tab stop, so
      suppress the ring that would otherwise flash on it. */
   .smaqmd-aerb__answer-title:focus { outline: none; }
-  .smaqmd-aerb__answer[data-verdict="pass"] .smaqmd-aerb__answer-title { color: var(--color-primary); }
-  .smaqmd-aerb__answer[data-verdict="fail"] .smaqmd-aerb__answer-title { color: var(--color-warning); }
+  .smaqmd-aerb__answer[data-verdict="pass"] .smaqmd-aerb__answer-title { color: var(--color-background-brand); }
+  .smaqmd-aerb__answer[data-verdict="fail"] .smaqmd-aerb__answer-title { color: var(--color-content-utility-warning); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
      available in this spoke); this 7-property clip-path pattern is the
      only home for a polite live-region that stays off-screen. */
-  .smaqmd-aerb__sr {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
 
   /* Cleaner-block chrome — ported from Option A's .smaqmd-aer__cleaner* rules,
      renamed to .smaqmd-aerb__cleaner*. Top border + padding separate blocks
@@ -553,20 +543,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      pattern; checked Beacon (none); the cleaner block is a spoke-level concern. */
   .smaqmd-aerb__cleaner {
     padding-block-start: var(--spacing-300, 0.75rem);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
   .smaqmd-aerb__cleaner:first-of-type {
     padding-block-start: 0;
     border-block-start: 0;
   }
   .smaqmd-aerb__cleaner-head { align-items: center; }
-  /* Group label for each cleaner block: type-body baseline (15px, not oversized
+  /* Group label for each cleaner block: typography-body-md baseline (15px, not oversized
      per the design-principles skill) carried to semibold so it reads as a label,
      not body copy — subordinate to the step's section-title above it. Primary
      text so the block's own name reads as the strongest label inside the block. */
   .smaqmd-aerb__cleaner-title {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
   }
   /* The two hero stats (the ACH problem + the CADR fix) sit at EQUAL weight, side
      by side, wrapping only when the panel is too narrow. */
@@ -581,22 +571,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      :global() anchored under the (scoped) root. */
   .smaqmd-aerb :global(.smaqmd-aerb__unit) {
     font-size: 0.5em;
-    font-weight: var(--font-weight-medium, 500);
-    color: var(--color-text-secondary);
+    font-weight: var(--typography-font-weight-medium, 500);
+    color: var(--color-content-default-secondary);
   }
   /* Caution note under the CADR hero (e.g. the >700 ft³/min warning). */
-  .smaqmd-aerb__caution { color: var(--color-warning, #d9822b); }
+  .smaqmd-aerb__caution { color: var(--color-content-utility-warning, #d9822b); }
   /* Hero numbers → the BRAND color. esa-stat's accent defaults to the spoke's
      SECONDARY (green) — wrong here; the heroes should read in the primary brand
      hue like the pass headline. --stat-accent-color is the consumer hook. */
   .smaqmd-aerb [data-metric="ach"],
   .smaqmd-aerb [data-metric="fix"] {
-    --stat-accent-color: var(--color-primary);
+    --stat-accent-color: var(--color-background-brand);
   }
   /* Below target: the ACH hero shifts to warning, matching the orange fail
      headline + scene. The CADR fix stays brand — it's the positive action. */
   .smaqmd-aerb [data-metric="ach"][data-below] {
-    --stat-accent-color: var(--color-warning, #d9822b);
+    --stat-accent-color: var(--color-background-utility-warning, #d9822b);
   }
 
   .smaqmd-aerb {
@@ -616,16 +606,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      fixed-inset full-viewport stage + invisible safe-area sentinel are likewise
      bespoke (no layouts.css primitive or esa- lego provides a fixed illustration
      backdrop). Token-driven fills: value-layered neutrals for the ground/room,
-     brand accent for the cleaner building + clean-air return lane, --color-border
+     brand accent for the cleaner building + clean-air return lane, --color-border-default
      for edges. */
   .smaqmd-cityview {
     position: fixed; inset-block: 0; inset-inline: var(--aer-gutter); z-index: 0; pointer-events: none;
     /* wave tints — clean-air return is brand (green when meeting target); the
        used-air intake is a neutral gray. */
-    --pulse-color: var(--color-primary, #159a86);
-    --out-color: var(--color-text-tertiary, #6b7280);
+    --pulse-color: var(--color-background-brand, #159a86);
+    --out-color: var(--color-content-default-tertiary, #6b7280);
   }
-  .smaqmd-cityview[data-state="fail"] { --pulse-color: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] { --pulse-color: var(--color-background-utility-warning, #d9822b); }
   .smaqmd-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
   /* Safe area the buildings fit into — CSS is the single source of truth; JS only measures. */
@@ -639,17 +629,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   /* Dot paper sits under everything; the translucent ground lets it show
      through faintly so the scene reads as drawn ON the iso lattice. */
-  .smaqmd-cityview__dot { fill: var(--color-border, #cfcfcf); }
+  .smaqmd-cityview__dot { fill: var(--color-border-default, #cfcfcf); }
   .smaqmd-cityview__ground {
-    fill: color-mix(in srgb, var(--color-surface-sunken, #f0f0f0) 45%, transparent);
-    stroke: var(--color-border-light, #e0e0e0);
+    fill: color-mix(in srgb, var(--color-background-elevation-sunken, #f0f0f0) 45%, transparent);
+    stroke: var(--color-border-default-subtle, #e0e0e0);
     stroke-width: 1;
     stroke-linejoin: round;
   }
 
   .smaqmd-cityview__road {
     fill: none;
-    stroke: var(--color-surface-sunken, #eaeaea);
+    stroke: var(--color-background-elevation-sunken, #eaeaea);
     stroke-width: 13;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -689,12 +679,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview__lanes[data-lane-idle] .smaqmd-cityview__wave { opacity: 0 !important; }
 
   .smaqmd-cityview__room-face {
-    stroke: var(--color-border, #d0d0d0);
+    stroke: var(--color-border-default, #d0d0d0);
     stroke-width: 1.5;
     stroke-linejoin: round;
     transition: fill 200ms ease;
   }
-  .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 80%, transparent); }
+  .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-background-elevation-raised, #fff) 80%, transparent); }
   .smaqmd-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 78%, transparent); }
   .smaqmd-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 78%, transparent); }
 
@@ -707,82 +697,82 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        smaller → the user's room is larger: room faces drop to more-transparent
                  fills and the cap fills strengthen so the ghost reads inside. */
   .smaqmd-cityview__cap-face {
-    stroke: color-mix(in srgb, var(--color-primary, #159a86) 55%, transparent);
+    stroke: color-mix(in srgb, var(--color-background-brand, #159a86) 55%, transparent);
     stroke-dasharray: 5 4;
     stroke-width: 1.5;
     stroke-linejoin: round;
   }
-  .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 8%, transparent); }
-  .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-primary, #159a86) 10%, transparent); }
-  .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-primary, #159a86) 12%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 8%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 10%, transparent); }
+  .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 12%, transparent); }
 
   /* smaller: the user's room is the bigger box, so make IT the more transparent
      one. The ghost keeps its default (low-alpha) fills in both cases. */
-  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-surface, #fff) 40%, transparent); }
+  .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="top"]   { fill: color-mix(in srgb, var(--color-background-elevation-raised, #fff) 40%, transparent); }
   .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-3, #f0f0f0) 38%, transparent); }
   .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__room-face[data-room="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 38%, transparent); }
 
-  .smaqmd-cityview__cap-label { fill: var(--color-primary, #159a86); }
+  .smaqmd-cityview__cap-label { fill: var(--color-background-brand, #159a86); }
 
   /* Architectural details on the room building — quiet, token-driven fills and
-     thin --color-border strokes so windows/door/RTUs/parapet/tower/mast read as
+     thin --color-border-default strokes so windows/door/RTUs/parapet/tower/mast read as
      building features without competing with the room or the flow. Window rows
      stack by story as the building grows tall (1 row short, up to 3 rows tall);
      a water tower and antenna mast appear on very tall roofs. No pointer-events
      rules: details inherit pointer-events:none from the stage. */
   .smaqmd-cityview__details { transition: opacity 200ms ease; }
   .smaqmd-cityview__win {
-    fill: color-mix(in srgb, var(--color-primary, #159a86) 11%, transparent);
-    stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
+    fill: color-mix(in srgb, var(--color-background-brand, #159a86) 11%, transparent);
+    stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
-  .smaqmd-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-primary, #159a86) 15%, transparent); }
+  .smaqmd-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 15%, transparent); }
   .smaqmd-cityview__door {
     fill: color-mix(in srgb, var(--smaqmd-gray-6, #d9d9d9) 85%, transparent);
-    stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round;
+    stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
-  .smaqmd-cityview__parapet { fill: none; stroke: var(--color-border-light, #d9d9d9); stroke-width: 1; stroke-linejoin: round; }
-  .smaqmd-cityview__rtu-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
-  .smaqmd-cityview__rtu-face[data-rtu-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .smaqmd-cityview__parapet { fill: none; stroke: var(--color-border-default-subtle, #d9d9d9); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__rtu-face { stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__rtu-face[data-rtu-face="top"]   { fill: color-mix(in srgb, var(--color-background-elevation-raised, #fcfcfc) 96%, transparent); }
   .smaqmd-cityview__rtu-face[data-rtu-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
   .smaqmd-cityview__rtu-face[data-rtu-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
-  .smaqmd-cityview__tower-leg { stroke: var(--color-border, #cecece); stroke-width: 1.5; stroke-linecap: round; }
-  .smaqmd-cityview__tower-face { stroke: var(--color-border, #cecece); stroke-width: 1; stroke-linejoin: round; }
-  .smaqmd-cityview__tower-face[data-tower-face="top"]   { fill: color-mix(in srgb, var(--color-surface, #fcfcfc) 96%, transparent); }
+  .smaqmd-cityview__tower-leg { stroke: var(--color-border-default, #cecece); stroke-width: 1.5; stroke-linecap: round; }
+  .smaqmd-cityview__tower-face { stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__tower-face[data-tower-face="top"]   { fill: color-mix(in srgb, var(--color-background-elevation-raised, #fcfcfc) 96%, transparent); }
   .smaqmd-cityview__tower-face[data-tower-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
   .smaqmd-cityview__tower-face[data-tower-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
-  .smaqmd-cityview__mast-line { stroke: var(--color-text-tertiary, #6b7280); stroke-width: 1.5; stroke-linecap: round; }
-  .smaqmd-cityview__mast-tip { fill: var(--pulse-color, var(--color-primary, #159a86)); opacity: 0.9; }
+  .smaqmd-cityview__mast-line { stroke: var(--color-content-default-tertiary, #6b7280); stroke-width: 1.5; stroke-linecap: round; }
+  .smaqmd-cityview__mast-tip { fill: var(--pulse-color, var(--color-background-brand, #159a86)); opacity: 0.9; }
   .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__details { opacity: 0.45; }
 
   .smaqmd-cityview__unit-face {
-    stroke: var(--color-primary-hover, #0f7e6e);
+    stroke: var(--color-background-brand-hover, #0f7e6e);
     stroke-width: 1;
     stroke-linejoin: round;
   }
-  .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-primary, #159a86) 72%, #fff); }
-  .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-primary, #159a86); }
-  .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-primary-hover, #0f7e6e); }
+  .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 72%, #fff); }
+  .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-background-brand, #159a86); }
+  .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-background-brand-hover, #0f7e6e); }
 
   /* Cohesive FAIL palette — when below target, the capacity "ghost" (the largest
      room the cleaners could actually cover) and the air-cleaner buildings shift
      from brand to the spoke's warning ORANGE, matching the orange flow waves + ACH
      readout so the whole scene reads "not passing" as one. The MAIN room stays
      neutral — it's the fixed reference; the ghost is what comes up short. */
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face { stroke: color-mix(in srgb, var(--color-warning, #d9822b) 55%, transparent); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 8%, transparent); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-warning, #d9822b) 10%, transparent); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-warning, #d9822b) 12%, transparent); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face { stroke: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 55%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="top"]   { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 8%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 10%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 12%, transparent); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-background-utility-warning, #d9822b); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face { stroke: var(--color-orange-10, #c15d10); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-warning, #d9822b) 72%, #fff); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-warning, #d9822b); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 72%, #fff); }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-background-utility-warning, #d9822b); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-orange-10, #c15d10); }
 
   .smaqmd-cityview__dim {
-    fill: var(--color-text-secondary, #555);
+    fill: var(--color-content-default-secondary, #555);
     font-size: 13px;
-    font-weight: var(--font-weight-medium, 500);
-    font-family: var(--font-sans, system-ui, sans-serif);
+    font-weight: var(--typography-font-weight-medium, 500);
+    font-family: var(--typography-font-family-sans, system-ui, sans-serif);
   }
 
   /* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
@@ -798,7 +788,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview__handle { pointer-events: all; cursor: grab; touch-action: none; }
   .smaqmd-cityview__chev {
     fill: none;
-    stroke: var(--color-text-secondary, #555);
+    stroke: var(--color-content-default-secondary, #555);
     stroke-width: 2;
     stroke-linecap: round; stroke-linejoin: round;
     /* Scale around the chevron's own centre (its path is symmetric about 0,0). */
@@ -833,7 +823,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     position: absolute;
     inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
     max-inline-size: 26rem; text-align: start;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
 
   /* The wizard's fixed LEFT column: header on top, wizard card below it. Sized to
@@ -864,8 +854,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        This padding gives the ring room to render. box-sizing is border-box, so the
        panel's fixed width/position is unchanged; only the inner content shrinks. */
     padding: var(--spacing-100, 0.25rem);
-    --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook, inherits into cards */
-    --card-border-color: var(--color-border-strong);  /* visible hairline over the scene (default #cecece reads too faint) */
+    --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent);  /* lego hook, inherits into cards */
+    --card-border-color: var(--color-border-default-strong);  /* visible hairline over the scene (default #cecece reads too faint) */
   }
   /* Width comes from the column now; the panel just fills it. */
   .smaqmd-aerw__panel { inline-size: auto; }
@@ -882,12 +872,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   }
   /* Result body — lives in its OWN card (smaqmd-aerb__result-panel) above the form,
      so no footer divider here; the card provides the separation. */
-  .smaqmd-aer-sections__result-title { color: var(--color-text-primary); }
+  .smaqmd-aer-sections__result-title { color: var(--color-content-default); }
   /* Live-experiment hint at the foot of the form card, shown after the first submit. */
   .smaqmd-aer-sections__tweak-note {
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     padding-block-start: var(--spacing-300, 0.75rem);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
 
   /* The panel is a .stack (flex column) with a max height: without this, short
@@ -907,8 +897,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     max-block-size: 50vh;
     overflow-y: auto; overscroll-behavior: contain;
     padding: var(--spacing-100, 0.25rem);  /* room for esa-card's outset box-shadow ring — see .smaqmd-aerb__panel */
-    --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent);  /* lego hook */
-    --card-border-color: var(--color-border-strong);
+    --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent);  /* lego hook */
+    --card-border-color: var(--color-border-default-strong);
   }
   .smaqmd-aerb__result-panel :global(.esa-card) {
     -webkit-backdrop-filter: blur(10px);
@@ -916,7 +906,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .smaqmd-aerb__panel,
-    .smaqmd-aerb__result-panel { --card-bg: color-mix(in srgb, var(--color-surface) 96%, transparent); }
+    .smaqmd-aerb__result-panel { --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
   }
 
   @media (max-width: 68rem) {
@@ -948,6 +938,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 </style>
 
 <script>
+  import { announce as kitAnnounce, initAnnouncer } from '@esa/ecology/announcer';
+  // Pre-mount the kit's two regions: a region that mounts and mutates in the same
+  // tick does not announce, and recompute() can raise a validation alert on init.
+  initAnnouncer();
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-radio-group';
   import '@esa/ecology/esa-button-toggle';
@@ -1700,7 +1694,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const unit = (u: string) => `<span class="smaqmd-aerb__unit"> ${u}</span>`;
     const setReadout = (name: string, text: string) =>
       block.querySelectorAll(`[data-r="${name}"]`).forEach((el) => (el.textContent = text));
-    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const show = (el: Element | null, on: boolean) => {
+      if (!el) return;
+      const node = el as HTMLElement;
+      const wasHidden = node.hidden;
+      node.hidden = !on;
+      // A [data-alert] block is a VISIBLE message, not a live region — announcing it
+      // here keeps the kit's two regions the only ones on the page (SC 4.1.3), and
+      // only on the hidden -> visible edge so a recompute does not re-announce.
+      if (on && wasHidden && node.hasAttribute('data-alert')) {
+        kitAnnounce(node.textContent?.trim() ?? '', { assertive: node.dataset.alert === 'assertive' });
+      }
+    };
 
     // Clean-air flow (ft³/min) for one cleaner block; blank/partial → 0 so empty
     // rows never block the result. Combined flow sums the live (non-removing)
@@ -1757,14 +1762,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
     // Debounced polite announcer: a one-sentence summary written 600 ms after the
     // last change (drag gestures don't chatter), and only when the text differs.
-    const announcer = root.querySelector<HTMLElement>('[data-announce]');
     let announceTimer = 0;
     let lastAnnounce = '';
     const announce = (msg: string) => {
-      if (!announcer) return;
       window.clearTimeout(announceTimer);
       announceTimer = window.setTimeout(() => {
-        if (msg !== lastAnnounce) { announcer.textContent = msg; lastAnnounce = msg; }
+        if (msg !== lastAnnounce) { kitAnnounce(msg); lastAnnounce = msg; }
       }, 600);
     };
 
