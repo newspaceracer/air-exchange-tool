@@ -5,27 +5,41 @@
 // as the wizard view and cannot drift from it. The variant drops the isometric
 // scene (it needs width a phone has not got, and it is secondary to the answer)
 // and steps every sizable esa-* lego up to `lg` for touch.
+//
+// Registered in src/data/prototypes.ts as its own entry rather than living behind
+// Option B's view toggle: it is a device target, not another presentation of the
+// same page, and it is the one view that should be opened directly on a phone.
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import SmaqmdAerWizard from '../../components/smaqmd-aer-wizard.astro';
-import SmaqmdVersionToggle from '../../components/smaqmd-version-toggle.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { withBase } from '../../lib/base';
 ---
 <!-- manifest:
   layout: single flowed column (component-owned, no fixed overlay)
   sections:
-    - version toggle     -> smaqmd-version-toggle
-    - page header        -> esa-page-header
+    - back link          -> esa-button (href) to the prototype library
+    - opening slide      -> smaqmd-aer-wizard (owns the h1; replaces esa-page-header)
     - wizard steps       -> smaqmd-aer-wizard variant="mobile" (no scene, lg controls)
 -->
 <BaseLayout title="Air Exchange Rate Tool (Mobile) — SMAQMD">
   <main>
     <SmaqmdAerWizard variant="mobile">
+      <!-- No esa-page-header here: its title and lede would restate the opening
+           slide immediately above the same fold. The slide owns the question and
+           the h1.
+
+           No version toggle either. This is its own prototype now, not a fourth
+           presentation of Option B, so the segmented switcher would offer three
+           destinations that are all the desktop tool. BaseLayout ships no nav, so
+           without SOMETHING here a phone has no way back out — hence the one link. -->
       <div slot="header">
-        <SmaqmdVersionToggle active="mobile" />
-        <EsaPageHeader
-          title="Is your air cleaner powerful enough for your room?"
-          lede="Enter your room size and your air cleaner's rating to see how often it refreshes the air — and the minimum rating to shop for if it falls short."
-        />
+        <EsaButton
+          href={withBase('/')}
+          variant="ghost"
+          appearance="outline"
+          size="lg"
+          icon="arrow-left"
+        >Prototype library</EsaButton>
       </div>
     </SmaqmdAerWizard>
   </main>

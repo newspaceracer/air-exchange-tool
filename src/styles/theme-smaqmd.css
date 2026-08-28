@@ -145,7 +145,12 @@
      (inherits grass unless pinned here), and --form-border-color-focus has no hub
      token at all (components fall back to the literal #43608a blue-gray). Setting
      both makes every esa-* control's focus state read as brand blue. */
-  --focus-ring-color: color-mix(in srgb, var(--color-background-brand) 35%, transparent);
+  /* The ring is the SOLID brand, not a wash of it. This was
+     color-mix(... 35%, transparent), which renders #c6d0c0 over white — 1.67:1,
+     failing SC 1.4.11's 3:1 for a focus indicator. The solid fill is 4.96:1.
+     A fill step is engineered to carry text; a 2px hairline of a 35% tint is not
+     the same job, and that is exactly the trap design-principles warns about. */
+  --focus-ring-color: var(--color-background-brand);
   --form-border-color-focus: var(--color-background-brand);
 
   /* ===== (6) --button-on-warning — deliberately NOT set =====
@@ -244,7 +249,43 @@
   --smaqmd-color-border-secondary-brand:            var(--smaqmd-earth-6);
   --smaqmd-color-content-on-secondary-brand-muted:  var(--smaqmd-earth-12);
 
+  /* The opening slide keeps the BRAND (Dawn), which is what it was before the
+     colour swap and after it was reverted: the slide is a landing surface and
+     takes the brand, while the step header is the green band. Named tokens
+     rather than raw ramp reads, which is the one thing kept from the swap. */
+  --smaqmd-color-background-intro-wash: var(--smaqmd-brand-3);
+  --smaqmd-color-content-intro-title:   var(--smaqmd-brand-12);
+
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */
 }
 
+/* ===== NO ZOOM-ON-FOCUS FOR TOUCH-SIZED VIEWPORTS =====
+   Mobile Safari zooms the whole viewport when you focus an input whose font-size
+   is under 16px, and it does not zoom back out — you are left panned into a form.
+   This kit's type scale is FLUID (--font-size-* are clamps on vw), so a field
+   scales DOWN as the viewport narrows: measured 14.35px at 390px wide. An input
+   is the one element that must not shrink on a phone, so the field composites are
+   pinned to a flat 16px below the layout breakpoint.
+
+   Scoped to the field legos rather than :root because `microcopy-*-subtle` is a
+   general composite — raising it globally would resize captions and helper text
+   that are correctly small. Every size step is listed because a spoke can set any
+   of them per field, and only the one a field actually uses will apply.
+
+   NOT fixed with maximum-scale=1 / user-scalable=no on the viewport meta: that is
+   the common workaround and it defeats pinch zoom, failing SC 1.4.4. Raising the
+   font is both the accessible fix and the more usable one. All four views render
+   esa-text-field, so this is deliberately global rather than mobile-view-only. */
+@media (max-width: 68rem) {
+  esa-text-field,
+  esa-select,
+  esa-combobox,
+  esa-textarea {
+    --typography-microcopy-2xs-subtle-font-size: 1rem;
+    --typography-microcopy-xs-subtle-font-size:  1rem;
+    --typography-microcopy-sm-subtle-font-size:  1rem;
+    --typography-microcopy-md-subtle-font-size:  1rem;
+    --typography-microcopy-lg-subtle-font-size:  1rem;
+  }
+}

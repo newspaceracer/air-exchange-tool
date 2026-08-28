@@ -41,6 +41,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-07-09',
     status: 'in-progress',
   },
+  {
+    slug: 'air-exchange-rate-mobile',
+    title: 'Air Exchange Rate Tool — Mobile',
+    description:
+      "The wizard rebuilt for a phone: no isometric scene, lg touch targets, and an opening slide. Shares Option B's calc engine, so the two cannot drift apart.",
+    route: '/prototypes/air-exchange-rate-mobile',
+    createdAt: '2026-08-28',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

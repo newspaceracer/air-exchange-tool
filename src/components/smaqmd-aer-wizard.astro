@@ -69,6 +69,10 @@ const { variant = 'default' } = Astro.props;
 const isMobile = variant === 'mobile';
 /** Control size for every lego that takes one. */
 const ctl = isMobile ? 'lg' : 'md';
+/* On mobile the page drops esa-page-header (the intro slide carries the question
+   instead), so the h1 lives in here. The intro and the step title are never both
+   visible, so promoting the step title on mobile keeps exactly one h1 per page. */
+const StepTitle = isMobile ? 'h1' : 'h2';
 
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
 // of (2A × 2B) carries two lattice dots — (0,0) and (A,B) — which tiles into the
@@ -265,7 +269,44 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        the SAME calc engine drives both — only the chrome differs. -->
   <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
     <EsaCard>
-      <div class="smaqmd-wizard stack" data-gap="lg" data-wizard>
+      <div class="smaqmd-wizard stack" data-gap="lg" data-wizard data-phase={isMobile ? 'intro' : 'steps'}>
+        {/* OPENING SLIDE (mobile only), deliberately outside the step machinery:
+            it carries no step number and no dot, because it asks nothing.
+
+            Copy worked to NN/g's informative-microcopy model — Clarity > Concision
+            > Character, and both strings inside the house limits (title 50/60,
+            summary 108/160).
+
+            CLARITY. The two questions a person has before starting a flow are "how
+            long is this?" and "what do I need?", so the summary answers both and
+            nothing else. It is not a description of the tool: text ABOUT the page
+            is banned by design-principles, and it would not earn its space here.
+            "Three questions" is front-loaded because effort is what decides whether
+            they start at all. CADR is jargon, but it is the word PRINTED ON THE BOX,
+            so removing it would leave the reader hunting for a term we had hidden;
+            it is glossed in plain words instead and pointed at where it lives.
+
+            CHARACTER stays near zero on purpose. This is a public-health tool for
+            residents checking their air during smoke season; warmth here would read
+            as levity. Plain and useful IS the agency's voice.
+
+            BUTTON: "Begin", not "Check my air cleaner" — the flow forks at step 2
+            for people who have no cleaner yet and want to know what to buy, and a
+            label naming one intent would quietly exclude the other. */}
+        {isMobile && (
+          <div class="smaqmd-wizard__intro" data-intro>
+            <h1 class="typography-heading-lg smaqmd-wizard__intro-title">
+              Is your air cleaner powerful enough for your room?
+            </h1>
+            <p class="typography-body-md smaqmd-wizard__intro-lede">
+              Three questions. You'll need your room's size and your air cleaner's
+              CADR — the clean-air rating on its box.
+            </p>
+            <span data-nav="begin">
+              <EsaButton size={ctl} type="button">Begin</EsaButton>
+            </span>
+          </div>
+        )}
         <!-- Progress head: numbered dots (the 3 input steps) + counter + title. -->
         <div class="smaqmd-wizard__head stack" data-gap="sm">
           <div class="smaqmd-wizard__dots cluster" data-gap="xs" aria-hidden="true">
@@ -274,7 +315,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <span class="smaqmd-wizard__dot" data-dot="2">3</span>
           </div>
           <p class="typography-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
-          <h2 class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</h2>
+          <StepTitle class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</StepTitle>
         </div>
 
         <!-- Step bodies — all present in the DOM (the engine reads every field on
@@ -1057,6 +1098,59 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb[data-variant='mobile'] .smaqmd-aerb__panel {
     max-block-size: none; overflow: visible;
   }
+  /* The opening slide and the step machinery are mutually exclusive; the wizard
+     root carries the phase so one attribute swaps the whole card. */
+  .smaqmd-wizard__intro { display: none; }
+  .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__head,
+  .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__body,
+  .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__nav { display: none; }
+  /* The opening slide is the one surface here that is allowed colour. It is a
+     landing surface, not product UI, and design-principles splits exactly there:
+     "product UI is austere; ... landing/showcase surfaces invite expressiveness".
+     So the card fills with the brand wash (Dawn step 3) rather than staying the
+     neutral white the step views keep. Blue, not the green used by the step
+     header, so the two read as different moments: brand opens, green marks the
+     steps. Cancels esa-card's --spacing-500 padding on all four sides to fill the
+     card, then restores it as its own padding. */
+  .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-400, 1rem);
+    margin: calc(var(--spacing-500, 1.5rem) * -1);
+    padding: var(--spacing-500, 1.5rem);
+    background: var(--smaqmd-color-background-intro-wash);
+    border-radius: var(--radius-md, 0.5rem);
+  }
+  .smaqmd-wizard__intro-title {
+    color: var(--smaqmd-color-content-intro-title);   /* 10.71:1 on the wash */
+    margin: 0;
+  }
+  .smaqmd-wizard__intro-lede {
+    margin: 0;
+    color: var(--color-content-default-secondary);   /* 5.10:1 on the wash */
+    /* A reading measure, not a phone constraint. This was 34ch, which is NARROWER
+       than the ~300px card on a 390px phone, so it was forcing an extra wrap on
+       the one screen this view exists for. 60ch is the normal measure and simply
+       never binds at phone width — it only stops the line running full-bleed if
+       the mobile view is opened on a desktop-width window. */
+    max-inline-size: 60ch;
+  }
+
+  /* TOUCH TARGETS — stopgap, remove when esassoc/ecology#37 ships.
+     esa-radio-group's option row is the <label> that carries the click handler,
+     and at size=lg it measures 300x26px: past SC 2.5.8's 24px floor, well under
+     the ~44px thumb convention. The lego exposes no ::part and no --radio-* hook,
+     and --_radio-size is private, so the only legitimate lever is a PUBLIC token
+     that inherits through the shadow boundary. The label is a typography
+     composite, so its line box — and therefore the row height — follows this:
+     Known limit: a label that WRAPS gets this leading on every line. The three
+     groups here are single-line down to 320px (verified), which is why it is
+     acceptable as a stopgap and not as the fix. */
+  .smaqmd-aerb[data-variant='mobile'] esa-radio-group {
+    --typography-body-lg-line-height: 2.75rem;   /* -> 44px rows */
+  }
+
   /* The step nav is the primary action on a phone — keep it reachable without a
      scroll on every step by letting it sit at the end of the flowed card. */
   .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard__nav {
@@ -2241,6 +2335,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // reflects every input regardless of the step shown.
     const INPUT_STEPS = 3;
     const TITLES = ['What size is your room?', 'What air cleaners do you have?', "What's your air-change target?", 'Your result'];
+    const wizardEl = root.querySelector<HTMLElement>('[data-wizard]');
     const stepSections = qa('[data-step]');
     const dots = qa('[data-dot]');
     const stepCountEl = root.querySelector('[data-step-count]');
@@ -2309,7 +2404,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
     root.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
-      if (t.closest('[data-nav="next"]'))         { e.preventDefault(); goStep(stepIdx + 1); }
+      if (t.closest('[data-nav="begin"]')) {
+        e.preventDefault();
+        // Hand the card over to the step machinery, then render step 1 with a
+        // direction so it reuses renderStep's own focus move onto the heading —
+        // leaving the intro is a change of context, same as any step change.
+        wizardEl?.setAttribute('data-phase', 'steps');
+        renderStep(1);
+      }
+      else if (t.closest('[data-nav="next"]'))   { e.preventDefault(); goStep(stepIdx + 1); }
       else if (t.closest('[data-nav="result"]'))  { e.preventDefault(); goStep(INPUT_STEPS); }
       else if (t.closest('[data-nav="back"]'))    { e.preventDefault(); goStep(stepIdx - 1); }
       else if (t.closest('[data-nav="restart"]')) { e.preventDefault(); goStep(0); }
