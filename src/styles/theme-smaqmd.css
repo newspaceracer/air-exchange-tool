@@ -248,6 +248,10 @@
   --smaqmd-color-background-secondary-brand-muted:  var(--smaqmd-earth-4);
   --smaqmd-color-border-secondary-brand:            var(--smaqmd-earth-6);
   --smaqmd-color-content-on-secondary-brand-muted:  var(--smaqmd-earth-12);
+  /* One step lighter than the band, for the trailing wave of the header swoop:
+     it has to read as a second edge against the white card without competing
+     with the band it sits under. Carries no text, so it has no contrast job. */
+  --smaqmd-color-background-secondary-brand-wash:   var(--smaqmd-earth-3);
 
   /* The opening slide keeps the BRAND (Dawn), which is what it was before the
      colour swap and after it was reverted: the slide is a landing surface and

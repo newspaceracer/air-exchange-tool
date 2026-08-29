@@ -273,38 +273,67 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         {/* OPENING SLIDE (mobile only), deliberately outside the step machinery:
             it carries no step number and no dot, because it asks nothing.
 
-            Copy worked to NN/g's informative-microcopy model — Clarity > Concision
-            > Character, and both strings inside the house limits (title 50/60,
-            summary 108/160).
+            It is also where the flow FORKS. This tool serves two people — someone
+            checking a cleaner they own, and someone with none who wants to know what
+            to buy — and that question used to sit at the top of step 2 as a radio
+            group. Asking it here instead means the wizard already knows which person
+            it is talking to before step 1, so it can drop the cleaners step entirely
+            for the shopper (see PLAN in the step machinery) rather than walking them
+            into a step whose only content is the answer they already gave. The radio
+            group stays in the DOM as the single source of truth the engine reads —
+            the buttons set it — and is hidden on this variant only.
 
-            CLARITY. The two questions a person has before starting a flow are "how
-            long is this?" and "what do I need?", so the summary answers both and
-            nothing else. It is not a description of the tool: text ABOUT the page
-            is banned by design-principles, and it would not earn its space here.
-            "Three questions" is front-loaded because effort is what decides whether
-            they start at all. CADR is jargon, but it is the word PRINTED ON THE BOX,
-            so removing it would leave the reader hunting for a term we had hidden;
-            it is glossed in plain words instead and pointed at where it lives.
+            Copy worked to NN/g's informative-microcopy model — Clarity > Concision
+            > Character, both strings inside the house limits (title 35/60,
+            summary 52/160).
+
+            CLARITY. Two earlier titles failed here and both failed the same way, by
+            naming one of the two people. "Is your air cleaner powerful enough for
+            your room?" told the shopper the tool was not for them. "How much clean
+            air does your room need?" fixed the exclusion but bought it with an
+            abstraction — a quantity of clean air is not a thing anyone came here
+            wanting. The title now names the OUTCOME both people are after, which is
+            the one thing they have in common. Note what it does NOT say: "make your
+            room's air cleaner" reads as "your room's AIR CLEANER" in a tool whose
+            whole subject is air cleaners, so the phrasing is avoided.
+
+            The summary names the tool, says what it computes, and attributes it —
+            requested directly (2026-08-28). This is text ABOUT the page, which
+            design-principles bans on tool surfaces, and the exception is deliberate
+            and narrow: a public agency's tool carries its provenance, and the
+            opening slide of a standalone mobile flow is the only surface here with
+            no page header, no nav and no other place for it to live. It does not
+            earn a second appearance anywhere in the steps.
+            It replaced a preparation line ("Two or three questions. Have your room's
+            size handy."), so the "how long is this / what do I need" questions now
+            go unanswered until step 1. Worth restoring as a second line if the slide
+            can afford it.
 
             CHARACTER stays near zero on purpose. This is a public-health tool for
             residents checking their air during smoke season; warmth here would read
             as levity. Plain and useful IS the agency's voice.
 
-            BUTTON: "Begin", not "Check my air cleaner" — the flow forks at step 2
-            for people who have no cleaner yet and want to know what to buy, and a
-            label naming one intent would quietly exclude the other. */}
+            BUTTONS: each names an INTENT in the user's words, not a step in ours,
+            and both start with a verb. The checking path leads because it is the
+            larger audience during smoke season; the shopping path is the outline
+            appearance because it is the less common one, not the lesser one. */}
         {isMobile && (
           <div class="smaqmd-wizard__intro" data-intro>
-            <h1 class="typography-heading-lg smaqmd-wizard__intro-title">
-              Is your air cleaner powerful enough for your room?
+            <h1 class="typography-heading-lg smaqmd-wizard__intro-title" data-intro-title tabindex="-1">
+              How to get cleaner air in your room
             </h1>
             <p class="typography-body-md smaqmd-wizard__intro-lede">
-              Three questions. You'll need your room's size and your air cleaner's
-              CADR — the clean-air rating on its box.
+              The Air Exchange Rate Tool estimates how many times an hour an air
+              cleaner can replace your room's air. From the Sac Metro Air District.
             </p>
-            <span data-nav="begin">
-              <EsaButton size={ctl} type="button">Begin</EsaButton>
-            </span>
+            <div class="smaqmd-wizard__intro-actions stack" data-gap="sm">
+              <span data-nav="check">
+                <EsaButton size={ctl} type="button">Check my air cleaner</EsaButton>
+              </span>
+              <span data-nav="shop">
+                <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Help me pick one</EsaButton>
+              </span>
+            </div>
           </div>
         )}
         <!-- Progress head: numbered dots (the 3 input steps) + counter + title. -->
@@ -316,6 +345,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           </div>
           <p class="typography-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
           <StepTitle class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</StepTitle>
+          <!-- The band's bottom EDGE, as the district's swoop rather than a straight
+               rule. Two crossing waves, matching the agency's letterhead mark: the
+               front one is the band's own colour and IS the band's edge (the flat
+               1px border is gone), the back one is a step lighter and surfaces from
+               under it toward the left. Inline SVG and not a CSS mask so the fill
+               stays a token read and the shape needs no vendor prefixes; hangs below
+               the band in the stack's own gap, so it costs no layout. -->
+          <svg class="smaqmd-wizard__swoop" viewBox="0 0 390 20" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path class="smaqmd-wizard__swoop-back" d="M0,0 H390 V2 C284,30 92,0 0,20 Z" />
+            <path class="smaqmd-wizard__swoop-front" d="M0,0 H390 V4 C296,24 104,-6 0,14 Z" />
+          </svg>
         </div>
 
         <!-- Step bodies — all present in the DOM (the engine reads every field on
@@ -955,10 +995,25 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     margin-inline: calc(var(--spacing-500, 1.5rem) * -1);
     padding: var(--spacing-400, 1rem) var(--spacing-500, 1.5rem);
     background: var(--smaqmd-color-background-secondary-brand-muted);
-    border-block-end: 1px solid var(--smaqmd-color-border-secondary-brand);
     border-start-start-radius: var(--radius-md, 0.5rem);
     border-start-end-radius: var(--radius-md, 0.5rem);
+    /* Anchors the swoop that forms the band's bottom edge. */
+    position: relative;
   }
+  /* Hangs BELOW the band, spanning the bled width, inside the wizard stack's own
+     lg gap — so it never pushes the step content down or changes the card height.
+     preserveAspectRatio="none" lets the 390-unit path stretch to any card width;
+     the shape is decorative, so distorting it is the point. */
+  .smaqmd-wizard__swoop {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 100%;
+    inline-size: 100%;
+    block-size: 1.375rem;
+    display: block;
+  }
+  .smaqmd-wizard__swoop-front { fill: var(--smaqmd-color-background-secondary-brand-muted); }
+  .smaqmd-wizard__swoop-back  { fill: var(--smaqmd-color-background-secondary-brand-wash); }
   .smaqmd-wizard__count { color: var(--smaqmd-color-content-secondary-brand); }      /* 5.55:1 on the band */
   .smaqmd-wizard__title { color: var(--smaqmd-color-content-on-secondary-brand-muted); } /* 9.58:1 on the band */
 
@@ -1093,7 +1148,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     padding: var(--spacing-400, 1rem);
     gap: var(--spacing-400, 1rem);
   }
-  .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard { block-size: auto; }
+  /* ONE FRAME HEIGHT FOR EVERY SLIDE. The card sized to its content here, so the
+     opening slide (~180px) and the target step (~394px) came in at under half the
+     height of the cleaners step (~744px) and the card jumped on every Next.
+     The floor is the ROOM step (~473px at every width measured, 320-600), not the
+     cleaners step: pinning to the tallest state made a 744px card, which on a
+     390x844 phone is most of the viewport and left the opening slide as a field of
+     empty wash. This holds four of the five slides — intro, room, target, result —
+     at one height, and lets the one genuinely tall step grow.
+     A MIN and not the desktop's fixed block-size: this variant deliberately flows
+     (the page scrolls, the card does not), so the cleaners step, a second cleaner,
+     a wrapped label or a validation alert still has to be able to GROW the card.
+     Fixing the height would put those states back behind an inner scrollbar. */
+  .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard {
+    block-size: auto;
+    min-block-size: 30rem;   /* = 480px */
+  }
   .smaqmd-aerb[data-variant='mobile'] .smaqmd-wizard__body { overflow: visible; }
   .smaqmd-aerb[data-variant='mobile'] .smaqmd-aerb__panel {
     max-block-size: none; overflow: visible;
@@ -1114,6 +1184,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      card, then restores it as its own padding. */
   .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro {
     display: flex;
+    /* Grows into the shared min height above, so the wash fills the whole card
+       instead of leaving white below a short slide. */
+    flex: 1 1 auto;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-400, 1rem);
@@ -1126,6 +1199,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--smaqmd-color-content-intro-title);   /* 10.71:1 on the wash */
     margin: 0;
   }
+  /* The two intent buttons sit at the foot of the slide — the same place the step
+     nav occupies on every screen after it, so the forward action never moves. */
+  .smaqmd-wizard__intro-actions { margin-block-start: auto; align-items: flex-start; }
+
+  /* The fork is asked on the opening slide now, so the radio group that used to ask
+     it at the top of the cleaners step would be a second copy of a question already
+     answered. Hidden, not removed: it stays the single source of truth the engine
+     reads (raw('hasCleaner')), and the intro buttons write to it. Mobile only —
+     the other views have no opening slide, so there it is still the real control. */
+  .smaqmd-aerb[data-variant='mobile'] [data-field='hasCleaner'] { display: none; }
   .smaqmd-wizard__intro-lede {
     margin: 0;
     color: var(--color-content-default-secondary);   /* 5.10:1 on the wash */
@@ -2333,9 +2416,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // each recompute) — this only toggles which step is visible + the chrome, and
     // gates leaving the room step on a valid room size. The scene backdrop already
     // reflects every input regardless of the step shown.
-    const INPUT_STEPS = 3;
+    // PLAN — which step sections this run walks, in order, as indices into
+    // stepSections/TITLES. It is not a constant because the two intents are not the
+    // same length: a shopper has no cleaner to describe, so their run drops section 1
+    // and becomes a two-step flow. Walking them through it anyway would mean a step
+    // whose only content is the answer they already gave on the opening slide.
+    // The dots, the "Step n of m" counter and the nav gates all read plan.length, so
+    // nothing else has to be told the flow got shorter.
+    const FULL_PLAN = [0, 1, 2];
+    const SHOP_PLAN = [0, 2];
+    const RESULT_SECTION = 3;
+    let plan: number[] = FULL_PLAN;
     const TITLES = ['What size is your room?', 'What air cleaners do you have?', "What's your air-change target?", 'Your result'];
     const wizardEl = root.querySelector<HTMLElement>('[data-wizard]');
+    const introEl = root.querySelector<HTMLElement>('[data-intro]');
+    const introTitle = root.querySelector<HTMLElement>('[data-intro-title]');
     const stepSections = qa('[data-step]');
     const dots = qa('[data-dot]');
     const stepCountEl = root.querySelector('[data-step-count]');
@@ -2347,13 +2442,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
     // dir: +1 advancing (Next), -1 retreating (Back), 0 no slide (initial paint).
     const renderStep = (dir = 0) => {
-      const isResult = stepIdx >= INPUT_STEPS;
-      stepSections.forEach((s) => show(s, Number(s.dataset.step) === stepIdx));
+      const isResult = stepIdx >= plan.length;
+      const section = isResult ? RESULT_SECTION : plan[stepIdx];
+      stepSections.forEach((s) => show(s, Number(s.dataset.step) === section));
       // Replay the enter animation on the now-visible step, sliding in from the
       // direction of travel. Removing both direction classes + forcing a reflow
       // before re-adding restarts the animation each step change (it would
       // otherwise only run once); the step is display:block by now.
-      const active = stepSections.find((s) => Number(s.dataset.step) === stepIdx);
+      const active = stepSections.find((s) => Number(s.dataset.step) === section);
       if (active) {
         active.classList.remove('smaqmd-wizard__step--enter-fwd', 'smaqmd-wizard__step--enter-back');
         if (dir !== 0) {
@@ -2362,21 +2458,28 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         }
       }
       dots.forEach((d, i) => {
+        // A two-step run shows two dots. The third is hidden rather than relabelled:
+        // the dots ARE the step count, so leaving a dead one on would promise a step
+        // the shopper never reaches.
+        show(d, i < plan.length);
         d.toggleAttribute('data-active', i === stepIdx && !isResult);
         d.toggleAttribute('data-done', i < stepIdx);
       });
-      if (stepCountEl) stepCountEl.textContent = isResult ? 'Result' : `Step ${stepIdx + 1} of ${INPUT_STEPS}`;
+      if (stepCountEl) stepCountEl.textContent = isResult ? 'Result' : `Step ${stepIdx + 1} of ${plan.length}`;
       // On the result step the verdict headline is the title — the generic
       // "Your result" h2 would just duplicate the eyebrow + verdict, so hide it.
       if (stepTitleEl) {
         (stepTitleEl as HTMLElement).hidden = isResult;
-        if (!isResult) stepTitleEl.textContent = TITLES[stepIdx];
+        if (!isResult) stepTitleEl.textContent = TITLES[section];
       }
-      show(navEl('back'), stepIdx > 0);
-      show(navEl('next'), stepIdx < INPUT_STEPS - 1);
-      show(navEl('result'), stepIdx === INPUT_STEPS - 1);
+      // Back is offered on the first step too when there is an opening slide to go
+      // back TO — without it the intent chosen there would be unchangeable, and a
+      // shopper who realises they do own a cleaner would have no way out.
+      show(navEl('back'), stepIdx > 0 || !!introEl);
+      show(navEl('next'), stepIdx < plan.length - 1);
+      show(navEl('result'), stepIdx === plan.length - 1);
       show(navEl('restart'), isResult);
-      if (roomHint && stepIdx !== 0) show(roomHint, false);
+      if (roomHint && section !== 0) show(roomHint, false);
       // Re-fit the scene: the panel height changes between steps, which moves the
       // safe-area sentinel; a sync recentres the buildings for the new frame.
       syncViewport();
@@ -2391,9 +2494,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
 
     const goStep = (i: number) => {
-      const next = Math.min(Math.max(0, i), INPUT_STEPS);
+      const next = Math.min(Math.max(0, i), plan.length);
       // Forward gate: you can't leave the room step without a valid room size.
-      if (next > stepIdx && stepIdx === 0 && !roomValid()) {
+      if (next > stepIdx && plan[stepIdx] === 0 && !roomValid()) {
         if (roomHint) show(roomHint, true);
         return;
       }
@@ -2402,20 +2505,42 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       renderStep(dir);
     };
 
+    // Returning to the opening slide is a step change like any other, so it moves
+    // focus the same way renderStep does — onto the heading of what is now on screen.
+    const toIntro = () => {
+      stepIdx = 0;
+      wizardEl?.setAttribute('data-phase', 'intro');
+      introTitle?.focus();
+    };
+    const backOrIntro = () => { if (stepIdx === 0 && introEl) toIntro(); else goStep(stepIdx - 1); };
+
     root.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
-      if (t.closest('[data-nav="begin"]')) {
+      // The two intent buttons on the opening slide. Each writes the answer into the
+      // hasCleaner radio group — the field the engine already reads — rather than
+      // introducing a second piece of state that could disagree with it. Setting the
+      // property fires no event, so the two listeners that would have run are called
+      // by hand.
+      const intent = t.closest('[data-nav="check"], [data-nav="shop"]');
+      if (intent) {
         e.preventDefault();
-        // Hand the card over to the step machinery, then render step 1 with a
-        // direction so it reuses renderStep's own focus move onto the heading —
-        // leaving the intro is a change of context, same as any step change.
+        const shopping = intent.matches('[data-nav="shop"]');
+        const hasCleanerEl = field('hasCleaner');
+        if (hasCleanerEl) hasCleanerEl.value = shopping ? 'no' : 'yes';
+        syncVisibility();
+        recompute();
+        plan = shopping ? SHOP_PLAN : FULL_PLAN;
+        stepIdx = 0;
+        // Hand the card over to the step machinery, then render with a direction so
+        // it reuses renderStep's own focus move onto the heading — leaving the intro
+        // is a change of context, same as any step change.
         wizardEl?.setAttribute('data-phase', 'steps');
         renderStep(1);
       }
       else if (t.closest('[data-nav="next"]'))   { e.preventDefault(); goStep(stepIdx + 1); }
-      else if (t.closest('[data-nav="result"]'))  { e.preventDefault(); goStep(INPUT_STEPS); }
-      else if (t.closest('[data-nav="back"]'))    { e.preventDefault(); goStep(stepIdx - 1); }
-      else if (t.closest('[data-nav="restart"]')) { e.preventDefault(); goStep(0); }
+      else if (t.closest('[data-nav="result"]'))  { e.preventDefault(); goStep(plan.length); }
+      else if (t.closest('[data-nav="back"]'))    { e.preventDefault(); backOrIntro(); }
+      else if (t.closest('[data-nav="restart"]')) { e.preventDefault(); if (introEl) toIntro(); else goStep(0); }
     });
     // Clear the room-required hint the moment a valid room is entered.
     root.addEventListener('input', () => {
