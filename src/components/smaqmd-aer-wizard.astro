@@ -57,22 +57,57 @@ const unitToggle = [
   { label: 'ft³', value: 'ft3' },
 ];
 
-// MOBILE VARIANT. A fourth "view" that is this same wizard with two changes:
-// the isometric scene is not rendered at all (it needs width the phone has not
-// got, and it is secondary information), and every sizable esa-* lego steps up
-// to `lg` for touch. Everything else — markup, steps, and the whole calc engine
-// below — is shared, so the mobile view cannot drift from the wizard's maths.
+// THREE VARIANTS, two independent decisions. Same markup, same steps, same calc
+// engine below in every one — so no view can drift from the wizard's maths.
+//
+//   variant       intro slide?   isometric scene?   controls
+//   'default'     no             yes                md
+//   'mobile'      yes            no (not rendered)  lg
+//   'responsive'  yes            yes, wide only     lg
+//
+// The two decisions are therefore separate booleans, NOT `isMobile`:
+//   hasIntro  — does the flow open on the fork slide (and so own the page's h1,
+//               and so hide the hasCleaner radio the slide already answered)?
+//   showScene — is the isometric scene RENDERED at all? It is a large animated
+//               SVG with a rAF loop and a ResizeObserver, so the mobile variant
+//               omits it from the document rather than hiding it with CSS.
+//
+// 'responsive' is the combined view: one page that behaves like the wizard on a
+// wide screen and like the mobile flow below the 68rem breakpoint. Because a
+// server-rendered variant cannot know the viewport, it ships the scene and hides
+// it with CSS at narrow widths; the script pauses the rAF loop to match (see
+// `sceneLive`). Its controls are `lg` at EVERY width — the variant must serve
+// phones, `lg` is the touch-correct 44px choice, and swapping sizes at runtime
+// would mean churning Lit props on every breakpoint crossing. It reads slightly
+// larger than the wizard view on desktop; that is intentional.
 interface Props {
-  variant?: 'default' | 'mobile';
+  variant?: 'default' | 'mobile' | 'responsive';
 }
 const { variant = 'default' } = Astro.props;
 const isMobile = variant === 'mobile';
+/** Opening fork slide: mobile + responsive. Drives the control size. */
+const hasIntro = variant !== 'default';
+/** Is the scene in the document at all? Rendered for default + responsive. */
+const showScene = !isMobile;
 /** Control size for every lego that takes one. */
-const ctl = isMobile ? 'lg' : 'md';
-/* On mobile the page drops esa-page-header (the intro slide carries the question
-   instead), so the h1 lives in here. The intro and the step title are never both
-   visible, so promoting the step title on mobile keeps exactly one h1 per page. */
-const StepTitle = isMobile ? 'h1' : 'h2';
+const ctl = hasIntro ? 'lg' : 'md';
+/* HEADINGS: THE PAGE OWNS THE h1; THIS COMPONENT STARTS AT h2.
+   Every heading in here — the intro title, the step title, the verdict headline —
+   is an h2, in every variant. The component is a section of a page, not a page,
+   and it is embedded in three different hosts (the three prototype pages, plus
+   the standalone vanilla build in public/aer-tool/); a section that claims the h1
+   either fights its host for the level or forces every host to go without one.
+   So the host supplies the h1 and these slot underneath it:
+     - the default variant's page carries an esa-page-header, whose title is the h1
+       (this was already the structure — the fork that used to promote these to h1
+       on the intro variants is gone, so all three variants now match);
+     - the mobile + responsive pages, which drop esa-page-header because the intro
+       slide carries the visible title, add a visually-hidden h1 instead;
+     - the vanilla build does the same, outside its embeddable region.
+   Exactly one of the three is ever in the layout at once (data-phase swaps the
+   intro against the steps; renderStep hides the step title on the result section,
+   where the verdict headline is the heading), so the outline never doubles up.
+   All three are styled by class, so the level is an outline decision only. */
 
 // Isometric dot-lattice for the background "paper". A rectangular pattern tile
 // of (2A × 2B) carries two lattice dots — (0,0) and (A,B) — which tiles into the
@@ -84,11 +119,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 ---
 
 <div class="smaqmd-aerb" data-aerb-wizard data-variant={variant}>
-  {/* The scene is omitted entirely on mobile — not hidden with CSS. It is a
-     large animated SVG with a rAF loop and a ResizeObserver, and shipping it
-     to a phone only to display:none it would cost the download and the work
-     for something the user never sees. The script below detects its absence. */}
-  {!isMobile && (
+  {/* The scene is omitted entirely on the MOBILE variant — not hidden with CSS.
+     It is a large animated SVG with a rAF loop and a ResizeObserver, and shipping
+     it to a phone only to display:none it would cost the download and the work
+     for something the user never sees. The script below detects its absence.
+     The RESPONSIVE variant cannot make that call at build time (the same HTML
+     serves both widths), so it ships the scene, hides it under 68rem with CSS,
+     and pauses the loop from the script instead — see `sceneLive`. */}
+  {showScene && (
   <!-- The city. bcn-lego-checked: no esa- lego draws a to-scale isometric
        city/room scene with animated flow (checked the catalog — esa-* has
        cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
@@ -269,8 +307,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        the SAME calc engine drives both — only the chrome differs. -->
   <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
     <EsaCard>
-      <div class="smaqmd-wizard stack" data-gap="lg" data-wizard data-phase={isMobile ? 'intro' : 'steps'}>
-        {/* OPENING SLIDE (mobile only), deliberately outside the step machinery:
+      <div class="smaqmd-wizard stack" data-gap="lg" data-wizard data-phase={hasIntro ? 'intro' : 'steps'}>
+        {/* OPENING SLIDE (mobile + responsive), deliberately outside the step machinery:
             it carries no step number and no dot, because it asks nothing.
 
             It is also where the flow FORKS. This tool serves two people — someone
@@ -281,7 +319,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             for the shopper (see PLAN in the step machinery) rather than walking them
             into a step whose only content is the answer they already gave. The radio
             group stays in the DOM as the single source of truth the engine reads —
-            the buttons set it — and is hidden on this variant only.
+            the buttons set it — and is hidden on the variants that have this slide.
 
             Copy worked to NN/g's informative-microcopy model — Clarity > Concision
             > Character, both strings inside the house limits (title 35/60,
@@ -317,11 +355,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             and both start with a verb. The checking path leads because it is the
             larger audience during smoke season; the shopping path is the outline
             appearance because it is the less common one, not the lesser one. */}
-        {isMobile && (
+        {hasIntro && (
           <div class="smaqmd-wizard__intro" data-intro>
-            <h1 class="typography-heading-lg smaqmd-wizard__intro-title" data-intro-title tabindex="-1">
+            <h2 class="typography-heading-lg smaqmd-wizard__intro-title" data-intro-title tabindex="-1">
               How to get cleaner air in your room
-            </h1>
+            </h2>
             <p class="typography-body-md smaqmd-wizard__intro-lede">
               The Air Exchange Rate Tool estimates how many times an hour an air
               cleaner can replace your room's air. From the Sac Metro Air District.
@@ -344,7 +382,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <span class="smaqmd-wizard__dot" data-dot="2">3</span>
           </div>
           <p class="typography-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
-          <StepTitle class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</StepTitle>
+          <h2 class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</h2>
           <!-- The band's bottom EDGE, as the district's swoop rather than a straight
                rule. Two crossing waves, matching the agency's letterhead mark: the
                front one is the band's own colour and IS the band's edge (the flat
@@ -503,7 +541,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <esa-button-toggle
                 class="smaqmd-aerb__units"
                 data-field="units"
-                size={isMobile ? 'lg' : 'xs'}
+                size={hasIntro ? 'lg' : 'xs'}
                 label="Units"
                 value="ft2"
                 options={JSON.stringify(unitToggle)}
@@ -554,7 +592,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <div class="smaqmd-aerb__cleaner-head repel">
         <p class="typography-body-md smaqmd-aerb__cleaner-title">Air cleaner</p>
         <span data-remove-cleaner hidden>
-          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={isMobile ? 'lg' : 'sm'} />
+          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={hasIntro ? 'lg' : 'sm'} />
         </span>
       </div>
       <esa-radio-group size={ctl}
@@ -1129,6 +1167,40 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       padding: var(--spacing-400, 1rem);
     }
     .smaqmd-aerb__panel { max-block-size: none; overflow: visible; }
+
+    /* ----- RESPONSIVE VARIANT, narrow ----- */
+    /* Below this breakpoint the responsive variant becomes the mobile flow. The
+       rules above already collapsed the fixed-overlay composition (column,
+       header, panel overflow) for every variant; what is left is the handful of
+       MOBILE VARIANT decisions that are keyed to [data-variant='mobile'] and so
+       do not reach here. They are DUPLICATED rather than shared because the
+       mobile variant must apply them at EVERY width (it has no scene to lose)
+       while responsive must apply them only here — and a JS-set layout attribute
+       would flash the wrong layout before the deferred script runs.
+       KEEP IN SYNC with the "===== MOBILE VARIANT =====" block below: each rule
+       here mirrors one there, and the reasoning for each lives there. */
+
+    /* Mirror: with the scene gone the card flows. display:none rather than
+       absent, because the same HTML has to serve the wide layout too. The rAF
+       loop is paused to match — the script's `sceneLive`, gated on this same
+       68rem query. */
+    .smaqmd-aerb[data-variant='responsive'] .smaqmd-cityview { display: none; }
+    /* Mirror: one frame height for every slide, as a MIN so tall steps can grow. */
+    .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard {
+      block-size: auto;
+      min-block-size: 30rem;   /* = 480px */
+    }
+    .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard__body { overflow: visible; }
+    /* Mirror: 44px radio rows (touch-target stopgap for esassoc/ecology#37). */
+    .smaqmd-aerb[data-variant='responsive'] esa-radio-group {
+      --typography-body-lg-line-height: 2.75rem;   /* -> 44px rows */
+    }
+    /* Mirror: the step nav sticks to the foot of the flowed card. */
+    .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard__nav {
+      position: sticky; inset-block-end: 0;
+      background: var(--color-background-elevation-raised, #fcfcfc);
+      padding-block: var(--spacing-300, 0.75rem);
+    }
   }
 
   /* ===== MOBILE VARIANT =====
@@ -1206,9 +1278,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   /* The fork is asked on the opening slide now, so the radio group that used to ask
      it at the top of the cleaners step would be a second copy of a question already
      answered. Hidden, not removed: it stays the single source of truth the engine
-     reads (raw('hasCleaner')), and the intro buttons write to it. Mobile only —
-     the other views have no opening slide, so there it is still the real control. */
-  .smaqmd-aerb[data-variant='mobile'] [data-field='hasCleaner'] { display: none; }
+     reads (raw('hasCleaner')), and the intro buttons write to it. Only on the two
+     variants that HAVE the opening slide (mobile + responsive) — the default
+     wizard has no slide, so there it is still the real control. Responsive hides
+     it at EVERY width, not just narrow ones: the slide it duplicates is likewise
+     shown at every width, so the question is already answered on a desktop too. */
+  .smaqmd-aerb:is([data-variant='mobile'], [data-variant='responsive']) [data-field='hasCleaner'] { display: none; }
   .smaqmd-wizard__intro-lede {
     margin: 0;
     color: var(--color-content-default-secondary);   /* 5.10:1 on the wash */
@@ -1255,6 +1330,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   const root = document.querySelector<HTMLElement>('[data-aerb-wizard]');
   if (root) {
+    // THE narrow-screen breakpoint, in JS. One MediaQueryList shared by both
+    // consumers below (header placement, and the responsive variant's scene
+    // pause) so they can never disagree about which side of 68rem we are on.
+    // Must stay identical to the `@media (max-width: 68rem)` query in the style
+    // block above — the CSS hides the scene, this decides whether it animates.
+    const mqMobile = window.matchMedia('(max-width: 68rem)');
+
     // ---- responsive header placement ----
     // Desktop keeps the page header atop the card column; mobile moves it ABOVE
     // the graphic (its DOM node is relocated, not duplicated, so its listeners
@@ -1262,7 +1344,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     {
       const headerEl = root.querySelector<HTMLElement>('.smaqmd-aerb__header');
       const colEl = root.querySelector<HTMLElement>('.smaqmd-aerw__col');
-      const mqMobile = window.matchMedia('(max-width: 68rem)');
       const placeHeader = () => {
         if (!headerEl) return;
         if (mqMobile.matches) {
@@ -1343,7 +1424,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const sceneSentinel = root.querySelector<HTMLElement>('[data-safe]');
     const sentinel = sceneSentinel ?? document.createElement('div');
     const hasScene = !!(sceneSvg && sceneStage && sceneSentinel);
+    // hasScene answers "is the scene in the document"; sceneLive answers "is it
+    // WORTH DRAWING right now". They differ for exactly one case: the responsive
+    // variant ships the scene at every width but CSS-hides it under 68rem, where
+    // the container measures 0x0 — so an unguarded loop would ease gradients
+    // nobody sees and syncViewport would fit to a zero-sized box, poisoning `safe`
+    // for when the scene comes back. Every other variant has sceneLive === hasScene
+    // forever: 'mobile' never renders the scene, 'default' never hides it.
+    const isResponsive = root.dataset.variant === 'responsive';
+    let sceneLive = hasScene && !(isResponsive && mqMobile.matches);
     const syncViewport = () => {
+      if (!sceneLive) return;
       viewW = container.clientWidth; viewH = container.clientHeight;
       svg.setAttribute('viewBox', `0 0 ${viewW} ${viewH}`);
       const s = sentinel.getBoundingClientRect();
@@ -1820,6 +1911,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
 
     const frame = (ts: number) => {
+      // A crossing into narrow can land mid-loop; drop out on the next tick
+      // rather than waiting for the morph to finish against a hidden scene.
+      if (!sceneLive) { running = false; return; }
       const dt = Math.min(0.05, (ts - last) / 1000 || 0);
       last = ts;
 
@@ -1841,7 +1935,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       else running = false;
     };
     const startLoop = () => {
-      if (!hasScene || running) return;
+      if (!sceneLive || running) return;   /* sceneLive already implies hasScene */
       running = true;
       last = performance.now();
       requestAnimationFrame(frame);
@@ -1893,6 +1987,33 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       tgt.L = b.L; tgt.W = b.W; tgt.H = b.H;
       startLoop();
     };
+
+    // ---- scene pause across the breakpoint (responsive variant only) ----
+    // The responsive variant is the only one whose scene appears and disappears
+    // during a session, so this is the only one that needs to stop and restart the
+    // rAF loop. Registered here, below morphScene, because it calls it.
+    //
+    // Going narrow: flipping sceneLive is enough — frame() bails on its next tick
+    // and startLoop() refuses to restart, so nothing runs while the scene is
+    // hidden. Coming back wide, two things are stale and both are SNAPPED rather
+    // than replayed: the eased room box and the capacity ghost's scale, which
+    // would otherwise animate from wherever the loop happened to stop to wherever
+    // the inputs now say — a morph the user never triggered, of a scene they were
+    // not looking at. Then refit (the container was 0x0 while hidden, and the
+    // window has by definition just been resized) and restart the waves via
+    // morphScene, which ends in startLoop().
+    if (isResponsive && hasScene) {
+      mqMobile.addEventListener('change', () => {
+        const live = !mqMobile.matches;
+        if (live === sceneLive) return;
+        sceneLive = live;
+        if (!live) return;
+        cur.L = tgt.L; cur.W = tgt.W; cur.H = tgt.H;
+        capS = capSTgt;
+        syncViewport();
+        morphScene();
+      });
+    }
 
     // ---- air-cleaner list (add / remove any number, capped at MAX_CLEANERS) ----
     const cleanersHost = root.querySelector<HTMLElement>('[data-cleaners]')!;

@@ -50,6 +50,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-08-28',
     status: 'in-progress',
   },
+  {
+    slug: 'air-exchange-rate-responsive',
+    title: 'Air Exchange Rate Tool — Responsive',
+    description:
+      'The wizard and the mobile view as one page: the opening slide at every size, the isometric scene only where there is width to read it. Same calc engine as both.',
+    route: '/prototypes/air-exchange-rate-responsive',
+    createdAt: '2026-09-01',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

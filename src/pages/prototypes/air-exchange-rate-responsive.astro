@@ -1,14 +1,17 @@
 ---
-// /prototypes/air-exchange-rate-mobile — the MOBILE presentation of Option B.
-// Not a fork: it is the same smaqmd-aer-wizard component in its `mobile` variant,
-// so the steps, the fields and the whole calc engine are literally the same code
-// as the wizard view and cannot drift from it. The variant drops the isometric
-// scene (it needs width a phone has not got, and it is secondary to the answer)
-// and steps every sizable esa-* lego up to `lg` for touch.
+// /prototypes/air-exchange-rate-responsive — the COMBINED presentation of Option B.
+// Not a fork and not a third design: it is the same smaqmd-aer-wizard component in
+// its `responsive` variant, so the steps, the fields and the whole calc engine are
+// literally the same code as the wizard and mobile views and cannot drift from them.
 //
-// Registered in src/data/prototypes.ts as its own entry rather than living behind
-// Option B's view toggle: it is a device target, not another presentation of the
-// same page, and it is the one view that should be opened directly on a phone.
+// It merges the two existing views along the one axis that actually depends on
+// screen width — the isometric scene, which needs room to read. Wide screens get
+// the wizard composition (scene behind, flow floating over it); below 68rem the
+// scene is hidden and its animation loop paused, leaving the mobile flow. The
+// opening fork slide is shown at EVERY width, so both audiences (checking a
+// cleaner vs shopping for one) meet the same single question first, and the
+// controls stay `lg` throughout — one page cannot know whether the pointer is a
+// thumb, so it takes the touch-safe size everywhere.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SmaqmdAerWizard from '../../components/smaqmd-aer-wizard.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
@@ -18,14 +21,14 @@ import { withBase } from '../../lib/base';
 import '@esa/tokens/a11y.css';
 ---
 <!-- manifest:
-  layout: single flowed column (component-owned, no fixed overlay)
+  layout: component-owned (fixed overlay when wide, single flowed column when narrow)
   sections:
     - back link          -> esa-button (href) to the prototype library
     - page h1            -> visually-hidden <h1> (the wizard's headings start at h2)
     - opening slide      -> smaqmd-aer-wizard (replaces esa-page-header)
-    - wizard steps       -> smaqmd-aer-wizard variant="mobile" (no scene, lg controls)
+    - wizard steps       -> smaqmd-aer-wizard variant="responsive" (scene wide-only, lg controls)
 -->
-<BaseLayout title="Air Exchange Rate Tool (Mobile) — SMAQMD">
+<BaseLayout title="Air Exchange Rate Tool (Responsive) — SMAQMD">
   <main>
     <!-- THE PAGE h1. The wizard's headings all start at h2 (it is a section, and
          the same component also ships inside the standalone build, where a host
@@ -37,15 +40,16 @@ import '@esa/tokens/a11y.css';
          .visually-hidden is the hub utility from @esa/tokens/a11y.css — the clip
          pattern is NOT hand-rolled here. -->
     <h1 class="visually-hidden">Air Exchange Rate Tool</h1>
-    <SmaqmdAerWizard variant="mobile">
+    <SmaqmdAerWizard variant="responsive">
       <!-- No esa-page-header here: its title and lede would restate the opening
-           slide immediately above the same fold. The slide owns the question; the h1 above owns the
-           document heading.
+           slide, which this variant shows at every width. The slide owns the
+           question; the h1 above owns the document heading.
 
-           No version toggle either. This is its own prototype now, not a fourth
-           presentation of Option B, so the segmented switcher would offer three
-           destinations that are all the desktop tool. BaseLayout ships no nav, so
-           without SOMETHING here a phone has no way back out — hence the one link. -->
+           No version toggle either. The switcher's other destinations all carry a
+           page header and no intro slide, so toggling INTO this page would
+           silently drop the chrome the toggle itself lives in. BaseLayout ships no
+           nav, so without SOMETHING here there is no way back out — hence the one
+           link. -->
       <div slot="header">
         <EsaButton
           href={withBase('/')}

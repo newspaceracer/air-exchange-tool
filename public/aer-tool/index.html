@@ -1,0 +1,848 @@
+<!doctype html>
+<!--
+  Air Exchange Rate Tool — standalone, zero-dependency build.
+
+  Hand-ported from the Astro prototype
+  (src/components/smaqmd-aer-wizard.astro, variant="responsive") so the client
+  can host it without Astro, Lit, npm or a build step. Everything the prototype
+  got from the @esa/ecology design system — card / stat / alert-box chrome, the
+  text-field and radio-group controls, the live-region announcer, the design
+  tokens — is reimplemented here on native HTML elements. See README.md.
+
+  Open this file directly (double-click) or serve the folder. Both work; there
+  are no module scripts and no absolute URLs.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Air Exchange Rate Tool — Sac Metro Air District</title>
+    <meta
+      name="description"
+      content="Estimate how many times an hour an air cleaner can replace the air in your room, and find the minimum CADR to look for."
+    />
+    <!-- Inline favicon so the page never fires a 404 for /favicon.ico, wherever
+         it is hosted. A data: URI keeps the folder self-contained. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230073b2'/%3E%3Cg fill='none' stroke='%23fcfcfc' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 11h13a3.5 3.5 0 1 0-3.5-3.5'/%3E%3Cpath d='M6 16h16a3.5 3.5 0 1 1-3.5 3.5'/%3E%3Cpath d='M6 21h9a3.5 3.5 0 1 1-3.5 3.5'/%3E%3C/g%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Plain classic script, deliberately NOT type="module": modules are
+         blocked by the file:// origin rules, and this has to open by
+         double-click. `defer` gives it the parsed DOM without a DOMContentLoaded
+         wrapper. -->
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <!-- THE DOCUMENT h1, and the only element on this page OUTSIDE the embeddable
+         region below. It is visually hidden because the opening slide's title is
+         the visible heading a sighted user reads — but a document still needs a
+         top-level heading, and in the standalone and iframe cases nothing else
+         supplies one.
+
+         It sits outside <main> deliberately. The region below is what README.md
+         option B tells the client to paste into their own page, and THAT page
+         owns its h1; if this element were inside, every embed would ship a second
+         one. So the region's headings all start at h2 and slot cleanly under
+         whatever heading the host provides. -->
+    <h1 class="visually-hidden">Air Exchange Rate Tool</h1>
+
+    <!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->
+    <main class="smaqmd-aerb" data-aerb-wizard data-variant="responsive">
+      <div class="smaqmd-aerb__stage smaqmd-cityview" data-cityview data-state="idle"> <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img" aria-label="Isometric city scene: your room as a building with windows and a door, and each air cleaner as its own smaller building on a street carrying used air out and clean air back. A dashed outline shows the largest room the cleaners could cover."> <defs> <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width="45.034" height="26"> <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle> <circle class="smaqmd-cityview__dot" cx="22.517" cy="13" r="1.1"></circle> </pattern> <!-- Air-change waves — one return + one intake gradient PER cleaner, so
+      each lane scrolls at its own cadence (tied to that cleaner's ACH
+      share). Return: full saturation fading to transparent, scrolled
+      cleaner → room (one repeat = one air change). Both ends transparent
+      so repeats meet seamlessly; the full-saturation head sits near
+      offset 0.8. Intake: same shape, scrolled room → cleaner, in the
+      neutral used-air color. -->  <linearGradient id="smaqmd-return-grad-1" data-return-grad="1" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop" offset="1" stop-opacity="0"></stop> </linearGradient> <linearGradient id="smaqmd-out-grad-1" data-out-grad="1" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop-out" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop-out" offset="1" stop-opacity="0"></stop> </linearGradient>  <linearGradient id="smaqmd-return-grad-2" data-return-grad="2" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop" offset="1" stop-opacity="0"></stop> </linearGradient> <linearGradient id="smaqmd-out-grad-2" data-out-grad="2" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop-out" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop-out" offset="1" stop-opacity="0"></stop> </linearGradient>  <linearGradient id="smaqmd-return-grad-3" data-return-grad="3" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop" offset="1" stop-opacity="0"></stop> </linearGradient> <linearGradient id="smaqmd-out-grad-3" data-out-grad="3" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop-out" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop-out" offset="1" stop-opacity="0"></stop> </linearGradient>  <linearGradient id="smaqmd-return-grad-4" data-return-grad="4" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop" offset="1" stop-opacity="0"></stop> </linearGradient> <linearGradient id="smaqmd-out-grad-4" data-out-grad="4" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="0" x2="1" y2="0"> <stop class="smaqmd-cityview__gstop-out" offset="0" stop-opacity="0"></stop> <stop class="smaqmd-cityview__gstop-out" offset="0.8" stop-opacity="1"></stop> <stop class="smaqmd-cityview__gstop-out" offset="1" stop-opacity="0"></stop> </linearGradient>  </defs> <!-- Isometric dot paper — the lattice the whole drawing sits on. --> <rect class="smaqmd-cityview__paper" x="0" y="0" width="100%" height="100%" fill="url(#smaqmd-iso-dots)"></rect> <polygon class="smaqmd-cityview__ground" data-ground></polygon> <!-- Streets — one per cleaner. Each carries a road surface, the out lane,
+      and the return lane's base track + bright wave. All sit BELOW the
+      buildings, so each lane end tucks behind the room / cleaner and reads
+      as entering or leaving it — never clipping on top of a face. Wave
+      strokes are inline `url(#…)` per cleaner (inline beats the scoped
+      stylesheet's presentation attributes). Groups i>1 start hidden. --> <g class="smaqmd-cityview__lanes" data-lanes="1"> <polyline class="smaqmd-cityview__road" data-road></polyline> <polyline class="smaqmd-cityview__track" data-flow="out-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="out-wave" style="stroke: url(#smaqmd-out-grad-1)"></polyline> <polyline class="smaqmd-cityview__track" data-flow="return-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="wave" style="stroke: url(#smaqmd-return-grad-1)"></polyline> </g><g class="smaqmd-cityview__lanes" data-lanes="2" style="visibility:hidden"> <polyline class="smaqmd-cityview__road" data-road></polyline> <polyline class="smaqmd-cityview__track" data-flow="out-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="out-wave" style="stroke: url(#smaqmd-out-grad-2)"></polyline> <polyline class="smaqmd-cityview__track" data-flow="return-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="wave" style="stroke: url(#smaqmd-return-grad-2)"></polyline> </g><g class="smaqmd-cityview__lanes" data-lanes="3" style="visibility:hidden"> <polyline class="smaqmd-cityview__road" data-road></polyline> <polyline class="smaqmd-cityview__track" data-flow="out-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="out-wave" style="stroke: url(#smaqmd-out-grad-3)"></polyline> <polyline class="smaqmd-cityview__track" data-flow="return-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="wave" style="stroke: url(#smaqmd-return-grad-3)"></polyline> </g><g class="smaqmd-cityview__lanes" data-lanes="4" style="visibility:hidden"> <polyline class="smaqmd-cityview__road" data-road></polyline> <polyline class="smaqmd-cityview__track" data-flow="out-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="out-wave" style="stroke: url(#smaqmd-out-grad-4)"></polyline> <polyline class="smaqmd-cityview__track" data-flow="return-track"></polyline> <polyline class="smaqmd-cityview__wave" data-flow="wave" style="stroke: url(#smaqmd-return-grad-4)"></polyline> </g> <!-- Room building (large). --> <polygon class="smaqmd-cityview__room-face" data-room="left"></polygon> <polygon class="smaqmd-cityview__room-face" data-room="right"></polygon> <polygon class="smaqmd-cityview__room-face" data-room="top"></polygon> <!-- Architectural details on the room building — part of the same
+      bcn-lego-checked cityview block (windows on both visible walls whose
+      count scales with wall length, a door, a parapet line, rooftop units).
+      Pre-rendered pools only; JS toggles style.visibility (NOT display — the
+      same WebKit paint-server quirk noted on the lanes/ghost) and sets
+      points every draw so details morph in lockstep with the eased room. --> <g class="smaqmd-cityview__details" data-room-details style="visibility:hidden"> <polygon class="smaqmd-cityview__parapet" data-parapet></polygon> <polygon class="smaqmd-cityview__win" data-win-l="1" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="2" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="3" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="4" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="5" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="6" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="7" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="8" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="9" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="10" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="11" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="12" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="13" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="14" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="15" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="16" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="17" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="18" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="19" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="20" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="21" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="22" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="23" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-l="24" style="visibility:hidden"></polygon> <polygon class="smaqmd-cityview__win" data-win-r="1" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="2" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="3" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="4" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="5" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="6" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="7" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="8" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="9" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="10" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="11" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="12" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="13" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="14" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="15" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="16" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="17" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="18" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="19" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="20" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="21" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="22" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="23" style="visibility:hidden"></polygon><polygon class="smaqmd-cityview__win" data-win-r="24" style="visibility:hidden"></polygon> <polygon class="smaqmd-cityview__door" data-door style="visibility:hidden"></polygon> <g class="smaqmd-cityview__rtu" data-rtu="1" style="visibility:hidden"> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="top"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="left"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="right"></polygon> </g><g class="smaqmd-cityview__rtu" data-rtu="2" style="visibility:hidden"> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="top"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="left"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="right"></polygon> </g><g class="smaqmd-cityview__rtu" data-rtu="3" style="visibility:hidden"> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="top"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="left"></polygon> <polygon class="smaqmd-cityview__rtu-face" data-rtu-face="right"></polygon> </g> <g class="smaqmd-cityview__tower" data-tower style="visibility:hidden"> <line class="smaqmd-cityview__tower-leg" data-tower-leg="1"></line> <line class="smaqmd-cityview__tower-leg" data-tower-leg="2"></line> <polygon class="smaqmd-cityview__tower-face" data-tower-face="top"></polygon> <polygon class="smaqmd-cityview__tower-face" data-tower-face="left"></polygon> <polygon class="smaqmd-cityview__tower-face" data-tower-face="right"></polygon> </g> <g class="smaqmd-cityview__mast" data-mast style="visibility:hidden"> <line class="smaqmd-cityview__mast-line" data-mast-line></line> <circle class="smaqmd-cityview__mast-tip" data-mast-tip r="1.8"></circle> </g> </g> <!-- Capacity ghost — a dashed outline of the largest room the cleaners can
+      cover at the target, drawn on the actual room to compare sizes. Static
+      (scope-stamped) group; JS sets its face points + label each draw and
+      toggles visibility (NOT display — same WebKit paint-server quirk noted
+      on the lanes). Paints after the room faces; the data-cap-compare swap on
+      the container makes the bigger box the more transparent one. --> <g class="smaqmd-cityview__capg" data-capg style="visibility:hidden"> <polygon class="smaqmd-cityview__cap-face" data-cap="left"></polygon> <polygon class="smaqmd-cityview__cap-face" data-cap="right"></polygon> <polygon class="smaqmd-cityview__cap-face" data-cap="top"></polygon> <text class="smaqmd-cityview__dim smaqmd-cityview__cap-label" data-label="capacity" text-anchor="start">—</text> </g> <!-- Air-cleaner buildings (small) — one per cleaner, AFTER the room faces so
+      they paint in front. Groups i>1 start hidden. --> <g class="smaqmd-cityview__unitg" data-unitg="1"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="2" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="3" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="4" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g> <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text> <text class="smaqmd-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text> <text class="smaqmd-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text> <!-- Drag grips — part of the same bcn-lego-checked cityview block: each edge
+      drags its dimension and types into the form fields (inputs stay the
+      source of truth). No esa- lego offers draggable diagram handles; the
+      write-back goes through the esa-text-field legos. --> <!-- Each hit line sits immediately before its own handle so the hover/active
+      CSS can scope to a single grip with the adjacent-sibling combinator (+).
+      Interleaving (not hit,hit,hit,handle,handle,handle) is what prevents one
+      edge's hover from darkening every chevron. --> <g data-grips> <line class="smaqmd-cityview__hit" data-grip="length"></line> <g class="smaqmd-cityview__handle" data-grip="length"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> <line class="smaqmd-cityview__hit" data-grip="width"></line> <g class="smaqmd-cityview__handle" data-grip="width"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> <line class="smaqmd-cityview__hit" data-grip="height"></line> <g class="smaqmd-cityview__handle" data-grip="height"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> </g> </svg> <!-- Invisible safe-area sentinel: CSS declares (per breakpoint) where the
+      buildings may live, clear of the panel + header; JS observes this rect
+      and feeds it to the fit math. --> <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div> <p class="typography-meta smaqmd-cityview__cap">
+      Air leaves your room, passes through the cleaner, and returns. When
+      entering length × width, drag the room's edges — or type — to resize it.
+      </p> </div>
+
+      <div class="smaqmd-aerw__col">
+        <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
+          <div class="esa-card">
+            <div class="esa-card__body typography-body-md">
+              <div class="smaqmd-wizard stack" data-gap="lg" data-wizard data-phase="intro">
+                <!-- OPENING SLIDE — carries the page's only h1 while it is
+                     showing, and forks the flow: "Check my air cleaner" walks
+                     the full three steps, "Help me pick one" drops the cleaners
+                     step. Both write the answer into the hidden hasCleaner
+                     radio group, which stays the single source of truth. -->
+                <div class="smaqmd-wizard__intro" data-intro>
+                  <h2
+                    class="typography-heading-lg smaqmd-wizard__intro-title"
+                    data-intro-title
+                    tabindex="-1"
+                  >
+                    How to get cleaner air in your room
+                  </h2>
+                  <p class="typography-body-md smaqmd-wizard__intro-lede">
+                    The Air Exchange Rate Tool estimates how many times an hour an air
+                    cleaner can replace your room's air. From the Sac Metro Air District.
+                  </p>
+                  <div class="smaqmd-wizard__intro-actions stack" data-gap="sm">
+                    <span data-nav="check">
+                      <button type="button" class="btn btn--primary btn--lg">
+                        Check my air cleaner
+                      </button>
+                    </span>
+                    <span data-nav="shop">
+                      <button type="button" class="btn btn--outline btn--lg">
+                        Help me pick one
+                      </button>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Progress head: numbered dots (the 3 input steps) + counter + title. -->
+                <div class="smaqmd-wizard__head stack" data-gap="sm">
+                  <div class="smaqmd-wizard__dots cluster" data-gap="xs" aria-hidden="true">
+                    <span class="smaqmd-wizard__dot" data-dot="0">1</span>
+                    <span class="smaqmd-wizard__dot" data-dot="1">2</span>
+                    <span class="smaqmd-wizard__dot" data-dot="2">3</span>
+                  </div>
+                  <p class="typography-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
+                  <h2
+                    class="typography-heading-md smaqmd-wizard__title"
+                    data-step-title
+                    tabindex="-1"
+                  >
+                    What size is your room?
+                  </h2>
+                  <!-- The band's bottom edge, as the district's swoop. Decorative. -->
+                  <svg
+                    class="smaqmd-wizard__swoop"
+                    viewBox="0 0 390 20"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path class="smaqmd-wizard__swoop-back" d="M0,0 H390 V2 C284,30 92,0 0,20 Z" />
+                    <path class="smaqmd-wizard__swoop-front" d="M0,0 H390 V4 C296,24 104,-6 0,14 Z" />
+                  </svg>
+                </div>
+
+                <!-- Step bodies — all present in the DOM (the engine reads every
+                     field on every recompute); only the active step is shown. -->
+                <div class="smaqmd-wizard__body">
+                  <!-- Step 0 — room -->
+                  <section class="stack" data-gap="md" data-step="0">
+                    <fieldset class="smaqmd-radio" data-field="roomMethod">
+                      <legend class="visually-hidden">Choose how to enter your room size</legend>
+                      <div class="smaqmd-radio__items">
+                        <label class="smaqmd-radio__item">
+                          <input type="radio" name="roomMethod" value="area" checked />
+                          <span class="smaqmd-radio__label typography-body-lg"
+                            >Floor area + ceiling height</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input type="radio" name="roomMethod" value="dimensions" />
+                          <span class="smaqmd-radio__label typography-body-lg"
+                            >Length × width × height</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input type="radio" name="roomMethod" value="volume" />
+                          <span class="smaqmd-radio__label typography-body-lg"
+                            >Room volume directly</span
+                          >
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    <div class="smaqmd-aerb__dims grid" data-gap="md">
+                      <div data-room="dimensions" hidden>
+                        <div class="smaqmd-field">
+                          <label class="smaqmd-field__label typography-label-lg" for="f-length"
+                            >Length (ft)</label
+                          >
+                          <div class="smaqmd-field__control">
+                            <input
+                              class="smaqmd-field__input"
+                              id="f-length"
+                              data-field="length"
+                              data-numeric
+                              type="text"
+                              inputmode="decimal"
+                              autocomplete="off"
+                              value="12"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div data-room="dimensions" hidden>
+                        <div class="smaqmd-field">
+                          <label class="smaqmd-field__label typography-label-lg" for="f-width"
+                            >Width (ft)</label
+                          >
+                          <div class="smaqmd-field__control">
+                            <input
+                              class="smaqmd-field__input"
+                              id="f-width"
+                              data-field="width"
+                              data-numeric
+                              type="text"
+                              inputmode="decimal"
+                              autocomplete="off"
+                              value="10"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div data-room="area">
+                        <div class="smaqmd-field">
+                          <label class="smaqmd-field__label typography-label-lg" for="f-area"
+                            >Floor area (ft²)</label
+                          >
+                          <div class="smaqmd-field__control">
+                            <input
+                              class="smaqmd-field__input"
+                              id="f-area"
+                              data-field="area"
+                              data-numeric
+                              type="text"
+                              inputmode="decimal"
+                              autocomplete="off"
+                              value="120"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div data-room="dimensions area">
+                        <div class="smaqmd-field">
+                          <label class="smaqmd-field__label typography-label-lg" for="f-height"
+                            >Ceiling height (ft)</label
+                          >
+                          <div class="smaqmd-field__control">
+                            <input
+                              class="smaqmd-field__input"
+                              id="f-height"
+                              data-field="height"
+                              data-numeric
+                              type="text"
+                              inputmode="decimal"
+                              autocomplete="off"
+                              value="8"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div data-room="volume" hidden>
+                        <div class="smaqmd-field">
+                          <label class="smaqmd-field__label typography-label-lg" for="f-volume"
+                            >Room volume (ft³)</label
+                          >
+                          <div class="smaqmd-field__control">
+                            <input
+                              class="smaqmd-field__input"
+                              id="f-volume"
+                              data-field="volume"
+                              data-numeric
+                              type="text"
+                              inputmode="decimal"
+                              autocomplete="off"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div data-room-hint hidden data-alert>
+                      <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+                        <div class="esa-alert-box__icon">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                          </svg>
+                        </div>
+                        <div class="esa-alert-box__body">
+                          <div class="esa-alert-box__message">Enter your room size to continue.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Step 1 — air cleaners. The intent fork was already answered
+                       on the opening slide, so the hasCleaner group is hidden
+                       here (CSS) and only kept as the engine's source of truth. -->
+                  <section class="stack" data-gap="md" data-step="1" hidden>
+                    <fieldset class="smaqmd-radio" data-field="hasCleaner">
+                      <legend class="smaqmd-radio__legend typography-label-lg">
+                        Do you have an air cleaner to check?
+                      </legend>
+                      <div class="smaqmd-radio__items">
+                        <label class="smaqmd-radio__item">
+                          <input type="radio" name="hasCleaner" value="yes" checked />
+                          <span class="smaqmd-radio__label typography-body-lg"
+                            >Yes, I'll enter it</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input type="radio" name="hasCleaner" value="no" />
+                          <span class="smaqmd-radio__label typography-body-lg"
+                            >No, show me what to buy</span
+                          >
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    <!-- Cleaner entry — revealed only on "Yes". -->
+                    <div class="stack" data-gap="md" data-cleaner-entry>
+                      <!-- Cleaner blocks stamped here by app.js (template at the foot of this file) -->
+                      <div class="stack" data-gap="lg" data-cleaners></div>
+                      <div class="cluster" data-gap="sm">
+                        <span data-add-cleaner>
+                          <button type="button" class="btn btn--outline btn--lg">
+                            <svg
+                              class="btn__icon"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M5 12h14"></path>
+                              <path d="M12 5v14"></path>
+                            </svg>
+                            <span class="btn__label">Add air cleaner</span>
+                          </button>
+                        </span>
+                        <p class="typography-meta" data-cap-note hidden>
+                          You've added the maximum of 4 air cleaners.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Step 2 — target -->
+                  <section class="stack" data-gap="md" data-step="2" hidden>
+                    <div class="smaqmd-field">
+                      <label class="smaqmd-field__label typography-label-lg" for="f-target"
+                        >Target air changes per hour</label
+                      >
+                      <div class="smaqmd-field__control">
+                        <input
+                          class="smaqmd-field__input"
+                          id="f-target"
+                          data-field="target"
+                          data-numeric
+                          type="text"
+                          inputmode="decimal"
+                          autocomplete="off"
+                          value="2"
+                          aria-describedby="h-target"
+                        />
+                      </div>
+                      <p class="smaqmd-field__help typography-body-sm" id="h-target">
+                        One air change means the cleaner has filtered a full room's worth of air.
+                        The California Air Resources Board (CARB) recommends at least 2 per hour.
+                        This target applies to the whole room — all cleaners together.
+                      </p>
+                    </div>
+
+                    <!-- Shown by recompute() only when the entered target drops
+                         below the CARB-recommended 2, so a low target is an
+                         explicit choice. -->
+                    <div data-target-warn hidden data-alert>
+                      <div class="esa-alert-box esa-alert-box--warning typography-body-sm">
+                        <div class="esa-alert-box__icon">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                          </svg>
+                        </div>
+                        <div class="esa-alert-box__body">
+                          <strong class="esa-alert-box__title typography-label-sm-strong"
+                            >Below the recommended minimum</strong
+                          >
+                          <div class="esa-alert-box__message">
+                            The California Air Resources Board recommends at least
+                            <strong>2</strong> air changes per hour. A lower target may not clear
+                            the air enough.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- A target of 0 (or less) is not a real goal — no cleaning
+                         at all. The result is blocked until it's positive. -->
+                    <div data-target-invalid hidden data-alert="assertive">
+                      <div class="esa-alert-box esa-alert-box--danger typography-body-sm">
+                        <div class="esa-alert-box__icon">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4"></path>
+                            <path d="M12 16h.01"></path>
+                          </svg>
+                        </div>
+                        <div class="esa-alert-box__body">
+                          <strong class="esa-alert-box__title typography-label-sm-strong"
+                            >Enter a target above 0</strong
+                          >
+                          <div class="esa-alert-box__message">
+                            A target of 0 means no air cleaning at all. Enter how many times per
+                            hour you want the room's air replaced — at least <strong>1</strong>,
+                            ideally <strong>2</strong> or more.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Step 3 — result -->
+                  <section class="stack" data-gap="md" data-step="3" hidden>
+                    <div class="stack" data-gap="md" data-result>
+                      <!-- ANSWER + hero metrics — the direct yes/no, then the two
+                           numbers that matter at EQUAL weight: the problem (ACH
+                           the setup delivers) and the fix (combined CADR to
+                           reach). Fail shows both; pass shows only ACH; shop
+                           only the CADR. -->
+                      <div class="stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
+                        <!-- The result phase's heading. h2 like the other two,
+                             for the reason given on the <main> below: this region
+                             is designed to be pasted into a host page that owns
+                             the document h1, so nothing inside it claims that
+                             level. Styling is entirely class-based, so the level
+                             is an outline decision only. -->
+                        <h2
+                          class="typography-heading-md smaqmd-aerb__answer-title"
+                          data-answer-title
+                          tabindex="-1"
+                        >
+                          —
+                        </h2>
+
+                        <div data-verdict-card="fail" hidden>
+                          <div class="esa-alert-box esa-alert-box--warning typography-body-sm">
+                            <div class="esa-alert-box__icon">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                                <path d="M12 9v4"></path>
+                                <path d="M12 17h.01"></path>
+                              </svg>
+                            </div>
+                            <div class="esa-alert-box__body">
+                              <strong class="esa-alert-box__title typography-label-sm-strong"
+                                >Below your target</strong
+                              >
+                              <div class="esa-alert-box__message">
+                                This room needs more clean air than your setup delivers. Add
+                                <strong data-r="moreunits">—</strong> more like yours — or swap in
+                                stronger cleaners — so their combined CADR reaches the number below
+                                and hits your target of <strong data-r="target">2</strong> air
+                                changes per hour.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div data-verdict-card="shop" hidden>
+                          <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+                            <div class="esa-alert-box__icon">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                              >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                              </svg>
+                            </div>
+                            <div class="esa-alert-box__body">
+                              <div class="esa-alert-box__message">
+                                CADR (Clean Air Delivery Rate) is the airflow rating printed on the
+                                air cleaner's box. Match or beat the number below to reach your
+                                target.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="smaqmd-aerb__heroes">
+                          <div data-metric="ach" hidden>
+                            <div class="esa-stat esa-stat--accent">
+                              <div class="esa-stat__value typography-display-sm">—</div>
+                              <div class="esa-stat__label typography-label-md">
+                                air changes per hour
+                              </div>
+                            </div>
+                          </div>
+                          <div data-metric="fix" hidden>
+                            <div class="esa-stat esa-stat--accent">
+                              <div class="esa-stat__value typography-display-sm">—</div>
+                              <div class="esa-stat__label typography-label-md">
+                                minimum combined CADR
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Over-700 caution: most consumer air cleaners top out
+                             around 700 ft³/min. -->
+                        <p class="typography-body-sm smaqmd-aerb__caution" data-cadr-high hidden>
+                          That's more than most air cleaners deliver (they top out around
+                          <strong>700 ft³/min</strong>), so you'll likely need more than one.
+                        </p>
+
+                        <!-- SECONDARY — the evidence for the number, as one
+                             legend sentence. Only shown with a cleaner
+                             delivering flow, so the comparison is complete. -->
+                        <div class="smaqmd-aerb__context" data-group="secondary" hidden>
+                          <p class="typography-body-sm">
+                            <span data-r="coversubj">Your cleaner covers</span> a room up to
+                            <strong data-r="coverarea">—</strong>, while your room is about
+                            <strong data-r="roomarea">—</strong>.
+                          </p>
+                          <fieldset class="smaqmd-toggle smaqmd-aerb__units" data-field="units">
+                            <legend class="visually-hidden">Units</legend>
+                            <label class="smaqmd-toggle__item">
+                              <input type="radio" name="units" value="ft2" checked />
+                              <span class="smaqmd-toggle__label">ft²</span>
+                            </label>
+                            <label class="smaqmd-toggle__item">
+                              <input type="radio" name="units" value="ft3" />
+                              <span class="smaqmd-toggle__label">ft³</span>
+                            </label>
+                          </fieldset>
+                        </div>
+                      </div>
+
+                      <div data-prompt="empty" hidden>
+                        <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+                          <div class="esa-alert-box__icon">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <path d="M12 16v-4"></path>
+                              <path d="M12 8h.01"></path>
+                            </svg>
+                          </div>
+                          <div class="esa-alert-box__body">
+                            <div class="esa-alert-box__message">
+                              Complete each step — a room size and a target above 0 — to see your
+                              result.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <!-- Nav — Back sits left (margin-auto), the forward action right. -->
+                <div class="smaqmd-wizard__nav">
+                  <span data-nav="back" hidden>
+                    <button type="button" class="btn btn--outline btn--lg">Back</button>
+                  </span>
+                  <span data-nav="next">
+                    <button type="button" class="btn btn--primary btn--lg">Next</button>
+                  </span>
+                  <span data-nav="result" hidden>
+                    <button type="button" class="btn btn--primary btn--lg">
+                      <svg
+                        class="btn__icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                      <span class="btn__label">See my result</span>
+                    </button>
+                  </span>
+                  <span data-nav="restart" hidden>
+                    <button type="button" class="btn btn--outline btn--lg">
+                      <svg
+                        class="btn__icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M3 2v6h6"></path>
+                        <path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path>
+                      </svg>
+                      <span class="btn__label">Start over</span>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cleaner-block template — cloned per cleaner by app.js, which stamps
+           the block id onto every [data-cleaner] and uniquifies the ids, `for`
+           targets, aria-describedby refs and radio `name`s inside it (two
+           cleaner blocks sharing a radio name would be ONE radio group). -->
+      <template data-cleaner-template>
+        <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
+          <div class="smaqmd-aerb__cleaner-head repel">
+            <p class="typography-body-md smaqmd-aerb__cleaner-title">Air cleaner</p>
+            <span data-remove-cleaner hidden>
+              <button
+                type="button"
+                class="btn btn--chrome btn--icon btn--lg"
+                aria-label="Remove this air cleaner"
+              >
+                <svg
+                  class="btn__icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <path d="M10 11v6"></path>
+                  <path d="M14 11v6"></path>
+                </svg>
+              </button>
+            </span>
+          </div>
+
+          <fieldset class="smaqmd-radio" data-field="unit" data-cleaner>
+            <legend class="smaqmd-radio__legend typography-label-lg">
+              What does the box or manual list?
+            </legend>
+            <div class="smaqmd-radio__items">
+              <label class="smaqmd-radio__item">
+                <input type="radio" name="unit" value="airflow" checked />
+                <span class="smaqmd-radio__label typography-body-lg"
+                  >Air flow rate / CADR (ft³/min)</span
+                >
+              </label>
+              <label class="smaqmd-radio__item">
+                <input type="radio" name="unit" value="ach" />
+                <span class="smaqmd-radio__label typography-body-lg"
+                  >Air changes per hour (ACH)</span
+                >
+              </label>
+            </div>
+          </fieldset>
+
+          <div data-unit-mode="airflow">
+            <div class="smaqmd-field">
+              <label class="smaqmd-field__label typography-label-lg" for="c-airflow"
+                >Air flow rate or CADR (ft³/min)</label
+              >
+              <div class="smaqmd-field__control">
+                <input
+                  class="smaqmd-field__input"
+                  id="c-airflow"
+                  data-field="airflow"
+                  data-cleaner
+                  data-numeric
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  aria-describedby="c-airflow-help"
+                />
+              </div>
+              <p class="smaqmd-field__help typography-body-sm" id="c-airflow-help">
+                CADR means Clean Air Delivery Rate. Use the highest air flow, or the lowest CADR
+                if three are listed.
+              </p>
+            </div>
+          </div>
+
+          <div class="stack" data-gap="md" data-unit-mode="ach" hidden>
+            <div class="smaqmd-field">
+              <label class="smaqmd-field__label typography-label-lg" for="c-ach"
+                >Air changes per hour (ACH)</label
+              >
+              <div class="smaqmd-field__control">
+                <input
+                  class="smaqmd-field__input"
+                  id="c-ach"
+                  data-field="ach"
+                  data-cleaner
+                  data-numeric
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <p class="typography-body-sm smaqmd-aerb__cleaner-note">
+              In what size room was that measured?
+            </p>
+            <div class="smaqmd-aerb__ref grid" data-gap="md">
+              <div class="smaqmd-field">
+                <label class="smaqmd-field__label typography-label-lg" for="c-refLength"
+                  >Length (ft)</label
+                >
+                <div class="smaqmd-field__control">
+                  <input
+                    class="smaqmd-field__input"
+                    id="c-refLength"
+                    data-field="refLength"
+                    data-cleaner
+                    data-numeric
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div class="smaqmd-field">
+                <label class="smaqmd-field__label typography-label-lg" for="c-refWidth"
+                  >Width (ft)</label
+                >
+                <div class="smaqmd-field__control">
+                  <input
+                    class="smaqmd-field__input"
+                    id="c-refWidth"
+                    data-field="refWidth"
+                    data-cleaner
+                    data-numeric
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+              <div class="smaqmd-field">
+                <label class="smaqmd-field__label typography-label-lg" for="c-refHeight"
+                  >Height (ft)</label
+                >
+                <div class="smaqmd-field__control">
+                  <input
+                    class="smaqmd-field__input"
+                    id="c-refHeight"
+                    data-field="refHeight"
+                    data-cleaner
+                    data-numeric
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="8"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </main>
+    <!-- ===== end of the embeddable region ===== -->
+  </body>
+</html>
