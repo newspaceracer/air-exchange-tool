@@ -1,37 +1,6 @@
-/* bcn-lego-checked: standalone zero-dependency client deliverable — every rule here is
-   hand-ported from smaqmd-aer-wizard.astro and its @esa/ecology legos (esa-card, esa-stat,
-   esa-alert-box, esa-text-field, esa-radio-group, esa-button) because no esa-* runtime
-   exists outside the Astro build: the .astro legos are compile-time only and the Lit ones
-   would re-introduce the npm dependency this file exists to remove. Checked Beacon (Angular,
-   same problem). This file IS the reusable home for the ported chrome. */
+/* bcn-lego-checked: zero-dependency client build, hand-ported from src/components/smaqmd-aer-wizard.astro and its @esa/ecology legos (esa-card, esa-stat, esa-alert-box, esa-text-field, esa-radio-group, esa-button) — no esa-* runtime exists outside the Astro build. */
 
-/* ============================================================================
-   Air Exchange Rate Tool — standalone stylesheet.
-
-   Ported from:
-     - src/components/smaqmd-aer-wizard.astro   (layout, wizard, city scene)
-     - src/styles/theme-smaqmd.css              (brand tokens + the AA pins)
-     - @esa/tokens {tokens,typography,layouts,component-tokens}.css
-     - @esa/ecology esa-card / esa-stat / esa-alert-box / esa-text-field /
-       esa-radio-group / esa-button
-
-   Token custom-property NAMES are kept exactly as they are in the design system
-   so this file stays diffable against the theme; only their VALUES are resolved
-   to literals (there is no token package to import here). Re-skinning the tool
-   means editing the :root block below and nothing else.
-
-   Everything is namespaced under .smaqmd-aerb / .smaqmd-*, .esa-*, .btn,
-   .typography-*, .stack/.cluster/.repel/.grid and .visually-hidden.
-   ========================================================================= */
-
-/* ---------------------------------------------------------------------------
-   1. FONT — Source Sans 3 (variable), the district's typeface.
-   SIL Open Font License 1.1; the full licence ships alongside as fonts/OFL.txt.
-   `font-display: swap` renders in the system fallback first so text is never
-   invisible while the ~29 KB file loads. Latin subset: a handful of exotic
-   glyphs (e.g. "≥" in the diagram label) fall back to system-ui, which is fine.
-   ------------------------------------------------------------------------ */
-@font-face {
+@font-face{
   font-family: 'Source Sans 3';
   font-style: normal;
   font-weight: 200 900;
@@ -39,29 +8,22 @@
   src: url('fonts/SourceSans3-Variable.woff2') format('woff2');
 }
 
-/* ---------------------------------------------------------------------------
-   2. TOKENS — resolved literals, original names.
-   ------------------------------------------------------------------------ */
-:root {
-  /* ----- brand: "Dawn" #0073B2, the district's Primary (Brand Guidelines 2026,
-     ADA Compliant Color Palette p.15), on the hub's Radix 1-12 step curve ----- */
+.smaqmd-aerb{
   --smaqmd-brand-2: #f4f9fb;
   --smaqmd-brand-3: #e5f0f5;
   --smaqmd-brand-6: #a8cade;
-  --smaqmd-brand-9: #0073b2; /* SOLID BRAND — the district primary, exact */
+  --smaqmd-brand-9: #0073b2;
   --smaqmd-brand-10: #076ea9;
-  --smaqmd-brand-11: #116194; /* low-contrast text (AA on white: 5.13:1) */
+  --smaqmd-brand-11: #116194;
   --smaqmd-brand-12: #173654;
 
-  /* ----- Earth Green — the guide's second Primary, carried at the spoke tier ----- */
   --smaqmd-earth-3: #ebf0e8;
   --smaqmd-earth-4: #dee6d9;
   --smaqmd-earth-6: #b8c7af;
   --smaqmd-earth-9: #5b784a;
-  --smaqmd-earth-11: #475f38; /* AA on white: 7.09:1 */
+  --smaqmd-earth-11: #475f38;
   --smaqmd-earth-12: #2e382a;
 
-  /* ----- neutral ramp ----- */
   --smaqmd-gray-1: #fcfcfc;
   --smaqmd-gray-2: #f9f9f9;
   --smaqmd-gray-3: #f0f0f0;
@@ -71,9 +33,8 @@
   --smaqmd-gray-7: #cecece;
   --smaqmd-gray-8: #bbbbbb;
   --smaqmd-gray-11: #646464;
-  --smaqmd-gray-12: #121212; /* near-black body text, matching airquality.org */
+  --smaqmd-gray-12: #121212;
 
-  /* ----- semantic: brand ----- */
   --color-background-brand: var(--smaqmd-brand-9);
   --color-background-brand-hover: var(--smaqmd-brand-10);
   --color-background-brand-active: var(--smaqmd-brand-10);
@@ -84,7 +45,6 @@
   --color-content-link: var(--smaqmd-brand-11);
   --color-content-on-brand-muted: var(--smaqmd-brand-12);
 
-  /* ----- semantic: neutral chain ----- */
   --color-content-default: var(--smaqmd-gray-12);
   --color-content-default-secondary: var(--smaqmd-gray-11);
   --color-content-default-tertiary: var(--smaqmd-gray-11);
@@ -96,27 +56,16 @@
   --color-background-elevation-raised: var(--smaqmd-gray-1);
   --color-background-elevation-sunken: var(--smaqmd-gray-3);
   --color-background-overlay-strong-hover: rgba(0, 0, 0, 0.05);
-  /* Used only by the diagram's grip-hover treatment; the hub has no such token,
-     so the component read it with a literal fallback. Named here so it is one
-     place rather than three. */
   --color-text: #1a1a1a;
 
-  /* ----- utility ramps (orange is this spoke's warning, not the hub's yellow) ----- */
   --color-orange-9: #f76b15;
   --color-orange-10: #ef5f00;
   --color-orange-12: #582d1d;
   --color-gray-12: #202020;
-  --color-background-utility-warning: var(--color-orange-9); /* the fail-scene accent */
+  --color-background-utility-warning: var(--color-orange-9);
   --color-background-utility-warning-subtle: #fff7ed;
   --color-border-utility-warning: #ffc182;
-  /* Step 12 rather than 11: it is the only orange clearing AA on EVERY surface
-     this spoke pairs it with — 11.61:1 on the page, 10.94:1 on the -subtle tint,
-     10.27:1 on -muted. Step 11 drops to 4.25:1 on the tint the alert box paints
-     its title against. */
   --color-content-utility-warning: var(--color-orange-12);
-  /* Text ON the solid orange fill has to leave the orange ramp to clear AA: the
-     darkest orange reaches only 3.91:1 on step 9, while near-black gray-12
-     clears at 5.48:1. The Radix "light 9" case. */
   --color-content-on-utility-warning: var(--color-gray-12);
 
   --color-background-utility-info-subtle: #fbfdff;
@@ -126,33 +75,22 @@
   --color-background-utility-success-subtle: #fbfefc;
   --color-border-utility-success: #adddc0;
 
-  /* ===== BASE-THEME AA PINS =====
-     Carried over verbatim from theme-smaqmd.css (lines 115-134), where they
-     mirror the hub's [data-a11y-assurance="wcag-aa"] profile into the base
-     theme so conformance does not depend on an opt-in attribute. The
-     contrast ratios in the comments are the values the UNPINNED tokens
-     measured — i.e. what each pin fixes. */
-  --color-background-accent: var(--color-orange-12); /* was 2.90:1 with its knockout text */
-  --color-content-utility-info: #113264; /* blue-12; was 4.25:1 on -muted */
-  --color-content-utility-success: #193b2d; /* green-12; was 4.21:1 on -muted */
-  --color-content-utility-danger: #641723; /* red-12; kept in step with the family */
+  --color-background-accent: var(--color-orange-12);
+  --color-content-utility-info: #113264;
+  --color-content-utility-success: #193b2d;
+  --color-content-utility-danger: #641723;
 
-  /* ----- spoke-tier Earth Green pair (see theme-smaqmd.css for why this is not
-     a tier-2 role: the hub's brand-secondary family was a Radix step 8 used as a
-     solid fill, an AA failure, and was retired) ----- */
   --smaqmd-color-background-secondary-brand: var(--smaqmd-earth-9);
   --smaqmd-color-content-secondary-brand: var(--smaqmd-earth-11);
-  --smaqmd-color-content-on-secondary-brand: var(--smaqmd-gray-1); /* 4.96:1 */
+  --smaqmd-color-content-on-secondary-brand: var(--smaqmd-gray-1);
   --smaqmd-color-background-secondary-brand-muted: var(--smaqmd-earth-4);
   --smaqmd-color-border-secondary-brand: var(--smaqmd-earth-6);
-  --smaqmd-color-content-on-secondary-brand-muted: var(--smaqmd-earth-12); /* 9.58:1 on the band */
+  --smaqmd-color-content-on-secondary-brand-muted: var(--smaqmd-earth-12);
   --smaqmd-color-background-secondary-brand-wash: var(--smaqmd-earth-3);
 
-  /* The opening slide keeps the BRAND (Dawn): it is a landing surface. */
   --smaqmd-color-background-intro-wash: var(--smaqmd-brand-3);
-  --smaqmd-color-content-intro-title: var(--smaqmd-brand-12); /* 10.71:1 on the wash */
+  --smaqmd-color-content-intro-title: var(--smaqmd-brand-12);
 
-  /* ----- spacing / radius / border ----- */
   --spacing-050: 0.125rem;
   --spacing-100: 0.25rem;
   --spacing-200: 0.5rem;
@@ -162,31 +100,24 @@
   --spacing-600: 2rem;
   --spacing-700: 3rem;
   --radius-sm: 0.25rem;
-  --radius-md: 0.25rem; /* the spoke flattens the hub's 8px default */
+  --radius-md: 0.25rem;
   --border-width-default: 1px;
   --elevation-2: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
 
-  /* ----- focus (design-principles: one band, the brand at a step that can be
-     seen; outline and never box-shadow alone, so forced-colors keeps it) ----- */
-  --focus-ring-color: var(--color-background-brand); /* solid brand: 4.96:1 */
+  --focus-ring-color: var(--color-background-brand);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
   --form-border-color: var(--color-border-default);
   --form-border-color-focus: var(--color-background-brand);
   --form-error-border-color: #ce2c31;
 
-  /* ----- motion ----- */
   --duration-base: 200ms;
   --easing-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
   --transition-fast: 150ms ease;
 
-  /* ----- type ----- */
   --typography-font-family-sans: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system,
     'Segoe UI', sans-serif;
   --typography-font-family-display: var(--typography-font-family-sans);
-  /* No monospace face is bundled: the tool renders no monospaced text (audited —
-     the mono token was declared in the theme but never read by this component),
-     so the stack is here only so an integrator inheriting it gets something sane. */
   --typography-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --typography-font-weight-regular: 350;
   --typography-font-weight-medium: 500;
@@ -194,55 +125,36 @@
   --typography-font-weight-bold: 650;
 }
 
-/* ---------------------------------------------------------------------------
-   3. RESET — the minimum the ported markup depends on.
-   ------------------------------------------------------------------------ */
-*,
-*::before,
-*::after {
+.smaqmd-aerb, .smaqmd-aerb *,
+.smaqmd-aerb *::before,
+.smaqmd-aerb *::after{
   box-sizing: border-box;
 }
 
-html {
-  /* SC 1.4.4 / 1.4.10: no maximum-scale, no user-scalable=no anywhere; the page
-     reflows to 320px and survives 400% zoom. */
+.smaqmd-aer-page{
+  margin: 0;
+  background: #fcfcfc;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
-body {
-  margin: 0;
-  font-family: var(--typography-font-family-sans);
-  font-weight: var(--typography-font-weight-regular);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--color-content-default);
-  background: var(--color-background-elevation-raised);
-  -webkit-font-smoothing: antialiased;
-}
-
-/* The layout primitives own spacing via `gap`; browser default margins on flow
-   elements would compound with it. Zeroed at :where() (0 specificity) so any
-   explicit margin still wins. Ported from @esa/tokens/layouts.css. */
-:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {
+.smaqmd-aerb :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre){
   margin: 0;
 }
 
-img,
-svg {
+.smaqmd-aerb img,
+.smaqmd-aerb svg{
   max-width: 100%;
 }
 
-[hidden] {
+.smaqmd-aerb [hidden]{
   display: none !important;
 }
 
-/* Ported from @esa/tokens/a11y.css. Every declaration is load-bearing: clip-path
-   for modern engines, clip for old ones, 1px (not 0) because a zero-sized node is
-   dropped from the accessibility tree in some engines, and nowrap so the text is
-   not read one word per line. */
-.visually-hidden {
+.smaqmd-visually-hidden{
   position: absolute;
+  font-size: 1rem;
+  line-height: 1.6;
   width: 1px;
   height: 1px;
   margin: -1px;
@@ -254,113 +166,94 @@ svg {
   clip-path: inset(50%);
 }
 
-/* ---------------------------------------------------------------------------
-   4. TYPOGRAPHY COMPOSITES — @esa/tokens/typography.css, flattened.
-
-   DELIBERATE DEVIATION: the hub's composites are FLUID (clamps on vw). Measured
-   on the prototype, that scales body-md down to 12.3px and meta to 10.2px at a
-   390px viewport — below the design system's own 16px body / 13px meta floors,
-   on the one screen this flow exists for. A standalone file has no build step to
-   regenerate the clamps against a different container, so the composites are
-   pinned to their DESKTOP rung at every width. Phones therefore read LARGER here
-   than in the prototype; nothing reads smaller.
-   ------------------------------------------------------------------------ */
-.typography-display-sm {
+.smaqmd-aerb .smaqmd-type-display-sm{
   font-family: var(--typography-font-family-display);
-  font-size: 2.25rem; /* 36px */
+  font-size: 2.25rem;
   font-weight: var(--typography-font-weight-bold);
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
-.typography-heading-lg {
+.smaqmd-aerb .smaqmd-type-heading-lg{
   font-family: var(--typography-font-family-display);
-  font-size: 1.875rem; /* 30px */
+  font-size: 1.875rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
-.typography-heading-md {
+.smaqmd-aerb .smaqmd-type-heading-md{
   font-family: var(--typography-font-family-display);
-  font-size: 1.5rem; /* 24px */
+  font-size: 1.5rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
-.typography-title-sm-strong {
-  font-size: 1.0625rem; /* 17px */
+.smaqmd-aerb .smaqmd-type-title-sm-strong{
+  font-size: 1.0625rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-body-lg {
-  font-size: 1.125rem; /* 18px */
+.smaqmd-aerb .smaqmd-type-body-lg{
+  font-size: 1.125rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.8;
   letter-spacing: 0.01em;
 }
 
-.typography-body-md {
-  font-size: 1rem; /* 16px — the design system's baseline (the hub rung is 15px;
-                      rounded up here because this file also serves as the page's
-                      body default and 16px is the stated floor) */
+.smaqmd-aerb .smaqmd-type-body-md{
+  font-size: 1rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-body-sm {
-  font-size: 0.875rem; /* 14px — the dense floor */
+.smaqmd-aerb .smaqmd-type-body-sm{
+  font-size: 0.875rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-label-lg {
-  font-size: 1.125rem; /* 18px */
+.smaqmd-aerb .smaqmd-type-label-lg{
+  font-size: 1.125rem;
   font-weight: var(--typography-font-weight-medium);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-label-md {
-  font-size: 0.9375rem; /* 15px */
+.smaqmd-aerb .smaqmd-type-label-md{
+  font-size: 0.9375rem;
   font-weight: var(--typography-font-weight-medium);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-label-sm-strong {
-  font-size: 0.875rem; /* 14px */
+.smaqmd-aerb .smaqmd-type-label-sm-strong{
+  font-size: 0.875rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.typography-meta {
-  /* 13px, not the hub's 12px: design-principles floors genuine meta at 13px and
-     the step counter is closer to UI than to a caption. */
+.smaqmd-aerb .smaqmd-type-meta{
   font-size: 0.8125rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-/* ---------------------------------------------------------------------------
-   5. LAYOUT PRIMITIVES — the subset of @esa/tokens/layouts.css this tool uses.
-   Composable engines tuned by --gap; `data-gap` picks a step declaratively.
-   ------------------------------------------------------------------------ */
-.stack {
+.smaqmd-aerb .smaqmd-stack{
   --gap: var(--spacing-400);
   display: flex;
   flex-direction: column;
   gap: var(--gap);
 }
 
-.cluster {
+.smaqmd-aerb .smaqmd-cluster{
   --gap: var(--spacing-300);
   --align: center;
   --justify: flex-start;
@@ -371,7 +264,7 @@ svg {
   justify-content: var(--justify);
 }
 
-.repel {
+.smaqmd-aerb .smaqmd-repel{
   --gap: var(--spacing-400);
   --align: center;
   display: flex;
@@ -381,7 +274,7 @@ svg {
   justify-content: space-between;
 }
 
-.grid {
+.smaqmd-aerb .smaqmd-grid{
   --gap: var(--spacing-400);
   --grid-min: 16rem;
   display: grid;
@@ -389,21 +282,14 @@ svg {
   grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));
 }
 
-/* presets — after the primitives so an attribute wins the equal-specificity tie */
-[data-gap='2xs'] { --gap: var(--spacing-100); }
-[data-gap='xs']  { --gap: var(--spacing-200); }
-[data-gap='sm']  { --gap: var(--spacing-300); }
-[data-gap='md']  { --gap: var(--spacing-400); }
-[data-gap='lg']  { --gap: var(--spacing-500); }
-[data-gap='xl']  { --gap: var(--spacing-600); }
+.smaqmd-aerb [data-gap='2xs']{ --gap: var(--spacing-100); }
+.smaqmd-aerb [data-gap='xs']{ --gap: var(--spacing-200); }
+.smaqmd-aerb [data-gap='sm']{ --gap: var(--spacing-300); }
+.smaqmd-aerb [data-gap='md']{ --gap: var(--spacing-400); }
+.smaqmd-aerb [data-gap='lg']{ --gap: var(--spacing-500); }
+.smaqmd-aerb [data-gap='xl']{ --gap: var(--spacing-600); }
 
-/* ---------------------------------------------------------------------------
-   6. esa-card — ported from @esa/ecology/src/components/esa-card.astro.
-   Only the default variant / default padding path is used here, so only those
-   rules are carried. --card-bg / --card-border-color stay the consumer hooks
-   the wizard's panel re-points.
-   ------------------------------------------------------------------------ */
-.esa-card {
+.smaqmd-aerb .smaqmd-card{
   --_card-bg: var(--card-bg, var(--color-background-elevation-raised));
   --_card-border: var(--card-border-color, var(--color-border-default));
   --_card-radius: var(--radius-md);
@@ -416,15 +302,11 @@ svg {
   overflow: hidden;
 }
 
-.esa-card__body {
+.smaqmd-aerb .smaqmd-card__body{
   padding: var(--_card-padding);
 }
 
-/* ---------------------------------------------------------------------------
-   7. esa-stat — ported from esa-stat.astro. --stat-accent-color is the consumer
-   hook the wizard re-points to the brand hue (its default is the secondary).
-   ------------------------------------------------------------------------ */
-.esa-stat {
+.smaqmd-aerb .smaqmd-stat{
   --_stat-value-color: var(--stat-value-color, var(--color-content-default));
   --_stat-label-color: var(--color-content-default-secondary);
   --_stat-accent-color: var(--stat-accent-color, var(--color-content-brand));
@@ -433,35 +315,28 @@ svg {
   display: flex;
   flex-direction: column;
   gap: var(--_stat-gap);
-  background: transparent; /* the container stays neutral; colour is the consumer's job */
+  background: transparent;
 }
 
-.esa-stat__value {
+.smaqmd-aerb .smaqmd-stat__value{
   color: var(--_stat-value-color);
 }
 
-.esa-stat--accent .esa-stat__value {
+.smaqmd-aerb .smaqmd-stat--accent .smaqmd-stat__value{
   color: var(--_stat-accent-color);
 }
 
-.esa-stat__label {
+.smaqmd-aerb .smaqmd-stat__label{
   color: var(--_stat-label-color);
 }
 
-/* ---------------------------------------------------------------------------
-   8. esa-alert-box — ported from esa-alert-box.astro.
-   THE TITLE CARRIES THE STATUS COLOUR; THE BODY DOES NOT — a coloured sentence
-   is harder to read than a neutral one, and an alert body is the longest text
-   these components carry. Never colour alone: every variant pairs its tint with
-   a distinct icon shape and, where present, a title.
-   ------------------------------------------------------------------------ */
-.esa-alert-box {
+.smaqmd-aerb .smaqmd-alert{
   --_alert-bg: var(--color-background-utility-info-subtle);
   --_alert-border: var(--color-border-utility-info);
   --_alert-accent: var(--color-content-utility-info);
   --_alert-icon-color: var(--_alert-accent);
   --_alert-title-color: var(--_alert-accent);
-  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary));
+  --_alert-text-color: var(--color-content-default-secondary);
 
   display: flex;
   align-items: flex-start;
@@ -472,71 +347,60 @@ svg {
   background: var(--_alert-bg);
 }
 
-.esa-alert-box--success {
+.smaqmd-aerb .smaqmd-alert--success{
   --_alert-bg: var(--color-background-utility-success-subtle);
   --_alert-border: var(--color-border-utility-success);
   --_alert-accent: var(--color-content-utility-success);
 }
 
-.esa-alert-box--warning {
+.smaqmd-aerb .smaqmd-alert--warning{
   --_alert-bg: var(--color-background-utility-warning-subtle);
   --_alert-border: var(--color-border-utility-warning);
   --_alert-accent: var(--color-content-utility-warning);
 }
 
-.esa-alert-box--danger {
+.smaqmd-aerb .smaqmd-alert--danger{
   --_alert-bg: var(--color-background-utility-danger-subtle);
   --_alert-border: var(--color-border-utility-danger);
   --_alert-accent: var(--color-content-utility-danger);
 }
 
-.esa-alert-box__icon {
+.smaqmd-aerb .smaqmd-alert__icon{
   flex-shrink: 0;
   color: var(--_alert-icon-color);
   padding-top: 1px;
   line-height: 0;
 }
 
-.esa-alert-box__body {
+.smaqmd-aerb .smaqmd-alert__body{
   flex: 1;
   min-width: 0;
 }
 
-.esa-alert-box__title {
+.smaqmd-aerb .smaqmd-alert__title{
   display: block;
   color: var(--_alert-title-color);
   margin-bottom: var(--spacing-050);
 }
 
-.esa-alert-box__message {
+.smaqmd-aerb .smaqmd-alert__message{
   color: var(--_alert-text-color);
 }
 
-/* ---------------------------------------------------------------------------
-   9. NATIVE CONTROLS — the esa-text-field / esa-radio-group / esa-button /
-   esa-button-toggle replacements. Sized to the legos' `lg` rung, which is what
-   the responsive variant ships at every width (the touch-correct 44px choice).
-
-   These are NATIVE elements on purpose. A hand-ported <div role="radio"> would
-   inherit none of the arrow-key handling, forced-colors styling or AT support
-   the real component carries; a native <input type="radio"> in a <fieldset>
-   carries all of it for free, and is what esa-radio-group itself now renders.
-   ------------------------------------------------------------------------ */
-
-/* ----- buttons ----- */
-.btn {
+.smaqmd-aerb .smaqmd-btn{
   display: inline-flex;
+  margin: 0;
+  text-transform: none;
+  text-decoration: none;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-200);
   font-family: inherit;
-  font-size: 1.125rem; /* lg */
+  font-size: 1.125rem;
   font-weight: var(--typography-font-weight-medium);
   line-height: 1;
   letter-spacing: 0.01em;
   padding: var(--spacing-400);
-  /* SC 2.5.8: 52px rendered, comfortably past the 24px minimum and the 44px
-     touch convention. Stated as a min so a wrapped label can only grow it. */
   min-block-size: 2.75rem;
   border: var(--border-width-default) solid transparent;
   border-radius: var(--radius-md);
@@ -548,75 +412,71 @@ svg {
     color var(--transition-fast);
 }
 
-.btn__icon {
+.smaqmd-aerb .smaqmd-btn__icon{
   flex-shrink: 0;
 }
 
-.btn:focus-visible {
-  /* outline, never box-shadow alone: forced-colors modes delete shadows and keep
-     outlines. */
+.smaqmd-aerb .smaqmd-btn:focus-visible{
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.btn--primary {
+.smaqmd-aerb .smaqmd-btn--primary{
   background: var(--color-background-brand);
   color: var(--color-content-default-knockout);
 }
 
-.btn--primary:hover {
+.smaqmd-aerb .smaqmd-btn--primary:hover{
   background: var(--color-background-brand-hover);
 }
 
-.btn--outline {
+.smaqmd-aerb .smaqmd-btn--outline{
   border-color: var(--color-border-default);
   color: var(--color-content-default);
 }
 
-.btn--outline:hover {
+.smaqmd-aerb .smaqmd-btn--outline:hover{
   background: var(--color-background-overlay-strong-hover);
 }
 
-.btn--chrome {
+.smaqmd-aerb .smaqmd-btn--chrome{
   color: var(--color-content-default-secondary);
 }
 
-.btn--chrome:hover {
+.smaqmd-aerb .smaqmd-btn--chrome:hover{
   background: var(--color-background-overlay-strong-hover);
   color: var(--color-content-default);
 }
 
-/* Icon-only: square, and named by aria-label in the markup (a bare icon button
-   announces nothing). */
-.btn--icon {
+.smaqmd-aerb .smaqmd-btn--icon{
   inline-size: 2.75rem;
   block-size: 2.75rem;
   padding: 0;
 }
 
-/* ----- text field (esa-text-field, size lg) ----- */
-.smaqmd-field {
+.smaqmd-aerb .smaqmd-field{
   display: block;
 }
 
-.smaqmd-field__label {
+.smaqmd-aerb .smaqmd-field__label{
   display: block;
   margin-block-end: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-field__control {
+.smaqmd-aerb .smaqmd-field__control{
   display: flex;
 }
 
-.smaqmd-field__input {
+.smaqmd-aerb .smaqmd-field__input{
   flex: 1 1 auto;
+  margin: 0;
+  text-transform: none;
+  -webkit-appearance: none;
+  appearance: none;
   min-inline-size: 0;
   inline-size: 100%;
   font-family: inherit;
-  /* >= 1rem, always. Mobile Safari zooms the viewport when a focused input is
-     under 16px and does not zoom back out; raising the font is the accessible
-     fix, unlike maximum-scale=1 which would fail SC 1.4.4. */
   font-size: 1.125rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.5;
@@ -628,60 +488,53 @@ svg {
   min-block-size: 2.75rem;
 }
 
-.smaqmd-field__input:focus-visible {
+.smaqmd-aerb .smaqmd-field__input:focus-visible{
   border-color: var(--form-border-color-focus);
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.smaqmd-field__input::placeholder {
+.smaqmd-aerb .smaqmd-field__input::placeholder{
   color: var(--color-content-default-secondary);
   opacity: 1;
 }
 
-/* The hint. Wired to its input with aria-describedby in the markup — a hint that
-   is only visually adjacent is not programmatically associated. */
-.smaqmd-field__help {
+.smaqmd-aerb .smaqmd-field__help{
   margin-block-start: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-/* ----- radio group (esa-radio-group, size lg) ----- */
-.smaqmd-radio {
+.smaqmd-aerb .smaqmd-radio{
   margin: 0;
   padding: 0;
   border: 0;
   min-inline-size: 0;
 }
 
-/* The legend NAMES the fieldset natively — a name by reference that cannot drift
-   from the visible text the way a copied aria-label does. */
-.smaqmd-radio__legend {
+.smaqmd-aerb .smaqmd-radio__legend{
   padding: 0;
   margin-block-end: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-radio__items {
+.smaqmd-aerb .smaqmd-radio__items{
   display: flex;
   flex-direction: column;
   gap: var(--spacing-200);
 }
 
-.smaqmd-radio__item {
+.smaqmd-aerb .smaqmd-radio__item{
   display: flex;
   align-items: center;
   gap: var(--spacing-200);
   cursor: pointer;
-  /* SC 2.5.8 — the whole row is the target, and it is 44px tall. The Astro
-     variant reaches the same number by inflating a typography composite's
-     line-height, which it documents as a stopgap; a real min-block-size here is
-     the fix, and it survives a label that wraps. */
   min-block-size: 2.75rem;
 }
 
-.smaqmd-radio__item input[type='radio'] {
+.smaqmd-aerb .smaqmd-radio__item input[type='radio']{
   appearance: none;
+  font: inherit;
+  font-size: 1rem;
   -webkit-appearance: none;
   flex-shrink: 0;
   margin: 0;
@@ -696,7 +549,7 @@ svg {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.smaqmd-radio__item input[type='radio']::before {
+.smaqmd-aerb .smaqmd-radio__item input[type='radio']::before{
   content: '';
   inline-size: 0.75rem;
   block-size: 0.75rem;
@@ -706,21 +559,20 @@ svg {
   transition: transform 120ms ease;
 }
 
-.smaqmd-radio__item input[type='radio']:checked::before {
+.smaqmd-aerb .smaqmd-radio__item input[type='radio']:checked::before{
   transform: scale(1);
 }
 
-.smaqmd-radio__item input[type='radio']:focus-visible {
+.smaqmd-aerb .smaqmd-radio__item input[type='radio']:focus-visible{
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.smaqmd-radio__label {
+.smaqmd-aerb .smaqmd-radio__label{
   color: var(--color-content-default);
 }
 
-/* ----- unit toggle (esa-button-toggle) ----- */
-.smaqmd-toggle {
+.smaqmd-aerb .smaqmd-toggle{
   display: inline-flex;
   margin: 0;
   padding: 0;
@@ -730,14 +582,14 @@ svg {
   overflow: hidden;
 }
 
-.smaqmd-toggle__item {
+.smaqmd-aerb .smaqmd-toggle__item{
   display: flex;
 }
 
-/* The radio stays in the accessibility tree and keeps arrow-key behaviour; only
-   its box is hidden, and its focus ring is drawn on the visible label. */
-.smaqmd-toggle__item input[type='radio'] {
+.smaqmd-aerb .smaqmd-toggle__item input[type='radio']{
   position: absolute;
+  font: inherit;
+  font-size: 1rem;
   opacity: 0;
   inline-size: 1px;
   block-size: 1px;
@@ -745,7 +597,7 @@ svg {
   pointer-events: none;
 }
 
-.smaqmd-toggle__label {
+.smaqmd-aerb .smaqmd-toggle__label{
   display: grid;
   place-items: center;
   min-inline-size: 2.75rem;
@@ -759,57 +611,43 @@ svg {
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label {
+.smaqmd-aerb .smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label{
   background: var(--color-background-brand);
   color: var(--color-content-default-knockout);
 }
 
-.smaqmd-toggle__item input[type='radio']:focus-visible + .smaqmd-toggle__label {
+.smaqmd-aerb .smaqmd-toggle__item input[type='radio']:focus-visible + .smaqmd-toggle__label{
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
-/* FORCED COLORS (Windows Contrast Themes) reads ELEMENTS, not ARIA, and deletes
-   every box-shadow and gradient. `appearance: none` also strips a control of the
-   system styling it would otherwise get for free — so hand the native widget
-   back, and let the mode paint the checked state itself. */
 @media (forced-colors: active) {
-  .smaqmd-radio__item input[type='radio'] {
+  .smaqmd-aerb .smaqmd-radio__item input[type='radio']{
     appearance: auto;
     -webkit-appearance: auto;
   }
-  .smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label {
+  .smaqmd-aerb .smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label{
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
   }
-  .btn,
-  .esa-card,
-  .esa-alert-box {
-    border-color: currentColor; /* a floating panel needs a border the mode can see */
+  .smaqmd-aerb .smaqmd-btn,
+.smaqmd-aerb .smaqmd-card,
+.smaqmd-aerb .smaqmd-alert{
+    border-color: currentColor;
   }
 }
 
-/* ============================================================================
-   10. THE TOOL — ported verbatim from smaqmd-aer-wizard.astro's <style> block.
-   Astro's :global() wrappers are unwrapped (there is no scoping here) and the
-   rules for the classic view's fixed result pane are dropped (the wizard puts
-   the result inside the panel). Everything else keeps its original comment.
-   ========================================================================= */
+.smaqmd-aerb [hidden]{ display: none !important; }
+.smaqmd-aerb .smaqmd-aerb__dims{ --grid-min: 6.5rem; }
+.smaqmd-aerb .smaqmd-aerb__ref{ --grid-min: 6.5rem; }
 
-.smaqmd-aerb [hidden] { display: none !important; }
-.smaqmd-aerb__dims { --grid-min: 6.5rem; }
-.smaqmd-aerb__ref { --grid-min: 6.5rem; }
-
-/* Prompt labelling the reference-room fields (ACH mode). A question the user
-   must answer → a real label: body-small (14px) + secondary + semibold, not a
-   faint 12px caption. */
-.smaqmd-aerb__cleaner-note {
+.smaqmd-aerb .smaqmd-aerb__cleaner-note{
   color: var(--color-content-default-secondary);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-.smaqmd-aerb__context {
+.smaqmd-aerb .smaqmd-aerb__context{
   color: var(--color-content-default-secondary);
   display: flex;
   flex-direction: column;
@@ -817,142 +655,111 @@ svg {
   align-items: flex-start;
 }
 
-/* Answer headline — the direct yes/no, tinted by verdict: green pass, orange
-   fail (matching the scene), neutral while only shopping for a rating. */
-.smaqmd-aerb__answer-title { color: var(--color-content-default); }
-/* Step headings are programmatic focus targets (tabindex=-1) for step-change
-   announcement, not tab stops — suppress the ring that would flash on them after
-   navigating (keyboard users never Tab here; the SR just reads the heading).
-   :focus and not :focus-visible on purpose: focus arrives here programmatically. */
-[data-step-title]:focus,
-[data-intro-title]:focus,
-.smaqmd-aerb__answer-title:focus { outline: none; }
-.smaqmd-aerb__answer[data-verdict='pass'] .smaqmd-aerb__answer-title { color: var(--color-background-brand); }
-.smaqmd-aerb__answer[data-verdict='fail'] .smaqmd-aerb__answer-title { color: var(--color-content-utility-warning); }
+.smaqmd-aerb .smaqmd-aerb__answer-title{ color: var(--color-content-default); }
+.smaqmd-aerb [data-step-title]:focus,
+.smaqmd-aerb [data-intro-title]:focus,
+.smaqmd-aerb .smaqmd-aerb__answer-title:focus{ outline: none; }
+.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='pass'] .smaqmd-aerb__answer-title{ color: var(--color-background-brand); }
+.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='fail'] .smaqmd-aerb__answer-title{ color: var(--color-content-utility-warning); }
 
-/* Cleaner-block chrome. Top border + padding separate blocks visually;
-   :first-of-type resets so the first block has no top chrome. */
-.smaqmd-aerb__cleaner {
+.smaqmd-aerb .smaqmd-aerb__cleaner{
   padding-block-start: var(--spacing-300);
   border-block-start: 1px solid var(--color-border-default);
 }
-.smaqmd-aerb__cleaner:first-of-type {
+.smaqmd-aerb .smaqmd-aerb__cleaner:first-of-type{
   padding-block-start: 0;
   border-block-start: 0;
 }
-.smaqmd-aerb__cleaner-head { align-items: center; }
-/* Group label for each cleaner block: body-md baseline carried to semibold so it
-   reads as a label, not body copy — subordinate to the step's title above it. */
-.smaqmd-aerb__cleaner-title {
+.smaqmd-aerb .smaqmd-aerb__cleaner-head{ align-items: center; }
+.smaqmd-aerb .smaqmd-aerb__cleaner-title{
   color: var(--color-content-default);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-/* The two hero stats (the ACH problem + the CADR fix) sit at EQUAL weight, side
-   by side, wrapping only when the panel is too narrow. */
-.smaqmd-aerb__heroes {
+.smaqmd-aerb .smaqmd-aerb__heroes{
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-400) var(--spacing-600);
 }
-/* Unit appended to a hero number (e.g. "32 ft³/min") — quieter + about half the
-   size of the number so the value stays the focus. */
-.smaqmd-aerb__unit {
+.smaqmd-aerb .smaqmd-aerb__unit{
   font-size: 0.5em;
   font-weight: var(--typography-font-weight-medium);
   color: var(--color-content-default-secondary);
 }
-/* Caution note under the CADR hero (e.g. the >700 ft³/min warning). */
-.smaqmd-aerb__caution { color: var(--color-content-utility-warning); }
-/* Hero numbers → the BRAND color. esa-stat's accent defaults to the spoke's
-   secondary — wrong here; the heroes should read in the primary brand hue like
-   the pass headline. --stat-accent-color is the consumer hook. */
+.smaqmd-aerb .smaqmd-aerb__caution{ color: var(--color-content-utility-warning); }
 .smaqmd-aerb [data-metric='ach'],
-.smaqmd-aerb [data-metric='fix'] {
+.smaqmd-aerb [data-metric='fix']{
   --stat-accent-color: var(--color-background-brand);
 }
-/* Below target: the ACH hero shifts to warning, matching the orange fail
-   headline + scene. The CADR fix stays brand — it's the positive action. */
-.smaqmd-aerb [data-metric='ach'][data-below] {
+.smaqmd-aerb [data-metric='ach'][data-below]{
   --stat-accent-color: var(--color-background-utility-warning);
 }
 
-.smaqmd-aerb {
+.smaqmd-aerb{
   position: relative;
   min-block-size: 100dvh;
   display: block;
-  /* Wide-screen frame: cap the composition width so the scene + column stay a
-     consistent, centered band on ultrawide monitors instead of the graphic
-     ballooning full-bleed. --aer-gutter is the margin from the viewport edge to
-     the frame; below --aer-frame it collapses to the normal spacing-500. */
+  font-family: var(--typography-font-family-sans);
+  font-size: 1rem;
+  font-weight: var(--typography-font-weight-regular);
+  font-style: normal;
+  line-height: 1.6;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: start;
+  text-transform: none;
+  text-indent: 0;
+  color: var(--color-content-default);
+  -webkit-font-smoothing: antialiased;
   --aer-frame: 90rem;
   --aer-gutter: max(var(--spacing-500), calc((100vw - var(--aer-frame)) / 2));
 }
 
-/* ---- smaqmd-cityview — the isometric city scene ----
-   Token-driven fills: value-layered neutrals for the ground/room, brand accent
-   for the cleaner building + clean-air return lane, --color-border-default for
-   edges. The SVG carries role="img" and a long aria-label; every grip inside it
-   is pointer-only enhancement (SC 2.5.7 — the text fields are the keyboard
-   equivalent) and stays out of the tab order. */
-.smaqmd-cityview {
+.smaqmd-aerb .smaqmd-cityview{
   position: fixed;
   inset-block: 0;
   inset-inline: var(--aer-gutter);
   z-index: 0;
   pointer-events: none;
-  /* wave tints — clean-air return is brand (green when meeting target); the
-     used-air intake is a neutral gray. */
   --pulse-color: var(--color-background-brand);
   --out-color: var(--color-content-default-tertiary);
 }
-.smaqmd-cityview[data-state='fail'] { --pulse-color: var(--color-background-utility-warning); }
-.smaqmd-cityview__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail']{ --pulse-color: var(--color-background-utility-warning); }
+.smaqmd-aerb .smaqmd-cityview__svg{ position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
 
-/* Safe area the buildings fit into — CSS is the single source of truth; JS only
-   measures. The wizard puts its column on the LEFT, so the buildings live to the
-   RIGHT: the left inset clears the column (32rem) + gaps. */
-.smaqmd-cityview__safe {
+.smaqmd-aerb .smaqmd-cityview__safe{
   position: absolute;
   inset: var(--spacing-500) var(--spacing-600) 4.5rem calc(32rem + 2 * var(--spacing-500));
   visibility: hidden;
 }
 
-/* Dot paper sits under everything; the translucent ground lets it show through
-   faintly so the scene reads as drawn ON the iso lattice. */
-.smaqmd-cityview__dot { fill: var(--color-border-default); }
-.smaqmd-cityview__ground {
+.smaqmd-aerb .smaqmd-cityview__dot{ fill: var(--color-border-default); }
+.smaqmd-aerb .smaqmd-cityview__ground{
   fill: color-mix(in srgb, var(--color-background-elevation-sunken) 45%, transparent);
   stroke: var(--color-border-default-subtle);
   stroke-width: 1;
   stroke-linejoin: round;
 }
 
-.smaqmd-cityview__road {
+.smaqmd-aerb .smaqmd-cityview__road{
   fill: none;
   stroke: var(--color-background-elevation-sunken);
   stroke-width: 13;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* Consistent base track each wave rides on — a light, always-present tint,
-   slightly wider than the wave so the path reads the same whether or not a
-   bright wave is passing over it. */
-.smaqmd-cityview__track {
+.smaqmd-aerb .smaqmd-cityview__track{
   fill: none;
   stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.smaqmd-cityview__track[data-flow='return-track'] { stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
-.smaqmd-cityview__track[data-flow='out-track']    { stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__track[data-flow='return-track']{ stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__track[data-flow='out-track']{ stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
 
-/* The air-change wave — a repeating full→transparent gradient scrolled by JS.
-   One repeat travels the lane per air change (cadence tied to ACH). Sits idle
-   until there's a valid result. */
-.smaqmd-cityview__gstop     { stop-color: var(--pulse-color); }
-.smaqmd-cityview__gstop-out { stop-color: var(--out-color); }
-.smaqmd-cityview__wave {
+.smaqmd-aerb .smaqmd-cityview__gstop{ stop-color: var(--pulse-color); }
+.smaqmd-aerb .smaqmd-cityview__gstop-out{ stop-color: var(--out-color); }
+.smaqmd-aerb .smaqmd-cityview__wave{
   fill: none;
   stroke-width: 4;
   stroke-linecap: round;
@@ -960,151 +767,128 @@ svg {
   opacity: 0;
   transition: opacity 220ms ease;
 }
-.smaqmd-cityview[data-state='pass'] .smaqmd-cityview__wave,
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__wave { opacity: 1; }
-/* A cleaner with no (or zero) flow shows faint tracks but no wave. */
-.smaqmd-cityview__lanes[data-lane-idle] .smaqmd-cityview__wave { opacity: 0 !important; }
+.smaqmd-aerb .smaqmd-cityview[data-state='pass'] .smaqmd-cityview__wave,
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__wave{ opacity: 1; }
+.smaqmd-aerb .smaqmd-cityview__lanes[data-lane-idle] .smaqmd-cityview__wave{ opacity: 0 !important; }
 
-.smaqmd-cityview__room-face {
+.smaqmd-aerb .smaqmd-cityview__room-face{
   stroke: var(--color-border-default);
   stroke-width: 1.5;
   stroke-linejoin: round;
   transition: fill 200ms ease;
 }
-.smaqmd-cityview__room-face[data-room='top']   { fill: color-mix(in srgb, var(--color-background-elevation-raised) 80%, transparent); }
-.smaqmd-cityview__room-face[data-room='left']  { fill: color-mix(in srgb, var(--smaqmd-gray-3) 78%, transparent); }
-.smaqmd-cityview__room-face[data-room='right'] { fill: color-mix(in srgb, var(--smaqmd-gray-4) 78%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 80%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-3) 78%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 78%, transparent); }
 
-/* Capacity ghost — dashed brand-tinted outline of the largest coverable room,
-   drawn over the real room to compare sizes. The data-cap-compare swap makes the
-   LARGER box the more transparent one. */
-.smaqmd-cityview__cap-face {
+.smaqmd-aerb .smaqmd-cityview__cap-face{
   stroke: color-mix(in srgb, var(--color-background-brand) 55%, transparent);
   stroke-dasharray: 5 4;
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
-.smaqmd-cityview__cap-face[data-cap='top']   { fill: color-mix(in srgb, var(--color-background-brand) 8%, transparent); }
-.smaqmd-cityview__cap-face[data-cap='left']  { fill: color-mix(in srgb, var(--color-background-brand) 10%, transparent); }
-.smaqmd-cityview__cap-face[data-cap='right'] { fill: color-mix(in srgb, var(--color-background-brand) 12%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='top']{ fill: color-mix(in srgb, var(--color-background-brand) 8%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='left']{ fill: color-mix(in srgb, var(--color-background-brand) 10%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='right']{ fill: color-mix(in srgb, var(--color-background-brand) 12%, transparent); }
 
-.smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='top']   { fill: color-mix(in srgb, var(--color-background-elevation-raised) 40%, transparent); }
-.smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='left']  { fill: color-mix(in srgb, var(--smaqmd-gray-3) 38%, transparent); }
-.smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='right'] { fill: color-mix(in srgb, var(--smaqmd-gray-4) 38%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 40%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-3) 38%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 38%, transparent); }
 
-.smaqmd-cityview__cap-label { fill: var(--color-background-brand); }
+.smaqmd-aerb .smaqmd-cityview__cap-label{ fill: var(--color-background-brand); }
 
-/* Architectural details on the room building — quiet, token-driven fills and
-   thin --color-border-default strokes so windows/door/RTUs/parapet/tower/mast
-   read as building features without competing with the room or the flow. */
-.smaqmd-cityview__details { transition: opacity 200ms ease; }
-.smaqmd-cityview__win {
+.smaqmd-aerb .smaqmd-cityview__details{ transition: opacity 200ms ease; }
+.smaqmd-aerb .smaqmd-cityview__win{
   fill: color-mix(in srgb, var(--color-background-brand) 11%, transparent);
   stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round;
 }
-.smaqmd-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-background-brand) 15%, transparent); }
-.smaqmd-cityview__door {
+.smaqmd-aerb .smaqmd-cityview__win[data-win-r]{ fill: color-mix(in srgb, var(--color-background-brand) 15%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__door{
   fill: color-mix(in srgb, var(--smaqmd-gray-6) 85%, transparent);
   stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round;
 }
-.smaqmd-cityview__parapet { fill: none; stroke: var(--color-border-default-subtle); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-cityview__rtu-face { stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-cityview__rtu-face[data-rtu-face='top']   { fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
-.smaqmd-cityview__rtu-face[data-rtu-face='left']  { fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
-.smaqmd-cityview__rtu-face[data-rtu-face='right'] { fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
-.smaqmd-cityview__tower-leg { stroke: var(--color-border-default); stroke-width: 1.5; stroke-linecap: round; }
-.smaqmd-cityview__tower-face { stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-cityview__tower-face[data-tower-face='top']   { fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
-.smaqmd-cityview__tower-face[data-tower-face='left']  { fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
-.smaqmd-cityview__tower-face[data-tower-face='right'] { fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
-.smaqmd-cityview__mast-line { stroke: var(--color-content-default-tertiary); stroke-width: 1.5; stroke-linecap: round; }
-.smaqmd-cityview__mast-tip { fill: var(--pulse-color); opacity: 0.9; }
-.smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__details { opacity: 0.45; }
+.smaqmd-aerb .smaqmd-cityview__parapet{ fill: none; stroke: var(--color-border-default-subtle); stroke-width: 1; stroke-linejoin: round; }
+.smaqmd-aerb .smaqmd-cityview__rtu-face{ stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
+.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__tower-leg{ stroke: var(--color-border-default); stroke-width: 1.5; stroke-linecap: round; }
+.smaqmd-aerb .smaqmd-cityview__tower-face{ stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
+.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__mast-line{ stroke: var(--color-content-default-tertiary); stroke-width: 1.5; stroke-linecap: round; }
+.smaqmd-aerb .smaqmd-cityview__mast-tip{ fill: var(--pulse-color); opacity: 0.9; }
+.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__details{ opacity: 0.45; }
 
-.smaqmd-cityview__unit-face {
+.smaqmd-aerb .smaqmd-cityview__unit-face{
   stroke: var(--color-background-brand-hover);
   stroke-width: 1;
   stroke-linejoin: round;
 }
-.smaqmd-cityview__unit-face[data-unit='top']   { fill: color-mix(in srgb, var(--color-background-brand) 72%, #fff); }
-.smaqmd-cityview__unit-face[data-unit='left']  { fill: var(--color-background-brand); }
-.smaqmd-cityview__unit-face[data-unit='right'] { fill: var(--color-background-brand-hover); }
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='top']{ fill: color-mix(in srgb, var(--color-background-brand) 72%, #fff); }
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='left']{ fill: var(--color-background-brand); }
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='right']{ fill: var(--color-background-brand-hover); }
 
-/* Cohesive FAIL palette — when below target, the capacity ghost and the
-   air-cleaner buildings shift from brand to the spoke's warning ORANGE, matching
-   the orange flow waves + ACH readout. The MAIN room stays neutral — it's the
-   fixed reference; the ghost is what comes up short. */
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face { stroke: color-mix(in srgb, var(--color-background-utility-warning) 55%, transparent); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='top']   { fill: color-mix(in srgb, var(--color-background-utility-warning) 8%, transparent); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='left']  { fill: color-mix(in srgb, var(--color-background-utility-warning) 10%, transparent); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='right'] { fill: color-mix(in srgb, var(--color-background-utility-warning) 12%, transparent); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-label { fill: var(--color-background-utility-warning); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face { stroke: var(--color-orange-10); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='top']   { fill: color-mix(in srgb, var(--color-background-utility-warning) 72%, #fff); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='left']  { fill: var(--color-background-utility-warning); }
-.smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='right'] { fill: var(--color-orange-10); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face{ stroke: color-mix(in srgb, var(--color-background-utility-warning) 55%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='top']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 8%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='left']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 10%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='right']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 12%, transparent); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-label{ fill: var(--color-background-utility-warning); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face{ stroke: var(--color-orange-10); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='top']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 72%, #fff); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='left']{ fill: var(--color-background-utility-warning); }
+.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='right']{ fill: var(--color-orange-10); }
 
-.smaqmd-cityview__dim {
+.smaqmd-aerb .smaqmd-cityview__dim{
   fill: var(--color-content-default-secondary);
   font-size: 13px;
   font-weight: var(--typography-font-weight-medium);
   font-family: var(--typography-font-family-sans);
 }
 
-/* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
-   edge drags its dimension and writes back into the text fields, which stay the
-   source of truth. Pointer-only by design (SC 2.5.7): typing in the field is the
-   keyboard-equivalent path, so the grips carry no tabindex. */
-.smaqmd-cityview__hit {
+.smaqmd-aerb .smaqmd-cityview__hit{
   stroke: transparent; stroke-width: 28; stroke-linecap: round;
   pointer-events: stroke; cursor: grab; touch-action: none;
 }
-.smaqmd-cityview__dim[data-grip] {
+.smaqmd-aerb .smaqmd-cityview__dim[data-grip]{
   pointer-events: all; cursor: grab; touch-action: none;
   user-select: none; -webkit-user-select: none;
 }
-.smaqmd-cityview__handle { pointer-events: all; cursor: grab; touch-action: none; }
-.smaqmd-cityview__chev {
+.smaqmd-aerb .smaqmd-cityview__handle{ pointer-events: all; cursor: grab; touch-action: none; }
+.smaqmd-aerb .smaqmd-cityview__chev{
   fill: none;
   stroke: var(--color-content-default-secondary);
   stroke-width: 2;
   stroke-linecap: round; stroke-linejoin: round;
-  /* Scale around the chevron's own centre (its path is symmetric about 0,0). */
   transform-box: fill-box; transform-origin: center;
   transition: stroke 120ms ease, transform 120ms ease;
 }
-/* Hover: `+` (adjacent sibling) scopes the highlight to the hovered edge's own
-   handle — `~` would darken every following handle, i.e. all of them. */
-.smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
-.smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev {
+.smaqmd-aerb .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
+.smaqmd-aerb .smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev{
   stroke: var(--color-text); stroke-width: 2.5;
 }
-/* Active: press-down feedback while the grip is held. */
-.smaqmd-cityview__handle:active .smaqmd-cityview__chev,
-.smaqmd-cityview__hit:active + .smaqmd-cityview__handle .smaqmd-cityview__chev {
+.smaqmd-aerb .smaqmd-cityview__handle:active .smaqmd-cityview__chev,
+.smaqmd-aerb .smaqmd-cityview__hit:active + .smaqmd-cityview__handle .smaqmd-cityview__chev{
   stroke: var(--color-text); transform: scale(0.97);
 }
-.smaqmd-cityview[data-dragging] .smaqmd-cityview__hit,
-.smaqmd-cityview[data-dragging] .smaqmd-cityview__handle,
-.smaqmd-cityview[data-dragging] .smaqmd-cityview__dim[data-grip] { cursor: grabbing; }
+.smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__hit,
+.smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__handle,
+.smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__dim[data-grip]{ cursor: grabbing; }
 
-/* Grips only make sense while entering length × width — the other room-entry
-   modes have no draggable edges. The pointerdown handler guards the same. */
-.smaqmd-cityview:not([data-entry-mode='dimensions']) [data-grips] { display: none; }
-.smaqmd-cityview:not([data-entry-mode='dimensions']) .smaqmd-cityview__dim[data-grip] {
+.smaqmd-aerb .smaqmd-cityview:not([data-entry-mode='dimensions']) [data-grips]{ display: none; }
+.smaqmd-aerb .smaqmd-cityview:not([data-entry-mode='dimensions']) .smaqmd-cityview__dim[data-grip]{
   pointer-events: none; cursor: default;
 }
 
-.smaqmd-cityview__cap {
+.smaqmd-aerb .smaqmd-cityview__cap{
   position: absolute;
   inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
   max-inline-size: 26rem; text-align: start;
   color: var(--color-content-default-tertiary);
 }
 
-/* The wizard's fixed LEFT column: the wizard card, sized to be the prominent
-   element on the page; the scene fits into what's left (right). */
-.smaqmd-aerw__col {
+.smaqmd-aerb .smaqmd-aerw__col{
   position: fixed; z-index: 1;
   inset-block: var(--spacing-500);
   inset-inline-start: var(--aer-gutter);
@@ -1115,69 +899,49 @@ svg {
   max-block-size: calc(100dvh - 2 * var(--spacing-500));
 }
 
-.smaqmd-aerb__panel {
-  /* Fills only the height it needs and scrolls when the step is tall; the
-     min-block-size:0 lets this flex child shrink below its content so the inner
-     scroll (not the page) takes the overflow. */
+.smaqmd-aerb .smaqmd-aerb__panel{
   flex: 0 1 auto; min-block-size: 0;
   overflow-y: auto; overscroll-behavior: contain;
-  /* Padding so the card's 1px border has room inside the scroll container. */
   padding: var(--spacing-100);
   --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent);
-  --card-border-color: var(--color-border-default-strong); /* visible hairline over the scene */
-  /* SC 2.4.11 (focus not obscured): the nav becomes sticky at the foot of this
-     scroller at narrow widths, so scrolling a focused field into view must stop
-     short of it. */
+  --card-border-color: var(--color-border-default-strong);
   scroll-padding-block-end: 6rem;
 }
-.smaqmd-aerw__panel { inline-size: auto; }
+.smaqmd-aerb .smaqmd-aerw__panel{ inline-size: auto; }
 
-/* smaqmd-wizard — the step shell. The numbered dots + step chrome are the
-   bespoke part; every CONTROL inside is a ported design-system control. */
-.smaqmd-wizard__dots { --align: center; }
-.smaqmd-wizard__dot {
+.smaqmd-aerb .smaqmd-wizard__dots{ --align: center; }
+.smaqmd-aerb .smaqmd-wizard__dot{
   display: inline-grid; place-items: center;
   inline-size: 1.5rem; block-size: 1.5rem;
   border-radius: 999px;
   font-size: 0.75rem; font-weight: var(--typography-font-weight-medium);
   color: var(--smaqmd-color-content-secondary-brand);
-  /* Idle sits ON the band; only the CURRENT step lifts to a white chip. */
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
   transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
-/* Completed steps: filled brand; current step: brand ring + brand text. The dot
-   row is aria-hidden — it repeats the "Step n of m" counter beside it, which is
-   the accessible copy. */
-.smaqmd-wizard__dot[data-done] {
+.smaqmd-aerb .smaqmd-wizard__dot[data-done]{
   background: var(--smaqmd-color-background-secondary-brand);
-  color: var(--smaqmd-color-content-on-secondary-brand);   /* 4.96:1 */
+  color: var(--smaqmd-color-content-on-secondary-brand);
   box-shadow: none;
 }
-.smaqmd-wizard__dot[data-active] {
-  color: var(--smaqmd-color-content-secondary-brand);      /* 7.09:1 on white */
+.smaqmd-aerb .smaqmd-wizard__dot[data-active]{
+  color: var(--smaqmd-color-content-secondary-brand);
   background: var(--color-background-elevation-raised);
   box-shadow: inset 0 0 0 2px var(--smaqmd-color-background-secondary-brand);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-/* Step header — a tinted SECTION band in the district's Earth Green. A TINT and
-   not the solid fill on purpose: containers stay neutral and header bands white,
-   so the hue reads clearly while the card stays a white container and the
-   saturated brand stays reserved for the primary action. Bleeds to the card
-   edges by cancelling the card's own --spacing-500 padding. */
-.smaqmd-wizard__head {
+.smaqmd-aerb .smaqmd-wizard__head{
   margin-block-start: calc(var(--spacing-500) * -1);
   margin-inline: calc(var(--spacing-500) * -1);
   padding: var(--spacing-400) var(--spacing-500);
   background: var(--smaqmd-color-background-secondary-brand-muted);
   border-start-start-radius: var(--radius-md);
   border-start-end-radius: var(--radius-md);
-  position: relative; /* anchors the swoop that forms the band's bottom edge */
+  position: relative;
 }
-/* Hangs BELOW the band, spanning the bled width, inside the wizard stack's own
-   lg gap — so it never pushes the step content down or changes the card height. */
-.smaqmd-wizard__swoop {
+.smaqmd-aerb .smaqmd-wizard__swoop{
   position: absolute;
   inset-inline: 0;
   inset-block-start: 100%;
@@ -1185,45 +949,34 @@ svg {
   block-size: 1.375rem;
   display: block;
 }
-.smaqmd-wizard__swoop-front { fill: var(--smaqmd-color-background-secondary-brand-muted); }
-.smaqmd-wizard__swoop-back  { fill: var(--smaqmd-color-background-secondary-brand-wash); }
-.smaqmd-wizard__count { color: var(--smaqmd-color-content-secondary-brand); }          /* 5.55:1 on the band */
-.smaqmd-wizard__title { color: var(--smaqmd-color-content-on-secondary-brand-muted); } /* 9.58:1 on the band */
+.smaqmd-aerb .smaqmd-wizard__swoop-front{ fill: var(--smaqmd-color-background-secondary-brand-muted); }
+.smaqmd-aerb .smaqmd-wizard__swoop-back{ fill: var(--smaqmd-color-background-secondary-brand-wash); }
+.smaqmd-aerb .smaqmd-wizard__count{ color: var(--smaqmd-color-content-secondary-brand); }
+.smaqmd-aerb .smaqmd-wizard__title{ color: var(--smaqmd-color-content-on-secondary-brand-muted); }
 
-/* Stable frame — a genuinely FIXED height (not a min: a floor still lets tall
-   states grow). Every step/result renders at this size, so the card never
-   resizes and the nav never jumps. Clamped to the viewport so short screens
-   shrink the frame rather than overflow it. */
-.smaqmd-wizard { block-size: min(38rem, calc(100dvh - 14rem)); }
-.smaqmd-wizard__body {
+.smaqmd-aerb .smaqmd-wizard{ block-size: min(38rem, calc(100dvh - 14rem)); }
+.smaqmd-aerb .smaqmd-wizard__body{
   flex: 1 1 auto;
   min-block-size: 0;
-  overflow: hidden auto;   /* clip the horizontal step-slide, scroll vertical overflow */
-  /* Bleed the clip box out by a hair so nested alert-box borders are not clipped. */
+  overflow: hidden auto;
   padding: var(--spacing-100);
   margin: calc(-1 * var(--spacing-100));
 }
 
-/* Nav: forward action on the right, Back pushed to the left when present. */
-.smaqmd-wizard__nav {
+.smaqmd-aerb .smaqmd-wizard__nav{
   display: flex; align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-300);
   margin-block-start: var(--spacing-200);
 }
-.smaqmd-wizard__nav [data-nav='back'] { margin-inline-end: auto; }
+.smaqmd-aerb .smaqmd-wizard__nav [data-nav='back']{ margin-inline-end: auto; }
 
-/* Step-change motion: the incoming step slides in from the direction of travel —
-   from the right when moving forward, from the left when moving back — so the
-   animation reads as advancing/retreating through the flow. An animation (not a
-   transition) because steps swap via the hidden attribute, which can't be
-   transitioned; renderStep() sets the direction class and re-triggers it. */
-.smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
-.smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{
   animation: var(--duration-base) var(--easing-in-out) both;
 }
-.smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd  { animation-name: smaqmd-wizard-step-in-fwd; }
-.smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation-name: smaqmd-wizard-step-in-back; }
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd{ animation-name: smaqmd-wizard-step-in-fwd; }
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{ animation-name: smaqmd-wizard-step-in-back; }
 @keyframes smaqmd-wizard-step-in-fwd {
   from { opacity: 0; transform: translateX(1.5rem); }
   to   { opacity: 1; transform: none; }
@@ -1233,32 +986,20 @@ svg {
   to   { opacity: 1; transform: none; }
 }
 
-.smaqmd-aerb__panel > * { flex-shrink: 0; }
-.smaqmd-aerb__panel .esa-card {
+.smaqmd-aerb .smaqmd-aerb__panel > *{ flex-shrink: 0; }
+.smaqmd-aerb .smaqmd-aerb__panel .smaqmd-card{
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .smaqmd-aerb__panel { --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
+  .smaqmd-aerb .smaqmd-aerb__panel{ --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
 }
 
-/* The opening slide and the step machinery are mutually exclusive; the wizard
-   root carries the phase so one attribute swaps the whole card, which means
-   exactly one of the three section headings — the intro title, the step title,
-   and (on the result section, where the step title is hidden) the verdict
-   headline — is ever in the layout.
-
-   All three are h2, NOT h1: this region is built to be pasted into a host page
-   that supplies its own h1, so nothing inside it claims that level. The
-   standalone page's h1 is the visually-hidden one outside <main> in index.html. */
-.smaqmd-wizard__intro { display: none; }
-.smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__head,
-.smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__body,
-.smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__nav { display: none; }
-/* The opening slide is the one surface here that is allowed colour: a landing
-   surface, not product UI. Blue (the brand) and not the green used by the step
-   header, so the two read as different moments. */
-.smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro {
+.smaqmd-aerb .smaqmd-wizard__intro{ display: none; }
+.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__head,
+.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__body,
+.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__nav{ display: none; }
+.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro{
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -1269,101 +1010,76 @@ svg {
   background: var(--smaqmd-color-background-intro-wash);
   border-radius: var(--radius-md);
 }
-.smaqmd-wizard__intro-title {
-  color: var(--smaqmd-color-content-intro-title);   /* 10.71:1 on the wash */
+.smaqmd-aerb .smaqmd-wizard__intro-title{
+  color: var(--smaqmd-color-content-intro-title);
   margin: 0;
 }
-/* The two intent buttons sit at the foot of the slide — the same place the step
-   nav occupies on every screen after it, so the forward action never moves. */
-.smaqmd-wizard__intro-actions { margin-block-start: auto; align-items: flex-start; }
-.smaqmd-wizard__intro-lede {
+.smaqmd-aerb .smaqmd-wizard__intro-actions{ margin-block-start: auto; align-items: flex-start; }
+.smaqmd-aerb .smaqmd-wizard__intro-lede{
   margin: 0;
-  color: var(--color-content-default-secondary);   /* 5.10:1 on the wash */
+  color: var(--color-content-default-secondary);
   max-inline-size: 60ch;
 }
 
-/* The fork is asked on the opening slide, so the radio group that used to ask it
-   at the top of the cleaners step would be a second copy of a question already
-   answered. Hidden, not removed: it stays the single source of truth the engine
-   reads, and the intro buttons write to it. Hidden at EVERY width, because the
-   slide it duplicates is likewise shown at every width. */
-.smaqmd-aerb[data-variant='responsive'] [data-field='hasCleaner'] { display: none; }
+.smaqmd-aerb[data-variant='responsive'] [data-field='hasCleaner']{ display: none; }
 
-/* ---- narrow: below 68rem the tool becomes the mobile flow ----
-   KEEP IN SYNC with the same breakpoint in smaqmd-aer-wizard.astro; the script's
-   `sceneLive` gate reads the identical query and pauses the rAF loop to match. */
 @media (max-width: 68rem) {
-  html {
-    /* SC 2.4.11 — the page itself scrolls here and the nav is sticky at the foot
-       of the card, so keep a focused field clear of it. */
+  .smaqmd-aer-page{
     scroll-padding-block-end: 7rem;
   }
 
-  .smaqmd-aerb { position: relative; min-block-size: 0; }
+  .smaqmd-aerb{ position: relative; min-block-size: 0; }
 
-  /* With the scene gone the card flows. display:none rather than absent, because
-     the same HTML has to serve the wide layout too; the script pauses the loop. */
-  .smaqmd-cityview { display: none; }
+  .smaqmd-aerb .smaqmd-cityview{ display: none; }
 
-  .smaqmd-aerw__col {
+  .smaqmd-aerb .smaqmd-aerw__col{
     position: relative; inset: auto;
     inline-size: auto; max-inline-size: none; max-block-size: none;
     min-block-size: 70dvh;
     gap: var(--spacing-400);
     padding: var(--spacing-400);
   }
-  .smaqmd-aerb__panel { max-block-size: none; overflow: visible; }
+  .smaqmd-aerb .smaqmd-aerb__panel{ max-block-size: none; overflow: visible; }
 
-  /* One frame height for every slide, as a MIN so tall steps can grow: this view
-     flows (the page scrolls, the card does not), so the cleaners step, a second
-     cleaner or a validation alert still has to be able to GROW the card. */
-  .smaqmd-wizard {
+  .smaqmd-aerb .smaqmd-wizard{
     block-size: auto;
-    min-block-size: 30rem;   /* = 480px */
+    min-block-size: 30rem;
   }
-  .smaqmd-wizard__body { overflow: visible; }
+  .smaqmd-aerb .smaqmd-wizard__body{ overflow: visible; }
 
-  /* The step nav is the primary action on a phone — keep it reachable without a
-     scroll on every step by letting it sit at the end of the flowed card. */
-  .smaqmd-wizard__nav {
+  .smaqmd-aerb .smaqmd-wizard__nav{
     position: sticky; inset-block-end: 0;
     background: var(--color-background-elevation-raised);
     padding-block: var(--spacing-300);
   }
 }
 
-/* ---- 400% zoom / 320px reflow (SC 1.4.10) ---- */
 @media (max-width: 26rem) {
-  .smaqmd-aerw__col { padding: var(--spacing-300); }
-  .esa-card { --_card-padding: var(--spacing-400); }
-  .smaqmd-wizard__head {
+  .smaqmd-aerb .smaqmd-aerw__col{ padding: var(--spacing-300); }
+  .smaqmd-aerb .smaqmd-card{ --_card-padding: var(--spacing-400); }
+  .smaqmd-aerb .smaqmd-wizard__head{
     margin-block-start: calc(var(--spacing-400) * -1);
     margin-inline: calc(var(--spacing-400) * -1);
     padding: var(--spacing-400);
   }
-  .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro {
+  .smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro{
     margin: calc(var(--spacing-400) * -1);
     padding: var(--spacing-400);
   }
-  /* Let the nav wrap rather than overflow when three buttons meet a 320px card. */
-  .smaqmd-wizard__nav { flex-wrap: wrap; }
-  .smaqmd-wizard__nav [data-nav] { flex: 1 1 auto; }
-  .smaqmd-wizard__nav .btn { inline-size: 100%; }
+  .smaqmd-aerb .smaqmd-wizard__nav{ flex-wrap: wrap; }
+  .smaqmd-aerb .smaqmd-wizard__nav [data-nav]{ flex: 1 1 auto; }
+  .smaqmd-aerb .smaqmd-wizard__nav .smaqmd-btn{ inline-size: 100%; }
 }
 
-/* ---- reduced motion ----
-   The JS honours prefers-reduced-motion too (it freezes the wave phase and skips
-   the add/remove height transitions); this covers the purely declarative half.
-   Users still get every state change — only the movement goes. */
 @media (prefers-reduced-motion: reduce) {
-  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
-  .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation: none; }
-  .smaqmd-cityview__wave,
-  .smaqmd-cityview__room-face,
-  .smaqmd-cityview__details,
-  .smaqmd-cityview__chev,
-  .smaqmd-wizard__dot,
-  .smaqmd-radio__item input[type='radio'],
-  .smaqmd-radio__item input[type='radio']::before,
-  .btn { transition: none; }
+  .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{ animation: none; }
+  .smaqmd-aerb .smaqmd-cityview__wave,
+.smaqmd-aerb .smaqmd-cityview__room-face,
+.smaqmd-aerb .smaqmd-cityview__details,
+.smaqmd-aerb .smaqmd-cityview__chev,
+.smaqmd-aerb .smaqmd-wizard__dot,
+.smaqmd-aerb .smaqmd-radio__item input[type='radio'],
+.smaqmd-aerb .smaqmd-radio__item input[type='radio']::before,
+.smaqmd-aerb .smaqmd-btn{ transition: none; }
 }
