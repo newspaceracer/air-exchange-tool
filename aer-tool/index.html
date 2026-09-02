@@ -30,8 +30,8 @@
  <g class="smaqmd-cityview__unitg" data-unitg="1"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="2" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="3" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g><g class="smaqmd-cityview__unitg" data-unitg="4" style="visibility:hidden"> <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon> <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon> </g> <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text> <text class="smaqmd-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text> <text class="smaqmd-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text>
  <g data-grips> <line class="smaqmd-cityview__hit" data-grip="length"></line> <g class="smaqmd-cityview__handle" data-grip="length"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> <line class="smaqmd-cityview__hit" data-grip="width"></line> <g class="smaqmd-cityview__handle" data-grip="width"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> <line class="smaqmd-cityview__hit" data-grip="height"></line> <g class="smaqmd-cityview__handle" data-grip="height"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g> </g> </svg>
  <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div> <p class="smaqmd-type-meta smaqmd-cityview__cap">
-      Air leaves your room, passes through the cleaner, and returns. When
-      entering length × width, drag the room's edges — or type — to resize it.
+      Representative illustration only — not a guide to where an air cleaner
+      should be placed in your room.
       </p> </div>
 
       <div class="smaqmd-aerw__col">
@@ -48,8 +48,9 @@
                     How to get cleaner air in your room
                   </h2>
                   <p class="smaqmd-type-body-md smaqmd-wizard__intro-lede">
-                    The Air Exchange Rate Tool estimates how many times an hour an air
-                    cleaner can replace your room's air. From the Sac Metro Air District.
+                    Use the air exchange rate tool to estimate how many times an hour an
+                    air cleaner can replace your room's air. This can help you improve
+                    the air quality in your room.
                   </p>
                   <div class="smaqmd-wizard__intro-actions smaqmd-stack" data-gap="sm">
                     <span data-nav="check">
@@ -59,7 +60,7 @@
                     </span>
                     <span data-nav="shop">
                       <button type="button" class="smaqmd-btn smaqmd-btn--outline smaqmd-btn--lg">
-                        Help me pick one
+                        Help me pick an air cleaner
                       </button>
                     </span>
                   </div>
@@ -71,7 +72,7 @@
                     <span class="smaqmd-wizard__dot" data-dot="1">2</span>
                     <span class="smaqmd-wizard__dot" data-dot="2">3</span>
                   </div>
-                  <p class="smaqmd-type-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
+                  <p class="smaqmd-visually-hidden smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
                   <h2
                     class="smaqmd-type-heading-md smaqmd-wizard__title"
                     data-step-title
@@ -314,7 +315,8 @@
                       <p class="smaqmd-field__help smaqmd-type-body-sm" id="smaqmd-h-target">
                         One air change means the cleaner has filtered a full room's worth of air.
                         The California Air Resources Board (CARB) recommends at least 2 per hour.
-                        This target applies to the whole room — all cleaners together.
+                        During wildfire smoke events, aim for 4–6. This target applies to the
+                        whole room — all cleaners together.
                       </p>
                     </div>
 
@@ -388,76 +390,24 @@
                   <section class="smaqmd-stack" data-gap="md" data-step="3" hidden>
                     <div class="smaqmd-stack" data-gap="md" data-result>
                       <div class="smaqmd-stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
-                        <h2
-                          class="smaqmd-type-heading-md smaqmd-aerb__answer-title"
-                          data-answer-title
-                          tabindex="-1"
-                        >
-                          —
-                        </h2>
+                        <!-- Hidden holder for the verdict headline. recompute() writes it
+                             here; renderStep() mirrors it into the header band's h2, which
+                             is THE visible title on the result step. -->
+                        <span data-answer-title hidden>—</span>
 
+                        <!-- Action-first: the instruction leads the body at heading-md —
+                             the same rung as the band title, never above it. No alert
+                             chrome and no "Below your target" title: the headline
+                             already delivered the diagnosis. -->
                         <div data-verdict-card="fail" hidden>
-                          <div class="smaqmd-alert smaqmd-alert--warning smaqmd-type-body-sm">
-                            <div class="smaqmd-alert__icon">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true"
-                              >
-                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
-                                <path d="M12 9v4"></path>
-                                <path d="M12 17h.01"></path>
-                              </svg>
-                            </div>
-                            <div class="smaqmd-alert__body">
-                              <strong class="smaqmd-alert__title smaqmd-type-label-sm-strong"
-                                >Below your target</strong
-                              >
-                              <div class="smaqmd-alert__message">
-                                This room needs more clean air than your setup delivers. Add
-                                <strong data-r="moreunits">—</strong> more like yours — or swap in
-                                stronger cleaners — so their combined CADR reaches the number below
-                                and hits your target of <strong data-r="target">2</strong> air
-                                changes per hour.
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div data-verdict-card="shop" hidden>
-                          <div class="smaqmd-alert smaqmd-alert--info smaqmd-type-body-sm">
-                            <div class="smaqmd-alert__icon">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true"
-                              >
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 16v-4"></path>
-                                <path d="M12 8h.01"></path>
-                              </svg>
-                            </div>
-                            <div class="smaqmd-alert__body">
-                              <div class="smaqmd-alert__message">
-                                CADR (Clean Air Delivery Rate) is the airflow rating printed on the
-                                air cleaner's box. Match or beat the number below to reach your
-                                target.
-                              </div>
-                            </div>
+                          <div class="smaqmd-stack" data-gap="xs">
+                            <p class="smaqmd-type-heading-md smaqmd-aerb__action">
+                              Add <strong data-r="moreunits">—</strong> more
+                              <span data-r="unitnoun">air cleaners</span> like yours
+                            </p>
+                            <p class="smaqmd-type-body-sm">
+                              Or swap in stronger cleaners.
+                            </p>
                           </div>
                         </div>
 
@@ -468,17 +418,41 @@
                               <div class="smaqmd-stat__label smaqmd-type-label-md">
                                 air changes per hour
                               </div>
+                              <!-- Live verdict line ("Below/Meets your N air changes per hour
+                                   target") written by recompute(). -->
+                              <div class="smaqmd-stat__sub smaqmd-type-body-sm">—</div>
                             </div>
                           </div>
                           <div data-metric="fix" hidden>
                             <div class="smaqmd-stat smaqmd-stat--accent">
                               <div class="smaqmd-stat__value smaqmd-type-display-sm">—</div>
                               <div class="smaqmd-stat__label smaqmd-type-label-md">
-                                minimum combined CADR
+                                combined CADR to shop for
+                              </div>
+                              <div class="smaqmd-stat__sub smaqmd-type-body-sm">
+                                added up across all the air cleaners in the room
                               </div>
                             </div>
                           </div>
                         </div>
+
+                        <!-- Shop mode: the number IS the action, so the CADR stat leads
+                             and this explainer supports it from below — same order as
+                             the fail screen, and no alert chrome for plain copy. -->
+                        <div data-verdict-card="shop" hidden>
+                          <p class="smaqmd-type-body-sm smaqmd-aerb__footnote">
+                            CADR (Clean Air Delivery Rate) is the airflow rating printed on the
+                            air cleaner's box. Match or beat this number to reach your target.
+                          </p>
+                        </div>
+
+                        <!-- Evidence, below the action: the delivered rate vs the target.
+                             Fail only — on a pass the ACH hero carries the same numbers. -->
+                        <p class="smaqmd-type-body-sm smaqmd-aerb__footnote" data-ach-evidence hidden>
+                          Your setup delivers <strong data-r="ach">—</strong> air changes
+                          per hour, against your target of
+                          <strong data-r="target">2</strong>.
+                        </p>
 
                         <p class="smaqmd-type-body-sm smaqmd-aerb__caution" data-cadr-high hidden>
                           That's more than most air cleaners deliver (they top out around
@@ -534,6 +508,25 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Usage tips — closed by default so the verdict above stays the
+                         point; outside [data-result] to keep the engine-shared subtree
+                         aligned with the Astro source. Hand-port of the hub's
+                         esa-collapsible lego (native details/summary — no JS). -->
+                    <details class="smaqmd-collapsible">
+                      <summary class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong">
+                        <span class="smaqmd-collapsible__title">Getting the most from your air cleaner</span>
+                      </summary>
+                      <div class="smaqmd-collapsible__body">
+                        <ul class="smaqmd-type-body-sm smaqmd-aerb__tips">
+                          <li>Remove all plastic wrapping from the filter before installing it.</li>
+                          <li>Keep windows and doors closed while it runs.</li>
+                          <li>Use it in the room where you spend the most time, usually a bedroom.</li>
+                          <li>Leave at least a foot of clearance around the air intake and outlet.</li>
+                          <li>Replace the filter on the schedule in your unit's manual — a clogged filter cleans less air.</li>
+                        </ul>
+                      </div>
+                    </details>
                   </section>
                 </div>
 

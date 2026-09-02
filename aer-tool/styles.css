@@ -330,6 +330,16 @@
   color: var(--_stat-label-color);
 }
 
+.smaqmd-aerb .smaqmd-stat__sub{
+  color: var(--_stat-label-color);
+}
+
+/* On a FAIL the action statement is the hero, so the CADR stat steps down a rung.
+   Shop mode keeps the full display-sm value — there the number IS the action. */
+.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='fail'] [data-metric='fix'] .smaqmd-stat__value{
+  font-size: 1.5rem;
+}
+
 .smaqmd-aerb .smaqmd-alert{
   --_alert-bg: var(--color-background-utility-info-subtle);
   --_alert-border: var(--color-border-utility-info);
@@ -433,10 +443,11 @@
 .smaqmd-aerb .smaqmd-btn--outline{
   border-color: var(--color-border-default);
   color: var(--color-content-default);
+  background: var(--color-background-elevation-raised);
 }
 
 .smaqmd-aerb .smaqmd-btn--outline:hover{
-  background: var(--color-background-overlay-strong-hover);
+  background: var(--color-background-elevation-sunken);
 }
 
 .smaqmd-aerb .smaqmd-btn--chrome{
@@ -600,10 +611,10 @@
 .smaqmd-aerb .smaqmd-toggle__label{
   display: grid;
   place-items: center;
-  min-inline-size: 2.75rem;
-  min-block-size: 2.75rem;
-  padding-inline: var(--spacing-300);
-  font-size: 0.9375rem;
+  min-inline-size: 2.25rem;
+  min-block-size: 2.25rem;
+  padding-inline: var(--spacing-250);
+  font-size: 0.8125rem;
   font-weight: var(--typography-font-weight-medium);
   color: var(--color-content-default-secondary);
   background: var(--color-background-elevation-raised);
@@ -655,12 +666,17 @@
   align-items: flex-start;
 }
 
-.smaqmd-aerb .smaqmd-aerb__answer-title{ color: var(--color-content-default); }
+/* Result verdict recolors the header band (renderStep sets data-verdict on the
+   wizard root). Fail swaps the sage band for the warning tint; pass lifts the
+   title to brand. */
+.smaqmd-aerb .smaqmd-wizard{ --_warn-band: color-mix(in srgb, var(--color-border-utility-warning) 40%, var(--color-background-utility-warning-subtle)); }
+.smaqmd-aerb .smaqmd-wizard[data-verdict='pass'] .smaqmd-wizard__title{ color: var(--smaqmd-color-content-secondary-brand); }
+.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__title{ color: var(--color-content-utility-warning); }
+.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] > .smaqmd-wizard__head{ background: var(--_warn-band); }
+.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__swoop-front{ fill: var(--_warn-band); }
+.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__swoop-back{ fill: var(--color-background-utility-warning-subtle); }
 .smaqmd-aerb [data-step-title]:focus,
 .smaqmd-aerb [data-intro-title]:focus,
-.smaqmd-aerb .smaqmd-aerb__answer-title:focus{ outline: none; }
-.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='pass'] .smaqmd-aerb__answer-title{ color: var(--color-background-brand); }
-.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='fail'] .smaqmd-aerb__answer-title{ color: var(--color-content-utility-warning); }
 
 .smaqmd-aerb .smaqmd-aerb__cleaner{
   padding-block-start: var(--spacing-300);
@@ -686,14 +702,66 @@
   font-weight: var(--typography-font-weight-medium);
   color: var(--color-content-default-secondary);
 }
-.smaqmd-aerb .smaqmd-aerb__caution{ color: var(--color-content-utility-warning); }
-.smaqmd-aerb [data-metric='ach'],
-.smaqmd-aerb [data-metric='fix']{
-  --stat-accent-color: var(--color-background-brand);
+/* Result text is ONE color — the subtle gray-11 (content-default-secondary). Only
+   the band title, the hero number, and the action line carry color. */
+.smaqmd-aerb [data-result] p.smaqmd-type-body-sm{ color: var(--color-content-default-secondary); }
+
+/* Hairline between the CADR stat and the supporting line below it — shared by
+   the fail evidence line and the shop explainer. */
+.smaqmd-aerb .smaqmd-aerb__footnote{
+  border-block-start: 1px solid var(--color-border-default);
+  padding-block-start: var(--spacing-300);
 }
-.smaqmd-aerb [data-metric='ach'][data-below]{
-  --stat-accent-color: var(--color-background-utility-warning);
+
+/* Collapsible — hand-port of the hub's esa-collapsible lego (native
+   <details>/<summary>, right-aligned caret in place of the disclosure marker). */
+.smaqmd-aerb .smaqmd-collapsible{
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-background-elevation-raised);
 }
+.smaqmd-aerb .smaqmd-collapsible__summary{
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-200);
+  padding: var(--spacing-300) var(--spacing-400);
+  color: var(--color-content-default);
+  cursor: pointer;
+  list-style: none;
+}
+.smaqmd-aerb .smaqmd-collapsible__summary::-webkit-details-marker{ display: none; }
+.smaqmd-aerb .smaqmd-collapsible__summary:focus-visible{
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+.smaqmd-aerb .smaqmd-collapsible__summary::after{
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-content-default-secondary);
+  border-bottom: 2px solid var(--color-content-default-secondary);
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+  margin-left: auto;
+}
+.smaqmd-aerb .smaqmd-collapsible[open] > .smaqmd-collapsible__summary::after{ transform: rotate(45deg); }
+.smaqmd-aerb .smaqmd-collapsible__body{
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+  padding: 0 var(--spacing-400) var(--spacing-400);
+}
+
+/* Usage-tips list inside the collapsible: default bullets, same quiet gray as
+   the other supporting result text. */
+.smaqmd-aerb .smaqmd-aerb__tips{
+  margin: 0;
+  padding-inline-start: var(--spacing-500);
+  color: var(--color-content-default-secondary);
+}
+.smaqmd-aerb .smaqmd-aerb__tips li + li{ margin-block-start: var(--spacing-200); }
+.smaqmd-aerb [data-metric='ach']{ --stat-accent-color: var(--color-background-brand); }
+.smaqmd-aerb [data-metric='fix']{ --stat-accent-color: var(--color-content-default); }
 
 .smaqmd-aerb{
   position: relative;
@@ -883,8 +951,8 @@
 
 .smaqmd-aerb .smaqmd-cityview__cap{
   position: absolute;
-  inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
-  max-inline-size: 26rem; text-align: start;
+  inset-block-end: var(--spacing-500); inset-inline-end: var(--spacing-500);
+  max-inline-size: 26rem; text-align: end;
   color: var(--color-content-default-tertiary);
 }
 
@@ -915,6 +983,7 @@
   inline-size: 1.5rem; block-size: 1.5rem;
   border-radius: 999px;
   font-size: 0.75rem; font-weight: var(--typography-font-weight-medium);
+  line-height: 1;
   color: var(--smaqmd-color-content-secondary-brand);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
@@ -1081,5 +1150,6 @@
 .smaqmd-aerb .smaqmd-wizard__dot,
 .smaqmd-aerb .smaqmd-radio__item input[type='radio'],
 .smaqmd-aerb .smaqmd-radio__item input[type='radio']::before,
-.smaqmd-aerb .smaqmd-btn{ transition: none; }
+.smaqmd-aerb .smaqmd-btn,
+.smaqmd-aerb .smaqmd-collapsible__summary::after{ transition: none; }
 }
