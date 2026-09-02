@@ -1028,6 +1028,7 @@
   var targetWarn = root.querySelector('[data-target-warn]');
   var targetInvalid = root.querySelector('[data-target-invalid]');
   var achWrap = block.querySelector('[data-metric="ach"]');
+  var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
   var cadrHighEl = block.querySelector('[data-cadr-high]');
   var setAnswer = function (title, verdict) {
@@ -1081,10 +1082,9 @@
       'coverarea',
       hasFlow ? (asFt3 ? fmt(coverVol, 0) + ' ft³' : fmt(coverVol / 8, 0) + ' ft²') : '—'
     );
-    showGroup('secondary', hasRoom && hasFlow);
-
     var ach = hasFlow && hasRoom ? (flow / vol) * 60 : NaN;
     var pass = hasFlow && hasRoom && ach >= target;
+    showGroup('secondary', pass);
 
     if (hasFlow && hasRoom) {
       capMaxVol = (flow * 60) / target;
@@ -1120,6 +1120,7 @@
 
     if (targetIsInvalid) {
       show(achWrap, false);
+      show(achEvidence, false);
       show(fixWrap, false);
       setAnswer('', null);
       setVerdictCard(null);
@@ -1131,8 +1132,13 @@
     } else if (hasFlow && hasRoom) {
       setMetric('ach', fmt(ach, 1));
       setReadout('ach', fmt(ach, 1));
-      show(achWrap, true);
-      if (achWrap) achWrap.toggleAttribute('data-below', !pass);
+      show(achWrap, pass);
+      show(achEvidence, !pass);
+      var achSub = achWrap ? achWrap.querySelector('.smaqmd-stat__sub') : null;
+      if (achSub) {
+        achSub.textContent =
+          (pass ? 'Meets' : 'Below') + ' your ' + fmt(target, 2) + ' air changes per hour target';
+      }
       setMetric('fix', fmt(needCadr, 0) + unitSpan('ft³/min'));
       show(fixWrap, !pass);
       if (!pass) {
@@ -1147,10 +1153,11 @@
         var weakest = flows.length ? Math.min.apply(null, flows) : 0;
         var moreUnits = weakest > 0 ? Math.max(1, Math.ceil((neededFlow - flow) / weakest)) : 0;
         setReadout('moreunits', fmt(moreUnits, 0));
-        show(cadrHighEl, needCadr > 700);
-      } else {
-        show(cadrHighEl, false);
+        setReadout('unitnoun', moreUnits === 1 ? 'air cleaner' : 'air cleaners');
       }
+      // The >700 caution is SHOP-mode-only: here "Add N more" already carries
+      // the multi-unit reality.
+      show(cadrHighEl, false);
       var subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
       var subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
       setAnswer(
@@ -1168,7 +1175,7 @@
       startLoop();
     } else if (hasRoom) {
       show(achWrap, false);
-      if (achWrap) achWrap.removeAttribute('data-below');
+      show(achEvidence, false);
       setMetric('fix', fmt(needCadr, 0) + unitSpan('ft³/min'));
       show(fixWrap, true);
       show(cadrHighEl, needCadr > 700);
@@ -1186,6 +1193,7 @@
       );
     } else {
       show(achWrap, false);
+      show(achEvidence, false);
       show(fixWrap, false);
       setAnswer('', null);
       setVerdictCard(null);
@@ -1331,18 +1339,24 @@
       }
     }
     dots.forEach(function (d, i) {
-      show(d, i < plan.length);
+      show(d, !isResult && i < plan.length);
       d.toggleAttribute('data-active', i === stepIdx && !isResult);
       d.toggleAttribute('data-done', i < stepIdx);
     });
+    show(root.querySelector('.smaqmd-wizard__dots'), !isResult);
     if (stepCountEl) {
       stepCountEl.textContent = isResult
         ? 'Result'
         : 'Step ' + (stepIdx + 1) + ' of ' + plan.length;
     }
     if (stepTitleEl) {
-      stepTitleEl.hidden = isResult;
-      if (!isResult) stepTitleEl.textContent = TITLES[section];
+      var answerText = isResult && answerTitle ? (answerTitle.textContent || '').trim() : '';
+      stepTitleEl.textContent = answerText && answerText !== '—' ? answerText : TITLES[section];
+    }
+    var verdict = isResult && answerG ? answerG.getAttribute('data-verdict') : null;
+    if (wizardEl) {
+      if (verdict) wizardEl.setAttribute('data-verdict', verdict);
+      else wizardEl.removeAttribute('data-verdict');
     }
     show(navEl('back'), stepIdx > 0 || !!introEl);
     show(navEl('next'), stepIdx < plan.length - 1);
@@ -1350,10 +1364,7 @@
     show(navEl('restart'), isResult);
     if (roomHint && section !== 0) show(roomHint, false);
     syncViewport();
-    if (dir !== 0) {
-      var heading = isResult ? answerTitle : stepTitleEl;
-      if (heading) heading.focus();
-    }
+    if (dir !== 0 && stepTitleEl) stepTitleEl.focus();
   };
 
   var goStep = function (i) {

@@ -25,9 +25,13 @@
 // now; flow is animated with plain CSS stroke-dashoffset (no animation library
 // yet) so GSAP/WAAPI can take over the motion later without touching the
 // projection math.
+// .visually-hidden for the step counter below — visible dots + step title carry
+// the progress visually; the counter stays in the DOM for screen readers.
+import '@esa/tokens/a11y.css';
 import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
 
@@ -277,8 +281,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
          and feeds it to the fit math. -->
     <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
     <p class="typography-meta smaqmd-cityview__cap">
-      Air leaves your room, passes through the cleaner, and returns. When
-      entering length × width, drag the room's edges — or type — to resize it.
+      Representative illustration only — not a guide to where an air cleaner
+      should be placed in your room.
     </p>
   </div>
   )}
@@ -361,15 +365,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               How to get cleaner air in your room
             </h2>
             <p class="typography-body-md smaqmd-wizard__intro-lede">
-              The Air Exchange Rate Tool estimates how many times an hour an air
-              cleaner can replace your room's air. From the Sac Metro Air District.
+              Use the air exchange rate tool to estimate how many times an hour an
+              air cleaner can replace your room's air. This can help you improve
+              the air quality in your room.
             </p>
             <div class="smaqmd-wizard__intro-actions stack" data-gap="sm">
               <span data-nav="check">
                 <EsaButton size={ctl} type="button">Check my air cleaner</EsaButton>
               </span>
               <span data-nav="shop">
-                <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Help me pick one</EsaButton>
+                <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Help me pick an air cleaner</EsaButton>
               </span>
             </div>
           </div>
@@ -381,7 +386,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <span class="smaqmd-wizard__dot" data-dot="1">2</span>
             <span class="smaqmd-wizard__dot" data-dot="2">3</span>
           </div>
-          <p class="typography-meta smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
+          <p class="visually-hidden smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
           <h2 class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</h2>
           <!-- The band's bottom EDGE, as the district's swoop rather than a straight
                rule. Two crossing waves, matching the agency's letterhead mark: the
@@ -464,7 +469,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               inputmode="decimal"
               label="Target air changes per hour"
               value="2"
-              help-text="One air change means the cleaner has filtered a full room's worth of air. The California Air Resources Board (CARB) recommends at least 2 per hour. This target applies to the whole room — all cleaners together."
+              help-text="One air change means the cleaner has filtered a full room's worth of air. The California Air Resources Board (CARB) recommends at least 2 per hour. During wildfire smoke events, aim for 4–6. This target applies to the whole room — all cleaners together."
             ></esa-text-field>
             <!-- Shown by recompute() only when the entered target drops below the
                  CARB-recommended 2, so a low target is an explicit choice. -->
@@ -489,41 +494,64 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                uses; the engine writes here regardless of which step is shown. -->
           <section class="stack" data-gap="md" data-step="3" hidden>
         <div class="stack" data-gap="md" data-result>
-          <!-- ANSWER + hero metrics — the direct yes/no, then the two numbers that
-               matter at EQUAL weight: the problem (ACH the setup delivers) and the
-               fix (the combined CADR to reach). A fail shows both side by side — "here's the
-               issue, here's what fixes it". Pass shows only ACH; shop only the CADR. -->
+          <!-- ANSWER, then ACTION over evidence. The headline carries the diagnosis;
+               everything after it is the prescription. On a fail the action alert
+               leads, the CADR-to-shop-for is the only hero, and the delivered ACH
+               demotes to a supporting evidence line. Pass shows the ACH hero alone
+               (there is no action); shop shows only the CADR. -->
           <div class="stack smaqmd-aerb__answer" data-gap="sm" data-group="answer" hidden>
-            <h2 class="typography-heading-md smaqmd-aerb__answer-title" data-answer-title tabindex="-1">—</h2>
+            <!-- Hidden holder for the verdict headline. recompute() writes it here;
+                 renderStep() mirrors it into the header band's h2, which is THE
+                 visible (and screen-reader) title on the result step. -->
+            <span data-answer-title hidden>—</span>
 
-            <!-- INFORMATION CARD — the verdict spelled out, colored by state
-                 (warning / info), sitting BETWEEN the headline and the metrics it
-                 introduces. On a fail it carries the fix (the CADR below); in shop
-                 mode it explains what CADR is. JS shows exactly one via
+            <!-- VERDICT CARD — the verdict spelled out. On a fail it carries the
+                 fix and leads the metrics; in shop mode it explains what CADR is
+                 and follows them (below). JS shows exactly one via
                  [data-verdict-card] and fills the readouts. Pass shows none. -->
+            <!-- Action-first: the instruction leads the body at heading-md — the
+                 same rung as the band title, never above it — and the fail-state
+                 stat value is capped to match (below). No alert chrome and no
+                 "Below your target" title: the headline already delivered the
+                 diagnosis, and a box would frame the action as an aside instead
+                 of the point. -->
             <div data-verdict-card="fail" hidden>
-              <EsaAlertBox variant="warning" title="Below your target">
-                This room needs more clean air than your setup delivers. Add
-                <strong data-r="moreunits">—</strong> more like yours — or swap in
-                stronger cleaners — so their combined CADR reaches the number below and
-                hits your target of <strong data-r="target">2</strong> air changes per hour.
-              </EsaAlertBox>
+              <div class="stack" data-gap="xs">
+                <p class="typography-heading-md smaqmd-aerb__action">
+                  Add <strong data-r="moreunits">—</strong> more
+                  <span data-r="unitnoun">air cleaners</span> like yours
+                </p>
+                <p class="typography-body-sm">
+                  Or swap in stronger cleaners.
+                </p>
+              </div>
             </div>
-            <div data-verdict-card="shop" hidden>
-              <EsaAlertBox variant="info">
-                CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
-                cleaner's box. Match or beat the number below to reach your target.
-              </EsaAlertBox>
-            </div>
-
             <div class="smaqmd-aerb__heroes">
+              <!-- The ACH sub is a live verdict line ("Below/Meets your N air changes
+                   per hour target") written by recompute(), not static copy. -->
               <div data-metric="ach" hidden>
-                <EsaStat value="—" label="air changes per hour" accent />
+                <EsaStat value="—" label="air changes per hour" sub="—" accent />
               </div>
               <div data-metric="fix" hidden>
-                <EsaStat value="—" label="minimum combined CADR" accent />
+                <EsaStat value="—" label="combined CADR to shop for"
+                  sub="added up across all the air cleaners in the room" accent />
               </div>
             </div>
+            <!-- Shop mode: the number IS the action, so the CADR stat leads and this
+                 explainer supports it from below — same order as the fail screen, and
+                 no alert chrome for what is plain supporting copy. -->
+            <div data-verdict-card="shop" hidden>
+              <p class="typography-body-sm smaqmd-aerb__footnote">
+                CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
+                cleaner's box. Match or beat this number to reach your target.
+              </p>
+            </div>
+            <!-- Evidence, below the action: the delivered rate vs the target. Fail
+                 only — on a pass the ACH hero above carries the same numbers. -->
+            <p class="typography-body-sm smaqmd-aerb__footnote" data-ach-evidence hidden>
+              Your setup delivers <strong data-r="ach">—</strong> air changes per hour,
+              against your target of <strong data-r="target">2</strong>.
+            </p>
             <!-- Over-700 caution: most consumer air cleaners top out around 700
                  ft³/min, so a required CADR above that isn't reachable with a single
                  unit. Shown by recompute() whenever the CADR-to-buy exceeds 700. -->
@@ -541,7 +569,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <esa-button-toggle
                 class="smaqmd-aerb__units"
                 data-field="units"
-                size={hasIntro ? 'lg' : 'xs'}
+                size={hasIntro ? 'sm' : 'xs'}
                 label="Units"
                 value="ft2"
                 options={JSON.stringify(unitToggle)}
@@ -558,6 +586,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <!-- Polite announcer: a visually-hidden live region written by recompute()
                after a 600 ms debounce so drag gestures do not chatter. -->
         </div>
+
+        <!-- Usage tips — closed by default so the verdict above stays the point;
+             OUTSIDE [data-result] so the engine-shared subtree stays byte-for-byte
+             the classic view's. -->
+        <EsaCollapsible title="Getting the most from your air cleaner">
+          <ul class="typography-body-sm smaqmd-aerb__tips">
+            <li>Remove all plastic wrapping from the filter before installing it.</li>
+            <li>Keep windows and doors closed while it runs.</li>
+            <li>Use it in the room where you spend the most time, usually a bedroom.</li>
+            <li>Leave at least a foot of clearance around the air intake and outlet.</li>
+            <li>Replace the filter on the schedule in your unit's manual — a clogged filter cleans less air.</li>
+          </ul>
+        </EsaCollapsible>
           </section>
         </div>
 
@@ -655,14 +696,27 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   /* Answer headline — the direct yes/no, tinted by verdict: green pass, orange
      fail (matching the scene), neutral while only shopping for a rating. */
-  .smaqmd-aerb__answer-title { color: var(--color-content-default); }
   /* Step headings are programmatic focus targets (tabindex=-1) for step-change
      announcement, not tab stops — suppress the ring that would flash on them after
-     navigating (keyboard users never Tab here; the SR just reads the heading). */
-  [data-step-title]:focus,
-  .smaqmd-aerb__answer-title:focus { outline: none; }
-  .smaqmd-aerb__answer[data-verdict="pass"] .smaqmd-aerb__answer-title { color: var(--color-background-brand); }
-  .smaqmd-aerb__answer[data-verdict="fail"] .smaqmd-aerb__answer-title { color: var(--color-content-utility-warning); }
+     navigating (keyboard users never Tab here; the SR just reads the heading).
+     a11y-checked: [data-step-title] carries tabindex="-1" and is focused only by
+     renderStep(); it is unreachable by Tab, so no visible ring is ever needed. */
+  [data-step-title]:focus { outline: none; }
+  /* Result verdict recolors the header band (renderStep sets data-verdict on the
+     wizard root). Fail swaps the sage band for the warning tint — the same orange
+     ramp the alert and the scene's fail state already use — so the band itself
+     says "below target" before the numbers do. Pass keeps the band and lifts the
+     title to the ramp's green. Contrast on the bands (24px semibold = large text,
+     AA is 3:1): warning #582d1d on the orange tint 9.29:1; earth-11 green on
+     earth-4 5.55:1 — both clear even the 4.5:1 normal-text bar. */
+  .smaqmd-wizard { --_warn-band: color-mix(in srgb, var(--color-border-utility-warning) 40%, var(--color-background-utility-warning-subtle)); }
+  /* Pass speaks the band's own green (earth-11, 5.55:1 on the earth-4 band) —
+     "target met" reads as green, not the neutral brand blue. */
+  .smaqmd-wizard[data-verdict="pass"] .smaqmd-wizard__title { color: var(--smaqmd-color-content-secondary-brand); }
+  .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__title { color: var(--color-content-utility-warning); }
+  .smaqmd-wizard[data-verdict="fail"] > .smaqmd-wizard__head { background: var(--_warn-band); }
+  .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__swoop-front { fill: var(--_warn-band); }
+  .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__swoop-back { fill: var(--color-background-utility-warning-subtle); }
 
   /* bcn-lego-checked: no esa- lego provides a CSS visually-hidden / sr-only
      utility; checked Beacon (uses a global .sr-only utility class not
@@ -708,18 +762,39 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--color-content-default-secondary);
   }
   /* Caution note under the CADR hero (e.g. the >700 ft³/min warning). */
-  .smaqmd-aerb__caution { color: var(--color-content-utility-warning, #d9822b); }
-  /* Hero numbers → the BRAND color. esa-stat's accent defaults to the spoke's
-     SECONDARY (green) — wrong here; the heroes should read in the primary brand
-     hue like the pass headline. --stat-accent-color is the consumer hook. */
-  .smaqmd-aerb [data-metric="ach"],
-  .smaqmd-aerb [data-metric="fix"] {
-    --stat-accent-color: var(--color-background-brand);
+  /* Result text is ONE color — the subtle gray-11 (content-default-secondary,
+     5.6:1 on the gray-1 ground). Only the band title, the hero number, and the
+     "Add N more…" action line carry color; every supporting line (stat labels,
+     subs, evidence, caution, coverage) sits at the same quiet rung. */
+  [data-result] p.typography-body-sm,
+  .smaqmd-aerb :global(.esa-stat__label),
+  .smaqmd-aerb :global(.esa-stat__sub) { color: var(--color-content-default-secondary, #646464); }
+  /* Hero numbers: the pass-state ACH keeps the primary brand hue; the CADR
+     number reads in gray-12 (content-default) — quiet ink, not a brand accent.
+     --stat-accent-color is esa-stat's consumer hook. */
+  .smaqmd-aerb [data-metric="ach"] { --stat-accent-color: var(--color-background-brand); }
+  .smaqmd-aerb [data-metric="fix"] { --stat-accent-color: var(--color-content-default); }
+  /* On a FAIL the action statement above is the hero, so the CADR stat steps down
+     a rung (heading-md scale) to stay subordinate to it. Shop mode keeps the full
+     display-sm value — there the number IS the action. */
+  .smaqmd-aerb__answer[data-verdict="fail"] [data-metric="fix"] {
+    --stat-value-size: var(--typography-heading-md-font-size, 1.5rem);
   }
-  /* Below target: the ACH hero shifts to warning, matching the orange fail
-     headline + scene. The CADR fix stays brand — it's the positive action. */
-  .smaqmd-aerb [data-metric="ach"][data-below] {
-    --stat-accent-color: var(--color-background-utility-warning, #d9822b);
+  /* Usage-tips list inside the collapsible: default bullets, tightened to the
+     body padding the lego already provides; same quiet gray as the other
+     supporting result text. */
+  .smaqmd-aerb__tips {
+    margin: 0;
+    padding-inline-start: var(--spacing-500, 1.5rem);
+    color: var(--color-content-default-secondary, #646464);
+  }
+  .smaqmd-aerb__tips li + li { margin-block-start: var(--spacing-200, 0.5rem); }
+  /* Hairline between the CADR stat and the supporting line below it — same
+     token-driven divider the cleaner blocks use (border + breathing room above
+     the text). Shared by the fail evidence line and the shop explainer. */
+  .smaqmd-aerb__footnote {
+    border-block-start: 1px solid var(--color-border-default);
+    padding-block-start: var(--spacing-300, 0.75rem);
   }
 
   .smaqmd-aerb {
@@ -954,8 +1029,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   .smaqmd-cityview__cap {
     position: absolute;
-    inset-block-end: var(--spacing-500); inset-inline-start: var(--spacing-500);
-    max-inline-size: 26rem; text-align: start;
+    inset-block-end: var(--spacing-500); inset-inline-end: var(--spacing-500);
+    max-inline-size: 26rem; text-align: end;
     color: var(--color-content-default-tertiary);
   }
 
@@ -993,6 +1068,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   /* Width comes from the column now; the panel just fills it. */
   .smaqmd-aerw__panel { inline-size: auto; }
 
+  /* Ghost/outline buttons in the wizard sit on the frosted panel (96% raised +
+     backdrop blur), so the lego's transparent rest state picks up the brand-blue
+     scene bleeding through the blur. Ground them on the same gray-1 the site
+     uses; hover/active restate the lego's sunken wash, which these higher-
+     specificity rules would otherwise override. */
+  .smaqmd-wizard :global(.esa-button--variant-ghost .esa-button__native) {
+    background: var(--color-background-elevation-raised, #fcfcfc);
+  }
+  .smaqmd-wizard :global(.esa-button--variant-ghost .esa-button__native:hover:not(:disabled)),
+  .smaqmd-wizard :global(.esa-button--variant-ghost.esa-button--active .esa-button__native) {
+    background: var(--color-background-elevation-sunken, #f0f0f0);
+  }
+
   /* smaqmd-wizard — the step shell. bcn-lego-checked: no esa- lego is a gated linear
      wizard/stepper (see the markup note); the numbered dots + step chrome are the
      bespoke home, composing esa-button / esa-* controls inside. Token-driven. */
@@ -1002,6 +1090,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     inline-size: 1.5rem; block-size: 1.5rem;
     border-radius: 999px;
     font-size: 0.75rem; font-weight: var(--typography-font-weight-medium, 500);
+    /* Inherited body line-height (1.6) makes the digit's line box taller than the
+       glyph, so the number rides high in the circle; hug the glyph instead. */
+    line-height: 1;
     color: var(--smaqmd-color-content-secondary-brand);
     /* Idle sits ON the band; only the CURRENT step lifts to a white chip. That
        is the whole active/idle distinction, so it has to be the loud one. */
@@ -1113,6 +1204,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   @media (prefers-reduced-motion: reduce) {
     .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
     .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation: none; }
+    /* The usage-tips collapsible's caret rotation — esa-collapsible ships the
+       transition ungated (hub gap); this spoke gates it so the shipped tool
+       honors the preference either way. */
+    .smaqmd-aerb :global(.esa-collapsible__summary)::after { transition: none; }
   }
   /* The panel is a .stack (flex column) with a max height: without this, short
      viewports shrink the cards (esa-card's overflow:hidden zeroes their flex
@@ -2224,6 +2319,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const targetWarn = root.querySelector<HTMLElement>('[data-target-warn]');
     const targetInvalid = root.querySelector<HTMLElement>('[data-target-invalid]');
     const achWrap = block.querySelector<HTMLElement>('[data-metric="ach"]');
+    const achEvidence = block.querySelector<HTMLElement>('[data-ach-evidence]');
     const fixWrap = block.querySelector<HTMLElement>('[data-metric="fix"]');
     const cadrHighEl = block.querySelector<HTMLElement>('[data-cadr-high]');
     const setAnswer = (title: string, verdict: 'pass' | 'fail' | 'shop' | null) => {
@@ -2282,15 +2378,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         ? (asFt3 ? `${fmt(vol, 0)} ft³` : `${fmt(area, 0)} ft²`) : '—');
       setReadout('coverarea', hasFlow
         ? (asFt3 ? `${fmt(coverVol, 0)} ft³` : `${fmt(coverVol / 8, 0)} ft²`) : '—');
-      // Secondary is the coverage-vs-room COMPARISON — only meaningful with a cleaner
-      // delivering flow (pass/fail). In shop mode "Your room is about X" would stand
-      // alone, echoing an input with nothing to compare it to, so the group is hidden.
-      showGroup('secondary', hasRoom && hasFlow);
-
       // ACH the current setup delivers + whether it meets the target. Computed once
       // here so the min-CADR guidance and the verdict below stay in agreement.
       const ach = hasFlow && hasRoom ? (flow / vol) * 60 : NaN;
       const pass = hasFlow && hasRoom && ach >= target;
+      // Secondary is the coverage-vs-room COMPARISON — PASS only. On a fail the
+      // evidence line already carries the shortfall and a second comparison would
+      // dilute the action; in shop mode there is no cleaner to compare at all.
+      showGroup('secondary', pass);
 
       // Capacity ghost — the largest room the cleaners cover at the target,
       // overlaid on the actual room. Only meaningful with both a flow and a room
@@ -2350,15 +2445,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         setPrompt(true);
         announce('');
       } else if (hasFlow && hasRoom) {
-        // Pass/fail: the ACH the setup delivers is the hero (vs. the target). On a
-        // FAIL, the CADR-to-buy joins it as a co-equal hero — problem + fix.
+        // Pass/fail: ACTION over evidence. On a pass the delivered ACH is the hero
+        // (there is nothing to do). On a FAIL the CADR-to-shop-for is the only
+        // hero and the delivered ACH demotes to the evidence line below it.
         setMetric('ach', fmt(ach, 1));
         setReadout('ach', fmt(ach, 1));
-        // No target restated here — the verdict headline + card already carry the
-        // comparison; the ACH number stands on its own as the delivered rate.
-        show(achWrap, true);
-        // Tint the ACH readout warning when it falls short of the target.
-        achWrap?.toggleAttribute('data-below', !pass);
+        show(achWrap, pass);
+        show(achEvidence, !pass);
+        const achSub = achWrap?.querySelector<HTMLElement>('.esa-stat__sub');
+        if (achSub) achSub.textContent =
+          `${pass ? 'Meets' : 'Below'} your ${fmt(target, 2)} air changes per hour target`;
         setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
         show(fixWrap, !pass);
         // Fail remedies: how many MORE of the user's current (assumed-identical)
@@ -2374,10 +2470,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           const weakest = flows.length ? Math.min(...flows) : 0;
           const moreUnits = weakest > 0 ? Math.max(1, Math.ceil((neededFlow - flow) / weakest)) : 0;
           setReadout('moreunits', fmt(moreUnits, 0));
-          show(cadrHighEl, needCadr > 700);
-        } else {
-          show(cadrHighEl, false);
+          setReadout('unitnoun', moreUnits === 1 ? 'air cleaner' : 'air cleaners');
         }
+        // The >700 caution is SHOP-mode-only: here "Add N more" already carries
+        // the multi-unit reality, so restating it would just re-clutter the fail.
+        show(cadrHighEl, false);
         // "Powerful enough", not "big enough" — adequacy here is airflow (CADR), not
         // physical size; the size metaphor feeds the very misconception the tool corrects.
         const subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
@@ -2396,7 +2493,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Shop mode (no cleaner yet): the combined CADR to reach IS the result, so it takes
         // the hero slot alone; the ACH hero has nothing to measure yet.
         show(achWrap, false);
-        achWrap?.removeAttribute('data-below');
+        show(achEvidence, false);
         setMetric('fix', `${fmt(needCadr, 0)}${unit('ft³/min')}`);
         show(fixWrap, true);
         // Same over-700 caution in shop mode: no single typical cleaner reaches it.
@@ -2581,17 +2678,25 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       dots.forEach((d, i) => {
         // A two-step run shows two dots. The third is hidden rather than relabelled:
         // the dots ARE the step count, so leaving a dead one on would promise a step
-        // the shopper never reaches.
-        show(d, i < plan.length);
+        // the shopper never reaches. On the result there are no steps left to count,
+        // so the dots go entirely.
+        show(d, !isResult && i < plan.length);
         d.toggleAttribute('data-active', i === stepIdx && !isResult);
         d.toggleAttribute('data-done', i < stepIdx);
       });
+      show(root.querySelector<HTMLElement>('.smaqmd-wizard__dots'), !isResult);
       if (stepCountEl) stepCountEl.textContent = isResult ? 'Result' : `Step ${stepIdx + 1} of ${plan.length}`;
-      // On the result step the verdict headline is the title — the generic
-      // "Your result" h2 would just duplicate the eyebrow + verdict, so hide it.
+      // On the result step the verdict headline takes over the header band: the h2
+      // mirrors the hidden [data-answer-title] holder recompute() wrote, and
+      // data-verdict on the wizard root tints the band + title (fail = warning).
       if (stepTitleEl) {
-        (stepTitleEl as HTMLElement).hidden = isResult;
-        if (!isResult) stepTitleEl.textContent = TITLES[section];
+        const t = isResult ? answerTitle?.textContent?.trim() : null;
+        stepTitleEl.textContent = t && t !== '—' ? t : TITLES[section];
+      }
+      const verdict = isResult ? answerG?.getAttribute('data-verdict') : null;
+      if (wizardEl) {
+        if (verdict) wizardEl.setAttribute('data-verdict', verdict);
+        else wizardEl.removeAttribute('data-verdict');
       }
       // Back is offered on the first step too when there is an opening slide to go
       // back TO — without it the intent chosen there would be unchangeable, and a
@@ -2607,11 +2712,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // A11y: on a real navigation (not the initial paint), move focus to the new
       // step's heading so screen-reader + keyboard users land in — and hear — the
       // step they advanced to, instead of focus being stranded on the old button.
-      // On the result step the h2 is hidden, so the verdict headline is the target.
-      if (dir !== 0) {
-        const heading = isResult ? answerTitle : (stepTitleEl as HTMLElement | null);
-        heading?.focus();
-      }
+      // The header h2 is the title on every step now, the result included.
+      if (dir !== 0) (stepTitleEl as HTMLElement | null)?.focus();
     };
 
     const goStep = (i: number) => {
