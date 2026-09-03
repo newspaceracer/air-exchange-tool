@@ -68,7 +68,27 @@
   var root = document.querySelector('[data-aerb-wizard]');
   if (!root) return;
 
+  // THE narrow-screen breakpoint, in JS. Must stay identical to the
+  // `@media (max-width: 68rem)` query in styles.css — the CSS lays the flow out,
+  // this decides where the header sits and whether the scene animates.
   var mqMobile = window.matchMedia('(max-width: 68rem)');
+
+  // ---- responsive header placement ----
+  // Wide keeps the page heading atop the card column; narrow moves it ABOVE the
+  // graphic (the node is relocated, not duplicated). Runs now (before paint) and
+  // on every breakpoint crossing. Port of the same block in the Astro source.
+  var headerEl = root.querySelector('.smaqmd-aerb__header');
+  var colEl = root.querySelector('.smaqmd-aerw__col');
+  var placeHeader = function () {
+    if (!headerEl) return;
+    if (mqMobile.matches) {
+      if (root.firstElementChild !== headerEl) root.prepend(headerEl);
+    } else if (colEl && colEl.firstElementChild !== headerEl) {
+      colEl.prepend(headerEl);
+    }
+  };
+  placeHeader();
+  mqMobile.addEventListener('change', placeHeader);
 
   var isGroup = function (el) {
     return !!el && el.tagName === 'FIELDSET';
@@ -147,14 +167,33 @@
   var viewH = 380;
   var safe = { x: 52, y: 52, w: 376, h: 276 };
   var MAX_SCALE = 12;
-  var CW_MAX = 4.5;
-  var CW_MIN = 2;
-  var GAP_MAX = 10;
+  // The DRAWN room stops growing here. Past this the picture says nothing new
+  // while everything in it shrinks toward invisible. Each axis clamps
+  // INDEPENDENTLY — scaling the footprint proportionally could drive the short
+  // side under the degenerate floor and blank the room. The drawn box clamps and
+  // the dimension LABELS keep the true feet, via labelK below.
+  var SCENE_MAX = 60; // ft — longest drawn floor side
+  var SCENE_MAX_H = 20; // ft — tallest drawn ceiling
+  // trueDim / drawnDim per axis. All 1 whenever nothing is clamped (the normal case).
+  var labelK = { L: 1, W: 1, H: 1 };
+  var CW_MAX = 2.6;
+  var CW_MIN = 1.4;
   var UNIT_MIN_PX = 22;
+  // Floor strip along the near x=L wall reserved for the FRONT cleaners;
+  // furniture is clamped out of it. Its counterpart at the far end of the room —
+  // the BACK units' zone — is not a constant, because those units move with the
+  // layout; it is the rectangle backZone() derives and layoutDetails() reserves.
+  // Wall thickness + floor slab depth give the cutaway its visible top caps, cut
+  // edges and front edges.
+  var CLEANER_STRIP = 3.8;
+  var WALL_T = 0.35;
+  var FLOOR_D = 0.35;
   var sceneSentinel = root.querySelector('[data-safe]');
   var sentinel = sceneSentinel || document.createElement('div');
   var hasScene = !!(sceneSvg && sceneStage && sceneSentinel);
   var isResponsive = root.getAttribute('data-variant') === 'responsive';
+  // Must match syncSceneLive()'s condition below — data-section is unset until the
+  // first renderStep, i.e. not yet the result step.
   var sceneLive = hasScene && !(isResponsive && mqMobile.matches);
 
   var syncViewport = function () {
@@ -171,10 +210,29 @@
     new ResizeObserver(syncViewport).observe(sentinel);
   }
 
-  var returnPaths = [];
-  var outPaths = [];
+  // Everything the ring pulse needs, in SCREEN space, refreshed by drawScene.
+  // A ring is a world-space circle of radius r on the floor around the unit's
+  // center; the projection is linear, so its image is exactly the ellipse
+  // P(t) = C + r * (cos t * E + sin t * F), where C is the projected unit center
+  // and E/F are the projections of the unit-foot world vectors +1x and +1y from
+  // it. Caching those three screen vectors per cleaner keeps the animation tick
+  // to plain arithmetic. null = that cleaner isn't drawn right now.
+  var ringDefs = [];
+  // Ripples in flight per cleaner, and the angular resolution of each.
+  var RING_COUNT = 3;
+  var RING_STEPS = 28;
   var sceneN = 1;
   var MAX_CLEANERS = 4;
+  // The 4 x 3 ring polygons are static markup, so they're looked up ONCE here
+  // rather than re-queried every frame. ringPolys[i][k] is cleaner i's ring k.
+  var ringPolys = [];
+  for (var rp = 0; hasScene && rp < MAX_CLEANERS; rp++) {
+    var found = svg.querySelectorAll(
+      '.smaqmd-cityview__rings[data-rings="' + (rp + 1) + '"] .smaqmd-cityview__ring',
+    );
+    ringPolys[rp] = [];
+    for (var rq = 0; rq < found.length; rq++) ringPolys[rp].push(found[rq]);
+  }
 
   var ptsAttr = function (pts) {
     return pts
@@ -199,6 +257,7 @@
   };
 
   var detailsG = svg.querySelector('[data-room-details]');
+  var furnG = svg.querySelector('[data-furniture]');
   var setDetail = function (sel, on, pts) {
     var el = svg.querySelector(sel);
     if (!el) return;
@@ -206,116 +265,301 @@
     if (on && pts) el.setAttribute('points', ptsAttr(pts));
   };
 
+  // N air cleaners standing ON THE FLOOR, filling the room from BOTH ends so
+  // added units read as covering the room rather than crowding one wall. The
+  // side assignment is FIXED by index (and mirrored by the two unit blocks in
+  // the markup, which is what makes the units' static paint order correct):
+  //
+  //   1 -> front (the strip along the open x=L edge)   2 -> back (the x=0 wall)
+  //   3 -> front, beside 1                             4 -> back, across from 3
+  //
+  // A side carrying ONE unit centers it at W/2; a side carrying TWO straddles
+  // W/2 with a gap g between them, and both sides use the SAME two y-centers, so
+  // every back unit stands directly across the room from its front partner
+  // (1<->2, 3<->4). The footprint scales with the room up to CW_MAX, then stops,
+  // with an absolute 3.2 ft cap so even a widened (readability-pass) unit stays
+  // appliance-sized.
   var layoutCleaners = function (L, W, n, cwOpt) {
-    var gap = Math.min(Math.max(3, Math.min(L, W) * 0.55), GAP_MAX);
-    var cwBase = Math.min(Math.max(Math.min(L, W) * 0.18, CW_MIN), CW_MAX);
-    var cw = Math.min(cwOpt == null ? cwBase : cwOpt, (W / n) * 0.55);
-    var ch = cw * 1.3;
-    var off = cw * 0.3;
+    var cwBase = Math.min(Math.max(Math.min(L, W) * 0.16, CW_MIN), CW_MAX);
+    var cw = Math.min(cwOpt == null ? cwBase : cwOpt, W * 0.55, 3.2);
+    // Anti-overlap ceilings, applied once a side actually carries a pair (n >= 3)
+    // or the two sides face each other (n >= 2).
+    //   ACROSS the width: 2*cw + g <= 0.7*W with g = max(1, 0.5*cw), so the
+    //   largest admissible cw is 0.28*W where that lands at or above the
+    //   g = 0.5*cw branch point (cw >= 2, i.e. W >= 7.14 ft), and 0.35*W - 0.5
+    //   below it.
+    //   ALONG the length: the front and back boxes keep a 0.6 ft aisle between
+    //   them -> cw <= (L - 2.4)/2.
+    if (n >= 3) cw = Math.min(cw, W * 0.28 >= 2 ? W * 0.28 : W * 0.35 - 0.5);
+    if (n >= 2) cw = Math.min(cw, (L - 2.4) / 2);
+    cw = Math.max(cw, 0.2);
+    var ch = cw * 1.5;
+    // Gap between the two units of a pair, and the resulting slot offset from the
+    // room's mid-width: each unit's CENTER sits at W/2 -/+ (cw/2 + g/2).
+    var g = Math.max(1, cw * 0.5);
+    var slot = cw / 2 + g / 2;
+    var frontPair = n >= 3;
+    var backPair = n >= 4;
     var out = [];
     for (var k = 0; k < n; k++) {
-      var cyc = (W * (k + 0.5)) / n;
+      var side = k % 2 === 0 ? 'front' : 'back';
+      var paired = side === 'front' ? frontPair : backPair;
+      // Index 0/1 take the lower-y slot of their side, 2/3 the higher one.
+      var cyc = !paired ? W / 2 : W / 2 + (k < 2 ? -slot : slot);
+      // Front: 1.2 ft of clearance from the x=L edge the cutaway opens on.
+      // Back:  0.6 ft off the x=0 wall (a wall gap, not a walking aisle).
+      var x0 = side === 'front' ? L - 1.2 - cw : 0.6;
       out.push({
-        x0: L + gap,
+        x0: x0,
         y0: cyc - cw / 2,
-        x1: L + gap + cw,
+        x1: x0 + cw,
         y1: cyc + cw / 2,
         h: ch,
-        laneOut: cyc - off,
-        laneRet: cyc + off,
+        side: side,
       });
     }
     return out;
   };
+  // The floor rectangle the BACK units occupy (plus a walking margin), or null
+  // when no unit stands against the x=0 wall. layoutDetails keeps furniture out
+  // of it.
+  var backZone = function (cls) {
+    var M = 0.6;
+    var x1 = -Infinity;
+    var y0 = Infinity;
+    var y1 = -Infinity;
+    var any = false;
+    for (var i = 0; i < cls.length; i++) {
+      if (cls[i].side !== 'back') continue;
+      any = true;
+      if (cls[i].x1 > x1) x1 = cls[i].x1;
+      if (cls[i].y0 < y0) y0 = cls[i].y0;
+      if (cls[i].y1 > y1) y1 = cls[i].y1;
+    }
+    if (!any) return null;
+    return { x0: 0, x1: x1 + M, y0: y0 - M, y1: y1 + M };
+  };
 
-  var WIN_POOL = 8;
-  var WIN_W = 2.4;
-  var RTU_DEFS = [
-    { fx: 0.66, fy: 0.38, sx: 2.4, sy: 1.8, h: 1.4 },
-    { fx: 0.4, fy: 0.7, sx: 1.8, sy: 1.8, h: 1.0 },
-    { fx: 0.8, fy: 0.68, sx: 1.4, sy: 1.4, h: 0.8 },
+  var WIN_POOL = 2;
+  var WIN_W = 3.0;
+  // Furniture pool, ordered BACK-TO-FRONT by (fx + fy) so document order IS
+  // painter order. fx/fy place the item's CENTER as a fraction of L/W; sx/sy/h
+  // are its world size in feet; minArea is the floor area at which it appears;
+  // snap pins it flush against the x=0 ('x') or y=0 ('y') wall.
+  // A BED IS A WALL PIECE: its head goes against the y=0 wall, never adrift in
+  // the middle of the floor. It cannot take the x=0 wall instead — that wall now
+  // hosts back cleaner units 2 and 4 at mid-width, and a 5 ft-deep bed would land
+  // in their reserved zone. So the y=0 wall carries three pieces (dresser, bed,
+  // desk) that have to share its length; they are spaced low-x -> center ->
+  // door-end here, and packed for real in the wall pass below.
+  var FURN_DEFS = [
+    { fx: 0.12, fy: 0.06, sx: 3.6, sy: 1.5, h: 2.7, minArea: 90, snap: 'y' }, // 1 dresser
+    { fx: 0.05, fy: 0.28, sx: 1.1, sy: 3.2, h: 5.6, minArea: 0, snap: 'x' }, // 2 bookshelf
+    { fx: 0.42, fy: 0.06, sx: 6.4, sy: 5.0, h: 1.7, minArea: 0, snap: 'y' }, // 3 bed (head to the wall)
+    { fx: 0.72, fy: 0.06, sx: 3.2, sy: 1.6, h: 2.5, minArea: 260, snap: 'y' }, // 4 desk
+    { fx: 0.05, fy: 0.74, sx: 1.4, sy: 1.4, h: 2.1, minArea: 140, snap: 'x' }, // 5 nightstand
+    { fx: 0.1, fy: 0.9, sx: 1.1, sy: 1.1, h: 3.0, minArea: 220 }, // 6 plant
+    { fx: 0.7, fy: 0.86, sx: 1.9, sy: 1.9, h: 2.4, minArea: 320 }, // 7 armchair
   ];
-  var winCenters = function (span0, span1) {
+  // Placement priority on the y=0 wall (FURN_DEFS indices: bed, dresser, desk).
+  // NOT paint order — the table above stays sorted back-to-front, which along
+  // this wall means by x, so document order is still painter order.
+  var WALL_ORDER = [2, 0, 3];
+  // The rug is the one flat piece — a quad on the floor at the foot of the bed,
+  // no height. It follows the bed toward the y=0 wall.
+  var RUG = { fx: 0.46, fy: 0.4, sx: 8.0, sy: 6.5, minArea: 150 };
+  var clamp = function (v, lo, hi) {
+    return Math.max(Math.min(v, hi), lo);
+  };
+  var winCenters = function (span0, span1, n) {
     var S = span1 - span0;
-    if (S < WIN_W) return [];
-    var n = Math.min(Math.max(Math.floor((S + 3) / 6), 1), WIN_POOL);
+    if (n < 1 || S < WIN_W) return [];
     var out = [];
     for (var i = 0; i < n; i++) out.push(span0 + (S * (i + 0.5)) / n);
     return out;
   };
-  var layoutDetails = function (L, W, H) {
+  var layoutDetails = function (L, W, H, zone) {
     var degenerate = L < 3 || W < 3 || H < 3.5;
-    var stories = Math.min(Math.max(Math.floor(H / 8), 1), 3);
-    var storyH = H / stories;
-    var winH = Math.min(3, storyH * 0.4);
-    var sills = [];
-    for (var r = 0; r < stories; r++) sills.push(r * storyH + Math.min(3, storyH * 0.36));
+    // ONE row of windows per wall, seen from inside: sill at ~0.38H, opening
+    // ~0.42H tall, both clamped so the head never runs into the ceiling.
+    var sill = Math.min(3.2, H * 0.38);
+    var winH = Math.min(Math.min(3.4, H * 0.42), Math.max(0.4, 0.85 * H - sill));
+    var nL = degenerate ? 0 : W >= 15 ? 2 : W >= 6 ? 1 : 0;
+    var winL = winCenters(0, W, nL);
+    // The y=0 wall carries the DOOR near the (L,0) corner the cutaway opens on,
+    // so its windows share what is left of that wall.
     var doorOn = !degenerate && L >= 8 && H >= 5;
     var doorH = Math.min(6.8, H * 0.8);
-    var winL = degenerate ? [] : winCenters(1.5, doorOn ? L - 5.5 : L - 1.5);
-    var winR = degenerate ? [] : winCenters(1.5, W - 1.5);
-    var rtus = [];
-    if (!degenerate && Math.min(L, W) >= 5) {
-      var count = Math.min(3, 1 + Math.floor(Math.sqrt(L * W) / 14));
-      for (var k = 0; k < count; k++) {
-        var d = RTU_DEFS[k];
-        var sx = Math.min(d.sx, L * 0.28);
-        var sy = Math.min(d.sy, W * 0.28);
-        var x0 = Math.max(Math.min(d.fx * L - sx / 2, L - 1 - sx), 1.6);
-        var y0 = Math.max(Math.min(d.fy * W - sy / 2, W - 1 - sy), 1);
-        rtus.push({ x0: x0, y0: y0, x1: x0 + sx, y1: y0 + sy, h: Math.min(d.h, H * 0.2) });
+    var winSpan0 = 1.5;
+    var winSpan1 = doorOn ? L - 5.5 : L - 1.5;
+    var span = winSpan1 - winSpan0;
+    var nR = degenerate ? 0 : span >= 12 ? 2 : span >= 3 ? 1 : 0;
+    var winR = winCenters(winSpan0, winSpan1, nR);
+    // Furniture: a room too small to walk around gets none; beyond that each
+    // piece is gated purely on floor area, sized to at most 30% of the room and
+    // 75% of the ceiling.
+    var furn = [];
+    var roomy = !degenerate && Math.min(L, W) >= 5;
+    var area = L * W;
+    // WALL PASS — the three y=0-wall pieces share one stretch of wall, so their
+    // x-spans are packed in PRIORITY order (bed, then dresser, then desk) before
+    // the pool loop below. Each takes its preferred x, is pushed off any span
+    // already claimed to whichever free side is nearer, and is simply not placed
+    // when the wall has nothing left. The window is [lo, hi]: WALL_LO in from the
+    // x=0 wall, stopping short of the door when there is one, and starting past
+    // the back cleaners' zone for any piece deep enough to reach into it.
+    // WALL_LO clears the CORNER: a piece against the x=0 wall reaches x = 0.3 +
+    // its width, and the two walls' pieces would otherwise overlap where they
+    // meet.
+    var WALL_LO = 1.8;
+    var wallX = [];
+    var taken = [];
+    var clashAt = function (v, sx) {
+      for (var t = 0; t < taken.length; t++) {
+        if (v < taken[t][1] - 1e-9 && v + sx > taken[t][0] + 1e-9) return taken[t];
       }
+      return null;
+    };
+    for (var wi = 0; wi < WALL_ORDER.length; wi++) {
+      var wk = WALL_ORDER[wi];
+      var wd = FURN_DEFS[wk];
+      if (!roomy || area < wd.minArea) {
+        wallX[wk] = null;
+        continue;
+      }
+      var wsx = Math.min(wd.sx, L * 0.3);
+      var wsy = Math.min(wd.sy, W * 0.3);
+      var hi = Math.min(L - CLEANER_STRIP - wsx, doorOn ? L - 4.6 - wsx : Infinity);
+      var lo = zone && 0.3 < zone.y1 && 0.3 + wsy > zone.y0 ? Math.max(WALL_LO, zone.x1) : WALL_LO;
+      if (hi < lo) {
+        wallX[wk] = null;
+        continue;
+      }
+      var wx0 = clamp(wd.fx * L - wsx / 2, lo, hi);
+      for (var pass = 0; wx0 != null && pass <= taken.length; pass++) {
+        var clash = clashAt(wx0, wsx);
+        if (!clash) break;
+        var at = wx0;
+        var cand = [clash[1], clash[0] - wsx];
+        var opts = [];
+        for (var oi = 0; oi < cand.length; oi++) {
+          if (cand[oi] >= lo - 1e-9 && cand[oi] <= hi + 1e-9) opts.push(cand[oi]);
+        }
+        opts.sort(function (p, q) {
+          return Math.abs(p - at) - Math.abs(q - at);
+        });
+        wx0 = opts.length ? opts[0] : null;
+      }
+      if (wx0 == null || clashAt(wx0, wsx)) {
+        wallX[wk] = null;
+        continue;
+      }
+      taken.push([wx0, wx0 + wsx]);
+      wallX[wk] = wx0;
     }
-    var towerOn = !degenerate && H >= 18 && Math.min(L, W) >= 6;
-    var tx0 = Math.max(Math.min(0.25 * L - 1.1, L - 1 - 2.2), 1.6);
-    var ty0 = Math.max(Math.min(0.3 * W - 1.1, W - 1 - 2.2), 1);
-    var mastOn = !degenerate && H >= 26;
-    var mastH = Math.min(6, H * 0.22);
+    for (var k = 0; k < FURN_DEFS.length; k++) {
+      var d = FURN_DEFS[k];
+      if (!roomy || area < d.minArea) {
+        furn.push(null);
+        continue;
+      }
+      var sx = Math.min(d.sx, L * 0.3);
+      var sy = Math.min(d.sy, W * 0.3);
+      // A piece whose clamp window has collapsed (the floor cannot hold it clear
+      // of both the cleaners' strip and the front edge) is simply not placed.
+      var hiX = L - CLEANER_STRIP - sx;
+      var hiY = W - 1 - sy;
+      if ((d.snap !== 'x' && hiX < 1) || (d.snap !== 'y' && hiY < 1)) {
+        furn.push(null);
+        continue;
+      }
+      // Wall-snapped pieces sit 0.3 ft off their wall — the y=0 ones at the x the
+      // wall pass above packed them into (null there means the wall could not
+      // hold them).
+      var wx = d.snap === 'y' ? (wallX[k] == null ? null : wallX[k]) : null;
+      if (d.snap === 'y' && wx == null) {
+        furn.push(null);
+        continue;
+      }
+      var x0 = d.snap === 'x' ? 0.3 : d.snap === 'y' ? wx : clamp(d.fx * L - sx / 2, 1, hiX);
+      var y0 = d.snap === 'y' ? 0.3 : clamp(d.fy * W - sy / 2, 1, hiY);
+      // BACK-ZONE RESERVATION (n >= 2). The far end of the room belongs to the
+      // x=0-wall cleaners, exactly as the near end belongs to the x=L ones via
+      // CLEANER_STRIP. The y=0-wall pieces already dodged it in the wall pass
+      // (they dodge along x); everything else slides along y to whichever side of
+      // the zone is nearer and still fits between the floor clamps, or is not
+      // placed at all when neither side has room. A piece already flush against
+      // the x=0 wall may run all the way into the corner (y = 0.3); a
+      // free-standing piece may not — there it would sit in the middle of the
+      // other wall's row.
+      if (
+        zone &&
+        d.snap !== 'y' &&
+        x0 < zone.x1 &&
+        x0 + sx > zone.x0 &&
+        y0 < zone.y1 &&
+        y0 + sy > zone.y0
+      ) {
+        var near = zone.y0 - sy;
+        var far = zone.y1;
+        var order = Math.abs(y0 - near) <= Math.abs(y0 - far) ? [near, far] : [far, near];
+        var loY = d.snap === 'x' ? 0.3 : 1;
+        var slotY = null;
+        for (var oj = 0; oj < order.length; oj++) {
+          if (order[oj] >= loY && order[oj] <= hiY) {
+            slotY = order[oj];
+            break;
+          }
+        }
+        if (slotY == null) {
+          furn.push(null);
+          continue;
+        }
+        y0 = slotY;
+      }
+      furn.push({ x0: x0, y0: y0, x1: x0 + sx, y1: y0 + sy, h: Math.min(d.h, H * 0.75) });
+    }
+    var rugOn = roomy && area >= RUG.minArea;
+    var rsx = Math.min(RUG.sx, L * 0.5);
+    var rsy = Math.min(RUG.sy, W * 0.55);
+    var rx0 = clamp(RUG.fx * L - rsx / 2, 0.8, L - CLEANER_STRIP - rsx);
+    var ry0 = clamp(RUG.fy * W - rsy / 2, 0.8, W - 0.8 - rsy);
     return {
       degenerate: degenerate,
-      stories: stories,
+      sill: sill,
       winH: winH,
-      sills: sills,
       doorOn: doorOn,
       doorH: doorH,
       winL: winL,
       winR: winR,
-      rtus: rtus,
-      towerOn: towerOn,
-      tx0: tx0,
-      ty0: ty0,
-      tx1: tx0 + 2.2,
-      ty1: ty0 + 2.2,
-      mastOn: mastOn,
-      mastH: mastH,
+      furn: furn,
+      rugOn: rugOn,
+      rx0: rx0,
+      ry0: ry0,
+      rx1: rx0 + rsx,
+      ry1: ry0 + rsy,
     };
   };
 
   var drawScene = function (L, W, H) {
     if (!hasScene) return;
     var n = Math.min(Math.max(1, sceneN), MAX_CLEANERS);
-    var det = layoutDetails(L, W, H);
 
+    // The ghost is flush with the room's open FRONT side (x=L) — where the first
+    // cleaner stands — and centered on the width, growing back across the room.
     var drawCap = capS > 0.01;
     var gL = L * capS;
     var gW = W * capS;
     var gx0 = L - gL;
-    var gy0 = W - gW;
+    var gy0 = (W - gW) / 2;
+    var gy1 = (W + gW) / 2;
+
+    // Shadow pad under the diorama: the room footprint plus a margin that grows
+    // with the room, at the underside of the floor slab. Its corners also cover
+    // the walls' WALL_T overhang behind the origin.
+    var shadowM = Math.max(2, 0.08 * (L + W));
 
     var computeFit = function (cls) {
-      var maxX1 = L;
-      var maxY1 = W;
-      for (var q = 0; q < cls.length; q++) {
-        maxX1 = Math.max(maxX1, cls[q].x1);
-        maxY1 = Math.max(maxY1, cls[q].y1);
-      }
-      var c0 = cls[0];
-      var margin = Math.max(c0.x1 - c0.x0, c0.x0 - L) * 0.9 + 1;
-      var lotX0 = -margin;
-      var lotY0 = -margin;
-      var lotX1 = maxX1 + margin;
-      var lotY1 = maxY1 + margin;
-
       var fitPts = [];
       var box = function (x0, y0, x1, y1, z1) {
         var corners = [
@@ -329,25 +573,22 @@
           fitPts.push(project(corners[i][0], corners[i][1], z1));
         }
       };
+      // The room box carries all of its own dressing — furniture and cleaners are
+      // clamped strictly inside it — except when the readability pass has widened
+      // a cleaner past what the room can hold, so the cleaner boxes still go in.
       box(0, 0, L, W, H);
-      for (var u = 0; u < det.rtus.length; u++) {
-        var rt = det.rtus[u];
-        box(rt.x0, rt.y0, rt.x1, rt.y1, H + rt.h);
-      }
-      if (det.towerOn) box(det.tx0, det.ty0, det.tx1, det.ty1, H + 4.8);
-      if (det.mastOn) box(L / 2, W / 2, L / 2, W / 2, H + det.mastH);
       for (var ci = 0; ci < cls.length; ci++) {
         var c = cls[ci];
         box(c.x0, c.y0, c.x1, c.y1, c.h);
       }
-      if (drawCap) box(gx0, gy0, L, W, H);
-      var lot = [
-        [lotX0, lotY0],
-        [lotX1, lotY0],
-        [lotX1, lotY1],
-        [lotX0, lotY1],
+      if (drawCap) box(gx0, gy0, L, gy1, H);
+      var pad = [
+        [-shadowM, -shadowM],
+        [L + shadowM, -shadowM],
+        [L + shadowM, W + shadowM],
+        [-shadowM, W + shadowM],
       ];
-      for (var li = 0; li < 4; li++) fitPts.push(project(lot[li][0], lot[li][1], 0));
+      for (var li = 0; li < 4; li++) fitPts.push(project(pad[li][0], pad[li][1], -FLOOR_D));
 
       var minX = Infinity;
       var maxX = -Infinity;
@@ -363,15 +604,7 @@
       var scale = Math.min(safe.w / (maxX - minX || 1), safe.h / (maxY - minY || 1), MAX_SCALE);
       var ox = safe.x + (safe.w - (maxX - minX) * scale) / 2 - minX * scale;
       var oy = safe.y + (safe.h - (maxY - minY) * scale) / 2 - minY * scale;
-      return {
-        scale: scale,
-        ox: ox,
-        oy: oy,
-        lotX0: lotX0,
-        lotY0: lotY0,
-        lotX1: lotX1,
-        lotY1: lotY1,
-      };
+      return { scale: scale, ox: ox, oy: oy };
     };
 
     var cleaners = layoutCleaners(L, W, n);
@@ -385,195 +618,209 @@
     var ox = fit.ox;
     var oy = fit.oy;
     fitScale = scale;
+    // Room dressing is laid out AFTER the cleaners because it has to dodge them:
+    // the furniture reserves the back units' zone, which depends on the FINAL
+    // cleaner width (the readability pass above can widen it).
+    var det = layoutDetails(L, W, H, backZone(cleaners));
     var w = function (x, y, z) {
       var p = project(x, y, z);
       return [ox + p[0] * scale, oy + p[1] * scale];
     };
 
     setPoly('[data-ground]', [
-      w(fit.lotX0, fit.lotY0, 0),
-      w(fit.lotX1, fit.lotY0, 0),
-      w(fit.lotX1, fit.lotY1, 0),
-      w(fit.lotX0, fit.lotY1, 0),
+      w(-shadowM, -shadowM, -FLOOR_D),
+      w(L + shadowM, -shadowM, -FLOOR_D),
+      w(L + shadowM, W + shadowM, -FLOOR_D),
+      w(-shadowM, W + shadowM, -FLOOR_D),
     ]);
 
-    setPoly('[data-room="top"]', [w(0, 0, H), w(L, 0, H), w(L, W, H), w(0, W, H)]);
-    setPoly('[data-room="left"]', [w(0, W, H), w(L, W, H), w(L, W, 0), w(0, W, 0)]);
-    setPoly('[data-room="right"]', [w(L, 0, H), w(L, W, H), w(L, W, 0), w(L, 0, 0)]);
+    // The two back walls, each as three faces: the INTERIOR face (x=0 left, y=0
+    // right), the WALL_T-wide top cap, and the cut edge at the near corner.
+    setPoly('[data-room="left"]', [w(0, 0, H), w(0, W, H), w(0, W, 0), w(0, 0, 0)]);
+    setPoly('[data-room="right"]', [w(0, 0, H), w(L, 0, H), w(L, 0, 0), w(0, 0, 0)]);
+    setPoly('[data-wall-top="left"]', [w(0, 0, H), w(0, W, H), w(-WALL_T, W, H), w(-WALL_T, 0, H)]);
+    setPoly('[data-wall-top="right"]', [w(0, 0, H), w(L, 0, H), w(L, -WALL_T, H), w(0, -WALL_T, H)]);
+    setPoly('[data-wall-cap="left"]', [w(0, W, H), w(-WALL_T, W, H), w(-WALL_T, W, 0), w(0, W, 0)]);
+    setPoly('[data-wall-cap="right"]', [w(L, 0, H), w(L, -WALL_T, H), w(L, -WALL_T, 0), w(L, 0, 0)]);
 
+    // The floor slab — the floor plane plus the two front edges of its depth.
+    var floorQuad = [w(0, 0, 0), w(L, 0, 0), w(L, W, 0), w(0, W, 0)];
+    setPoly('[data-room="floor"]', floorQuad);
+    setPoly('[data-floor-edge="left"]', [
+      w(0, W, 0),
+      w(L, W, 0),
+      w(L, W, -FLOOR_D),
+      w(0, W, -FLOOR_D),
+    ]);
+    setPoly('[data-floor-edge="right"]', [
+      w(L, 0, 0),
+      w(L, W, 0),
+      w(L, W, -FLOOR_D),
+      w(L, 0, -FLOOR_D),
+    ]);
+    // …and the same quad again as the clip every cleaning pulse rides inside, so
+    // a ring at full radius stops at the floor's edge instead of spilling up the
+    // walls or out onto the dot paper.
+    setPoly('[data-floor-clip]', floorQuad);
+
+    // Room dressing — re-derived every frame from the eased dims, so a window
+    // opens or a piece of furniture arrives ONE at a time as the room grows. A
+    // degenerate room draws bare walls + floor only, so all three dressing groups
+    // go hidden together (style.visibility, never display).
     if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
+    if (furnG) furnG.style.visibility = det.degenerate ? 'hidden' : '';
+    if (det.degenerate) setDetail('[data-rug]', false);
     if (!det.degenerate) {
       var hw = WIN_W / 2;
-      for (var r = 0; r < 3; r++) {
-        var rowOn = r < det.stories;
-        var z0 = det.sills[r] == null ? 0 : det.sills[r];
-        var z1 = z0 + det.winH;
-        for (var c2 = 0; c2 < WIN_POOL; c2++) {
-          var s = r * 8 + c2 + 1;
-          var cl = det.winL[c2];
-          var onL = rowOn && cl != null;
-          setDetail(
-            '[data-win-l="' + s + '"]',
-            onL,
-            onL
-              ? [w(cl - hw, W, z1), w(cl + hw, W, z1), w(cl + hw, W, z0), w(cl - hw, W, z0)]
-              : undefined
-          );
-          var cr = det.winR[c2];
-          var onR = rowOn && cr != null;
-          setDetail(
-            '[data-win-r="' + s + '"]',
-            onR,
-            onR
-              ? [w(L, cr - hw, z1), w(L, cr + hw, z1), w(L, cr + hw, z0), w(L, cr - hw, z0)]
-              : undefined
-          );
-        }
+      var z0 = det.sill;
+      var z1 = det.sill + det.winH;
+      for (var s = 1; s <= WIN_POOL; s++) {
+        var cl = det.winL[s - 1];
+        setDetail(
+          '[data-win-l="' + s + '"]',
+          cl != null,
+          cl != null
+            ? [w(0, cl - hw, z1), w(0, cl + hw, z1), w(0, cl + hw, z0), w(0, cl - hw, z0)]
+            : undefined
+        );
+        var cr = det.winR[s - 1];
+        setDetail(
+          '[data-win-r="' + s + '"]',
+          cr != null,
+          cr != null
+            ? [w(cr - hw, 0, z1), w(cr + hw, 0, z1), w(cr + hw, 0, z0), w(cr - hw, 0, z0)]
+            : undefined
+        );
       }
       setDetail(
         '[data-door]',
         det.doorOn,
         det.doorOn
-          ? [w(L - 4.5, W, det.doorH), w(L - 1.5, W, det.doorH), w(L - 1.5, W, 0), w(L - 4.5, W, 0)]
+          ? [w(L - 4.2, 0, det.doorH), w(L - 1.2, 0, det.doorH), w(L - 1.2, 0, 0), w(L - 4.2, 0, 0)]
           : undefined
       );
-      var pin = Math.min(0.9, 0.15 * Math.min(L, W));
-      setPoly('[data-parapet]', [
-        w(pin, pin, H),
-        w(L - pin, pin, H),
-        w(L - pin, W - pin, H),
-        w(pin, W - pin, H),
-      ]);
-      for (var k2 = 0; k2 < 3; k2++) {
-        var u2 = det.rtus[k2];
-        var g = svg.querySelector('[data-rtu="' + (k2 + 1) + '"]');
+      setDetail(
+        '[data-rug]',
+        det.rugOn,
+        det.rugOn
+          ? [
+              w(det.rx0, det.ry0, 0),
+              w(det.rx1, det.ry0, 0),
+              w(det.rx1, det.ry1, 0),
+              w(det.rx0, det.ry1, 0),
+            ]
+          : undefined
+      );
+
+      // Furniture — each piece the same 3-face mini-box as a cleaner unit, but
+      // standing on the floor. The pool is already back-to-front, so drawing it
+      // in index order is correct depth.
+      for (var k2 = 0; k2 < FURN_DEFS.length; k2++) {
+        var u2 = det.furn[k2];
+        var g = svg.querySelector('[data-furn="' + (k2 + 1) + '"]');
         if (g) g.style.visibility = u2 ? '' : 'hidden';
         if (!u2) continue;
-        var zt = H + u2.h;
-        setPoly('[data-rtu="' + (k2 + 1) + '"] [data-rtu-face="top"]', [
+        var zt = u2.h;
+        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="top"]', [
           w(u2.x0, u2.y0, zt),
           w(u2.x1, u2.y0, zt),
           w(u2.x1, u2.y1, zt),
           w(u2.x0, u2.y1, zt),
         ]);
-        setPoly('[data-rtu="' + (k2 + 1) + '"] [data-rtu-face="left"]', [
+        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="left"]', [
           w(u2.x0, u2.y1, zt),
           w(u2.x1, u2.y1, zt),
-          w(u2.x1, u2.y1, H),
-          w(u2.x0, u2.y1, H),
+          w(u2.x1, u2.y1, 0),
+          w(u2.x0, u2.y1, 0),
         ]);
-        setPoly('[data-rtu="' + (k2 + 1) + '"] [data-rtu-face="right"]', [
+        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="right"]', [
           w(u2.x1, u2.y0, zt),
           w(u2.x1, u2.y1, zt),
-          w(u2.x1, u2.y1, H),
-          w(u2.x1, u2.y0, H),
+          w(u2.x1, u2.y1, 0),
+          w(u2.x1, u2.y0, 0),
         ]);
-      }
-
-      var towerG = svg.querySelector('[data-tower]');
-      if (towerG) towerG.style.visibility = det.towerOn ? '' : 'hidden';
-      if (det.towerOn) {
-        var setLine2 = function (sel, p, q) {
-          var el = svg.querySelector(sel);
-          if (!el) return;
-          el.setAttribute('x1', p[0].toFixed(1));
-          el.setAttribute('y1', p[1].toFixed(1));
-          el.setAttribute('x2', q[0].toFixed(1));
-          el.setAttribute('y2', q[1].toFixed(1));
-        };
-        setLine2('[data-tower-leg="1"]', w(det.tx0, det.ty1, H + 2.2), w(det.tx0, det.ty1, H));
-        setLine2('[data-tower-leg="2"]', w(det.tx1, det.ty0, H + 2.2), w(det.tx1, det.ty0, H));
-        var zb = H + 2.2;
-        var ztt = H + 4.8;
-        setPoly('[data-tower-face="top"]', [
-          w(det.tx0, det.ty0, ztt),
-          w(det.tx1, det.ty0, ztt),
-          w(det.tx1, det.ty1, ztt),
-          w(det.tx0, det.ty1, ztt),
-        ]);
-        setPoly('[data-tower-face="left"]', [
-          w(det.tx0, det.ty1, ztt),
-          w(det.tx1, det.ty1, ztt),
-          w(det.tx1, det.ty1, zb),
-          w(det.tx0, det.ty1, zb),
-        ]);
-        setPoly('[data-tower-face="right"]', [
-          w(det.tx1, det.ty0, ztt),
-          w(det.tx1, det.ty1, ztt),
-          w(det.tx1, det.ty1, zb),
-          w(det.tx1, det.ty0, zb),
-        ]);
-      }
-
-      var mastG = svg.querySelector('[data-mast]');
-      if (mastG) mastG.style.visibility = det.mastOn ? '' : 'hidden';
-      if (det.mastOn) {
-        var base = w(L / 2, W / 2, H);
-        var top = w(L / 2, W / 2, H + det.mastH);
-        var line = svg.querySelector('[data-mast-line]');
-        if (line) {
-          line.setAttribute('x1', base[0].toFixed(1));
-          line.setAttribute('y1', base[1].toFixed(1));
-          line.setAttribute('x2', top[0].toFixed(1));
-          line.setAttribute('y2', top[1].toFixed(1));
-        }
-        var tip = svg.querySelector('[data-mast-tip]');
-        if (tip) {
-          tip.setAttribute('cx', top[0].toFixed(1));
-          tip.setAttribute('cy', top[1].toFixed(1));
-        }
       }
     }
 
+    // Capacity ghost — the same cutaway language the room uses (floor + the two
+    // faces away from the viewer), flush with the open front, centered on width.
     if (drawCap) {
-      setPoly('[data-cap="top"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, W, H), w(gx0, W, H)]);
-      setPoly('[data-cap="left"]', [w(gx0, W, H), w(L, W, H), w(L, W, 0), w(gx0, W, 0)]);
-      setPoly('[data-cap="right"]', [w(L, gy0, H), w(L, W, H), w(L, W, 0), w(L, gy0, 0)]);
-      var capPt = w(gx0, gy0, H);
+      // Uniform scale means the body is entirely inside the room (in-front twin)
+      // or entirely beyond it (behind-the-walls twin) — pick per frame, blank the
+      // other. Both twins' visibility belongs to recompute().
+      var bodyG = gx0 < -1e-6 ? '[data-capg-back]' : '[data-capg]';
+      var idleG = gx0 < -1e-6 ? '[data-capg]' : '[data-capg-back]';
+      setPoly(idleG + ' [data-cap="floor"]', []);
+      setPoly(idleG + ' [data-cap="left"]', []);
+      setPoly(idleG + ' [data-cap="right"]', []);
+      setPoly(bodyG + ' [data-cap="floor"]', [w(gx0, gy0, 0), w(L, gy0, 0), w(L, gy1, 0), w(gx0, gy1, 0)]);
+      setPoly(bodyG + ' [data-cap="left"]', [w(gx0, gy0, H), w(gx0, gy1, H), w(gx0, gy1, 0), w(gx0, gy0, 0)]);
+      setPoly(bodyG + ' [data-cap="right"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, gy0, 0), w(gx0, gy0, 0)]);
+      // Fill-less top face + near-corner vertical complete the box outline.
+      setPoly('[data-cap="top"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, gy1, H), w(gx0, gy1, H)]);
+      var capEdge = svg.querySelector('[data-cap-edge]');
+      if (capEdge) {
+        var ce0 = w(L, gy1, 0);
+        var ce1 = w(L, gy1, H);
+        capEdge.setAttribute('x1', ce0[0]); capEdge.setAttribute('y1', ce0[1]);
+        capEdge.setAttribute('x2', ce1[0]); capEdge.setAttribute('y2', ce1[1]);
+      }
+      // Label just past the ghost's near corner (L, gy1) on the open side.
+      var capPt = w(L, gy1, 0);
       var prefix = capClamped ? '≥' : '';
       var capFt3 = raw('units') === 'ft3';
       var capText = capFt3 ? fmt(capMaxVol, 0) + ' ft³' : fmt(capMaxVol / 8, 0) + ' ft²';
-      setLabel('capacity', [capPt[0] + 6, capPt[1] - 8], 'covers a room up to ' + prefix + capText);
+      setLabel('capacity', [capPt[0] + 8, capPt[1] + 16], 'covers a room up to ' + prefix + capText);
     }
 
-    returnPaths.length = 0;
-    outPaths.length = 0;
+    // Per cleaner: its cleaning-pulse group (rings lying on the floor) and its
+    // unit group (the box standing on the floor). Groups beyond n are hidden via
+    // style.visibility — NOT display: this scene toggles everything the same way,
+    // and a group that was ever display:none has bitten WebKit here before.
+    ringDefs.length = 0;
     for (var i2 = 0; i2 < MAX_CLEANERS; i2++) {
-      var laneG = svg.querySelector('.smaqmd-cityview__lanes[data-lanes="' + (i2 + 1) + '"]');
+      var ringsG = svg.querySelector('.smaqmd-cityview__rings[data-rings="' + (i2 + 1) + '"]');
       var unitG = svg.querySelector('.smaqmd-cityview__unitg[data-unitg="' + (i2 + 1) + '"]');
       var on = i2 < n;
-      var wasHidden = laneG && laneG.style.visibility === 'hidden';
-      if (laneG) laneG.style.visibility = on ? '' : 'hidden';
+      if (ringsG) ringsG.style.visibility = on ? '' : 'hidden';
       if (unitG) unitG.style.visibility = on ? '' : 'hidden';
-      if (laneG && on && wasHidden) {
-        var waveEls = laneG.querySelectorAll('.smaqmd-cityview__wave');
-        for (var wi = 0; wi < waveEls.length; wi++) {
-          waveEls[wi].style.stroke = waveEls[wi].style.stroke;
-        }
-      }
       if (!on) {
-        returnPaths[i2] = [];
-        outPaths[i2] = [];
+        // Blank as well as hide: visibility alone would leave last draw's stale
+        // points on the ring polygons, which flash for a frame when the group
+        // comes back at a different room size.
+        ringDefs[i2] = null;
+        var stale = ringPolys[i2] || [];
+        for (var si = 0; si < stale.length; si++) stale[si].setAttribute('points', '');
         continue;
       }
       var cc = cleaners[i2];
 
-      var setLaneG = (function (lg) {
-        return function (sel, pts) {
-          var el = lg ? lg.querySelector(sel) : null;
-          if (el) el.setAttribute('points', ptsAttr(pts));
-        };
-      })(laneG);
-      var cyc2 = (cc.laneOut + cc.laneRet) / 2;
-      setLaneG('[data-road]', [w(L, cyc2, 0), w(cc.x0, cyc2, 0)]);
-      var outPath = [w(L, cc.laneOut, 0), w(cc.x0, cc.laneOut, 0)];
-      setLaneG('[data-flow="out-track"]', outPath);
-      setLaneG('[data-flow="out-wave"]', outPath);
-      var returnPath = [w(cc.x0, cc.laneRet, 0), w(L, cc.laneRet, 0)];
-      setLaneG('[data-flow="return-track"]', returnPath);
-      setLaneG('[data-flow="wave"]', returnPath);
-      outPaths[i2] = outPath;
-      returnPaths[i2] = returnPath;
+      // The cleaning pulse's geometry, cached for the animation tick. Center is
+      // the unit's footprint center; the pulse starts just outside the box (0.75 x
+      // its width, so the first ring reads as leaving the unit rather than being
+      // drawn on it) and travels out to rMax. rMax is a share of the room's SHORT
+      // side, floored so a tiny room still shows a ripple and capped so a huge
+      // room's pulse stays a local radius — the floor clip trims the overrun.
+      var cw2 = cc.x1 - cc.x0;
+      var ucx = (cc.x0 + cc.x1) / 2;
+      var ucy = (cc.y0 + cc.y1) / 2;
+      var r0 = 0.75 * cw2;
+      var rMax = Math.max(r0 + 0.5, Math.min(7, Math.max(2.5, 0.45 * Math.min(L, W))));
+      // The projection is linear, so a world circle maps to an exact ellipse and
+      // the two unit-foot basis vectors below capture it completely.
+      var basePt = w(ucx, ucy, 0);
+      var exPt = w(ucx + 1, ucy, 0);
+      var fyPt = w(ucx, ucy + 1, 0);
+      ringDefs[i2] = {
+        cx: basePt[0],
+        cy: basePt[1],
+        ex: exPt[0] - basePt[0],
+        ey: exPt[1] - basePt[1],
+        fx: fyPt[0] - basePt[0],
+        fy: fyPt[1] - basePt[1],
+        r0: r0,
+        rMax: rMax,
+      };
 
       var setUnitG = (function (ug) {
         return function (sel, pts) {
@@ -601,12 +848,14 @@
       ]);
     }
 
+    // Text reads the TRUE feet (drawn x labelK) — identical to the drawn value
+    // unless SCENE_MAX has clamped the box.
     var lm = mid(w(0, W, 0), w(L, W, 0));
-    setLabel('length', [lm[0] - 4, lm[1] + 20], fmt(L, 1) + ' ft');
+    setLabel('length', [lm[0] - 4, lm[1] + 20], fmt(L * labelK.L, 1) + ' ft');
     var wm = mid(w(0, 0, H), w(0, W, H));
-    setLabel('width', [wm[0] - 12, wm[1] - 12], fmt(W, 1) + ' ft');
+    setLabel('width', [wm[0] - 12, wm[1] - 12], fmt(W * labelK.W, 1) + ' ft');
     var hm = mid(w(0, W, 0), w(0, W, H));
-    setLabel('height', [hm[0] - 26, hm[1]], fmt(H, 1) + ' ft');
+    setLabel('height', [hm[0] - 26, hm[1]], fmt(H * labelK.H, 1) + ' ft');
 
     var HANDLE_DEG = { length: 30, width: 150, height: 90 };
     var setLine = function (dim, p, q) {
@@ -629,10 +878,19 @@
     setLine('length', w(0, W, 0), w(L, W, 0));
     setLine('width', w(0, 0, H), w(0, W, H));
     setLine('height', w(0, W, 0), w(0, W, H));
+
+    // Repaint the pulse from the bases just cached. Doing it HERE rather than
+    // only in the rAF tick keeps the rings correct on the draws that aren't part
+    // of the animation — the initial render, and the re-fit after a resize (which
+    // under prefers-reduced-motion is the only draw there is).
+    paintRings();
   };
 
+  // Time scale: HOUR_SECONDS of wall-clock = one hour. ONE RING travelling from
+  // the unit out to its full radius and fading out is ONE AIR CHANGE, so a fresh
+  // ring leaves a cleaner every HOUR_SECONDS / ACH seconds. RING_COUNT rings are
+  // in flight at a time, evenly spaced through the cycle.
   var HOUR_SECONDS = 5;
-  var TRAVEL = 2.2;
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var cur = { L: 12, W: 10, H: 8 };
   var tgt = { L: 12, W: 10, H: 8 };
@@ -641,64 +899,93 @@
   var capMaxVol = 0;
   var capClamped = false;
   var capG = svg.querySelector('[data-capg]');
+  var capGBack = svg.querySelector('[data-capg-back]');
+  // The ghost's caption is a sibling drawn after the room contents — shown and
+  // hidden in lockstep with capG.
+  // Upper outline (top face + near vertical) + caption: the late-painted half of
+  // the ghost, shown/hidden in lockstep with capG.
+  var capLabel = svg.querySelector('[data-capg-top]');
+  // Per-cleaner air-change cadence: laneAch[i] = that cleaner's flow x 60 / room
+  // volume. Zero (blank cleaner) -> no pulse on that unit.
   var laneAch = [];
+  // idle | pass | fail | shop (aggregate tint). 'shop' is the preview state: no
+  // cleaner entered, but a room + a target are, so the scene shows what buying to
+  // the recommended rating would look like. Everything that asks "is the scene
+  // live?" asks stateNow !== 'idle', so 'shop' animates by construction; only the
+  // two places that name 'pass'/'fail' explicitly (the verdict copy and the fail
+  // recolour) treat it differently.
   var stateNow = 'idle';
   var running = false;
   var last = 0;
-  var waves = [];
-  if (hasScene) {
-    for (var gi = 0; gi < MAX_CLEANERS; gi++) {
-      (function (i) {
-        waves.push({
-          grad: svg.querySelector('[data-return-grad="' + (i + 1) + '"]'),
-          path: function () {
-            return returnPaths[i] || [];
-          },
-          idx: i,
-          phase: 0,
-        });
-        waves.push({
-          grad: svg.querySelector('[data-out-grad="' + (i + 1) + '"]'),
-          path: function () {
-            return outPaths[i] || [];
-          },
-          idx: i,
-          phase: 0,
-        });
-      })(gi);
-    }
-  }
+  // Where each cleaner's pulse sits in its cycle, 0…1. One full cycle is one air
+  // change for THAT cleaner; ring k rides k/RING_COUNT ahead of the phase, which
+  // keeps the three ripples evenly spaced no matter the cadence.
+  var ringPhase = [];
+  for (var rf = 0; rf < MAX_CLEANERS; rf++) ringPhase[rf] = 0;
   var animating = function () {
     return stateNow !== 'idle' && !reduced;
   };
 
-  var updateWave = function (dt) {
-    if (stateNow === 'idle') return;
-    for (var i = 0; i < waves.length; i++) {
-      var wv = waves[i];
-      if (!wv.grad) continue;
-      if (wv.idx >= sceneN) continue;
-      var ach = laneAch[wv.idx];
+  // Paint every drawn cleaner's rings at the CURRENT phase, off the screen bases
+  // drawScene cached. A ring's radius travels linearly from r0 out to rMax across
+  // one cycle while its stroke fades to nothing, so it dissolves at its widest
+  // rather than snapping back to the unit.
+  var paintRings = function () {
+    for (var i = 0; i < MAX_CLEANERS; i++) {
+      var d = ringDefs[i];
+      var polys = ringPolys[i];
+      if (!d || !polys) continue;
+      for (var k = 0; k < RING_COUNT; k++) {
+        var poly = polys[k];
+        if (!poly) continue;
+        // Under prefers-reduced-motion the phase never advances, so the rings
+        // park at their static offsets (p = k/RING_COUNT).
+        var p = (ringPhase[i] + k / RING_COUNT) % 1;
+        var r = d.r0 + (d.rMax - d.r0) * p;
+        var pts = [];
+        for (var s = 0; s < RING_STEPS; s++) {
+          var th = (s / RING_STEPS) * Math.PI * 2;
+          var ca = Math.cos(th);
+          var sa = Math.sin(th);
+          pts.push(
+            (d.cx + r * (d.ex * ca + d.fx * sa)).toFixed(1) +
+              ',' +
+              (d.cy + r * (d.ey * ca + d.fy * sa)).toFixed(1)
+          );
+        }
+        poly.setAttribute('points', pts.join(' '));
+        poly.setAttribute('stroke-opacity', (0.55 * (1 - p)).toFixed(2));
+      }
+    }
+  };
+
+  // Advance each cleaner's pulse — one cycle per air change for THAT cleaner,
+  // with the interval clamped so a very high ACH doesn't strobe and a very low one
+  // still visibly moves. Pure arithmetic: the repaint is drawScene's job and runs
+  // immediately after on the same tick.
+  var updateRings = function (dt) {
+    if (stateNow === 'idle' || reduced) return;
+    for (var i = 0; i < MAX_CLEANERS && i < sceneN; i++) {
+      var ach = laneAch[i];
       if (!ach || !isFinite(ach)) continue;
-      var path = wv.path();
-      if (path.length < 2) continue;
-      var interval = Math.max(0.3, Math.min(20, HOUR_SECONDS / ach));
-      var P0 = path[0];
-      var P1 = path[path.length - 1];
-      var dx = P1[0] - P0[0];
-      var dy = P1[1] - P0[1];
-      var Ln = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ux = dx / Ln;
-      var uy = dy / Ln;
-      var v = Ln / TRAVEL;
-      var wl = Math.max(8, v * interval);
-      wv.phase = reduced ? 0 : (wv.phase + v * dt) % wl;
-      var sx = P0[0] + ux * wv.phase;
-      var sy = P0[1] + uy * wv.phase;
-      wv.grad.setAttribute('x1', sx.toFixed(1));
-      wv.grad.setAttribute('y1', sy.toFixed(1));
-      wv.grad.setAttribute('x2', (sx + ux * wl).toFixed(1));
-      wv.grad.setAttribute('y2', (sy + uy * wl).toFixed(1));
+      // Quarter of the air-change cadence — faster rates read as too frenetic.
+      var interval = Math.max(1.2, Math.min(80, (4 * HOUR_SECONDS) / ach));
+      ringPhase[i] = (ringPhase[i] + dt / interval) % 1;
+    }
+  };
+
+  // Flag every ring group the scene should NOT pulse: cleaners past sceneN, and
+  // cleaners with no cadence. The CSS hides a flagged group outright, so this is
+  // the per-lane counterpart to the container's data-state. It runs after EVERY
+  // laneAch fill — recompute has two (the measured cleaners, and shop mode's
+  // split of the target) — so the flags can never drift from the cadences.
+  var syncLaneIdle = function () {
+    for (var i = 0; i < MAX_CLEANERS; i++) {
+      var idle = !(i < sceneN && laneAch[i] > 0);
+      var g = svg.querySelector('.smaqmd-cityview__rings[data-rings="' + (i + 1) + '"]');
+      if (!g) continue;
+      if (idle) g.setAttribute('data-lane-idle', '');
+      else g.removeAttribute('data-lane-idle');
     }
   };
 
@@ -726,9 +1013,11 @@
       cur.H = tgt.H;
       capS = capSTgt;
     }
+    // Advance the pulse BEFORE drawing: drawScene re-caches each cleaner's ring
+    // bases for the room's current size and then repaints from them, so this order
+    // paints this tick's phase against this tick's geometry.
+    updateRings(dt);
     drawScene(cur.L, cur.W, cur.H);
-
-    updateWave(dt);
 
     if (morphing || animating()) requestAnimationFrame(frame);
     else running = false;
@@ -740,6 +1029,30 @@
     requestAnimationFrame(frame);
   };
 
+  // Soft upper bounds on room size. NOT a validity gate — the ACH arithmetic is
+  // correct at any size, so an over-size room still computes and still shows a
+  // result; it only raises the [data-room-warn] alert, because at this scale the
+  // overwhelmingly likely cause is a typo. The DRAG grips clamp to the same
+  // numbers, so pulling an edge and typing a value can never disagree.
+  var ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000, volume: 300000 };
+  var ROOM_MIN = 1;
+  // Is any entered field, in the CURRENT entry mode, past its bound?
+  var roomOversize = function () {
+    var over = function (name) {
+      var v = num(name);
+      return isFinite(v) && v > ROOM_MAX[name];
+    };
+    switch (raw('roomMethod')) {
+      case 'dimensions':
+        return over('length') || over('width') || over('height');
+      case 'area':
+        return over('area') || over('height');
+      case 'volume':
+        return over('volume');
+      default:
+        return false;
+    }
+  };
   var roomVolume = function () {
     switch (raw('roomMethod')) {
       case 'dimensions':
@@ -786,26 +1099,39 @@
   };
   var morphScene = function () {
     var b = sceneBox();
-    tgt.L = b.L;
-    tgt.W = b.W;
-    tgt.H = b.H;
+    // Clamp what we DRAW at SCENE_MAX, and record how far the true box overran
+    // so the dimension labels can still read the entered feet.
+    tgt.L = Math.min(b.L, SCENE_MAX);
+    tgt.W = Math.min(b.W, SCENE_MAX);
+    tgt.H = Math.min(b.H, SCENE_MAX_H);
+    labelK.L = b.L / tgt.L;
+    labelK.W = b.W / tgt.W;
+    labelK.H = b.H / tgt.H;
     startLoop();
   };
 
-  if (isResponsive && hasScene) {
-    mqMobile.addEventListener('change', function () {
-      var live = !mqMobile.matches;
-      if (live === sceneLive) return;
-      sceneLive = live;
-      if (!live) return;
-      cur.L = tgt.L;
-      cur.W = tgt.W;
-      cur.H = tgt.H;
-      capS = capSTgt;
-      syncViewport();
-      morphScene();
-    });
-  }
+  // ---- scene pause ----
+  // TWO things can hide the scene under 68rem: the breakpoint itself, and the
+  // step — narrow shows the scene ONLY on the result section, whose id renderStep
+  // stamps on the root (and toIntro clears). The condition below is the exact
+  // complement of the CSS in the 68rem block, so the loop is live if and only if
+  // the band is on screen. Coming back, the eased room box and the ghost's scale
+  // are SNAPPED rather than replayed (a morph the user never triggered, of a scene
+  // they were not looking at), then refit and restarted via morphScene.
+  var syncSceneLive = function () {
+    var live =
+      hasScene && !(isResponsive && mqMobile.matches && root.getAttribute('data-section') !== '3');
+    if (live === sceneLive) return;
+    sceneLive = live;
+    if (!live) return;
+    cur.L = tgt.L;
+    cur.W = tgt.W;
+    cur.H = tgt.H;
+    capS = capSTgt;
+    syncViewport();
+    morphScene();
+  };
+  if (isResponsive && hasScene) mqMobile.addEventListener('change', syncSceneLive);
 
   var cleanersHost = root.querySelector('[data-cleaners]');
   var template = root.querySelector('[data-cleaner-template]');
@@ -814,7 +1140,16 @@
   };
   var nextId = 0;
 
-  var CLEANER_FIELDS = ['unit', 'airflow', 'ach', 'refLength', 'refWidth', 'refHeight'];
+  var CLEANER_FIELDS = [
+    'unit',
+    'airflow',
+    'ach',
+    'refMethod',
+    'refArea',
+    'refLength',
+    'refWidth',
+    'refHeight',
+  ];
 
   var uniquifyBlock = function (frag, sfx) {
     var withId = frag.querySelectorAll('[id]');
@@ -962,6 +1297,14 @@
       var unitMode = raw('unit', b.getAttribute('data-cleaner-block'));
       showEl(b.querySelector('[data-unit-mode="airflow"]'), unitMode !== 'ach');
       showEl(b.querySelector('[data-unit-mode="ach"]'), unitMode === 'ach');
+      // Reference-room entry mode inside the ACH sub-form — the same wrapper rule
+      // as [data-room] above, but queried on the BLOCK so each cleaner keeps its
+      // own choice.
+      var refMethod = raw('refMethod', b.getAttribute('data-cleaner-block')) || 'area';
+      var refWraps = b.querySelectorAll('[data-ref]');
+      for (var r = 0; r < refWraps.length; r++) {
+        showEl(refWraps[r], refWraps[r].getAttribute('data-ref').split(' ').indexOf(refMethod) !== -1);
+      }
     });
     var atCap = blocks.length >= MAX_CLEANERS;
     showEl(root.querySelector('[data-add-cleaner]'), !atCap);
@@ -991,10 +1334,17 @@
     }
   };
 
+  // In ACH mode the flow is derived from the reported ACH x the manufacturer's
+  // reference room volume / 60. That volume is L*W*(H||8) or area*(H||8), whichever
+  // way the block's refMethod says the room was given.
   var cleanerFlow = function (id) {
     var f;
     if (raw('unit', id) === 'ach') {
-      var refVol = num('refLength', id) * num('refWidth', id) * (pos('refHeight', id) || 8);
+      var refH = pos('refHeight', id) || 8;
+      var refVol =
+        raw('refMethod', id) === 'dimensions'
+          ? num('refLength', id) * num('refWidth', id) * refH
+          : num('refArea', id) * refH;
       f = (pos('ach', id) * refVol) / 60;
     } else {
       f = pos('airflow', id);
@@ -1027,9 +1377,16 @@
   var answerTitle = block.querySelector('[data-answer-title]');
   var targetWarn = root.querySelector('[data-target-warn]');
   var targetInvalid = root.querySelector('[data-target-invalid]');
+  var roomWarn = root.querySelector('[data-room-warn]');
   var achWrap = block.querySelector('[data-metric="ach"]');
   var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
+  // The fix stat's label + sub are REWRITTEN per rating mode (see renderFix), so
+  // they are grabbed once here alongside the wrapper rather than re-queried.
+  var fixLabel = fixWrap ? fixWrap.querySelector('.smaqmd-stat__label') : null;
+  var fixSub = fixWrap ? fixWrap.querySelector('.smaqmd-stat__sub') : null;
+  var fixEquiv = fixWrap ? fixWrap.querySelector('[data-ach-equiv]') : null;
+  var fixEquivRows = fixWrap ? fixWrap.querySelector('[data-ach-equiv-rows]') : null;
   var cadrHighEl = block.querySelector('[data-cadr-high]');
   var setAnswer = function (title, verdict) {
     if (answerTitle) answerTitle.textContent = title;
@@ -1063,16 +1420,26 @@
     var enteredTarget = num('target');
     var targetIsInvalid = isFinite(enteredTarget) && enteredTarget <= 0;
     show(targetInvalid, targetIsInvalid);
+    show(roomWarn, roomOversize());
     show(targetWarn, isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
 
     var flow = combinedFlow();
     var vol = roomVolume();
     var hasFlow = flow > 0;
     var hasRoom = isFinite(vol) && vol > 0;
+    // The shop flow's scene preview: no cleaner to measure, but a room AND a real
+    // target, which is everything the recommendation is made of — so the scene can
+    // show it. `target` alone can't gate this (it falls back to 2 when the field is
+    // blank); a preview of a number the user hasn't given would be the tool
+    // answering its own question, so it takes the ENTERED target. The three result
+    // branches below key their scene state off this same flag.
+    var shopPreview = !hasFlow && hasRoom && isFinite(enteredTarget) && enteredTarget > 0;
 
     var area = roomArea();
     var coverVol = hasFlow ? (flow * 60) / target : NaN;
     var asFt3 = raw('units') === 'ft3';
+    // Which rating the "shop for" stat states (the toggle under it).
+    var asAch = raw('rating') === 'ach';
     setReadout('coversubj', blocks.length > 1 ? 'Your cleaners cover' : 'Your cleaner covers');
     setReadout(
       'roomarea',
@@ -1093,10 +1460,32 @@
       capClamped = sScale > 3;
       container.dataset.capCompare = capMaxVol >= vol ? 'bigger' : 'smaller';
       if (capG) capG.style.visibility = '';
+      if (capGBack) capGBack.style.visibility = '';
+      if (capLabel) capLabel.style.visibility = '';
+    } else if (shopPreview) {
+      // Shop mode: the ghost is the RECOMMENDED setup's coverage, and the
+      // recommendation is sized to this room by construction — combined CADR =
+      // target x vol / 60, so the volume it covers backs out to (CADR x 60) /
+      // target = vol exactly. The ghost therefore lands FLUSH on the room box
+      // (scale 1, never clamped, never the smaller of the two). That coincidence is
+      // the whole point of showing it: the label reads "covers a room up to <this
+      // room>", which turns an abstract rating into the box the user is standing
+      // in. Computed straight from vol rather than through the CADR — needCadr is
+      // declared further down, and threading it up here would make the ghost depend
+      // on statement order for a value we already know.
+      capMaxVol = vol;
+      capSTgt = 1;
+      capClamped = false;
+      container.dataset.capCompare = 'bigger';
+      if (capG) capG.style.visibility = '';
+      if (capGBack) capGBack.style.visibility = '';
+      if (capLabel) capLabel.style.visibility = '';
     } else {
       capSTgt = 0;
       capClamped = false;
       if (capG) capG.style.visibility = 'hidden';
+      if (capGBack) capGBack.style.visibility = 'hidden';
+      if (capLabel) capLabel.style.visibility = 'hidden';
     }
 
     laneAch.length = 0;
@@ -1105,15 +1494,52 @@
       var f = cleanerFlow(b.getAttribute('data-cleaner-block'));
       laneAch[i] = hasRoom && f > 0 ? (f / vol) * 60 : 0;
     });
-    for (var li = 0; li < MAX_CLEANERS; li++) {
-      var laneG = svg.querySelector('.smaqmd-cityview__lanes[data-lanes="' + (li + 1) + '"]');
-      if (!laneG) continue;
-      var idle = !(li < sceneN && laneAch[li] > 0);
-      if (idle) laneG.setAttribute('data-lane-idle', '');
-      else laneG.removeAttribute('data-lane-idle');
-    }
+    syncLaneIdle();
 
     var needCadr = (target * vol) / 60;
+    // The "shop for" stat, written in whichever rating the toggle asks for. Both
+    // the FAIL and the SHOP path below render it, so it lives here as one function
+    // rather than as two copies that could word the same number differently.
+    //   CADR - the number printed on the box, in CFM. Combined, because a CADR is
+    //          not bought per unit: it is the sum the setup has to reach.
+    //   ACH  - the user's own target, restated as the claim a box would have to
+    //          make: N air changes an hour IN A ROOM AT LEAST THIS BIG. There is no
+    //          standard test room to convert a CADR against, so the qualification
+    //          is their room, not a fictional one.
+    var renderFix = function () {
+      if (asAch) {
+        setMetric('fix', fmt(target, 2) + unitSpan('ACH'));
+        if (fixLabel) fixLabel.textContent = 'ACH coverage to shop for';
+        if (fixSub) {
+          fixSub.textContent =
+            fmt(target, 2) + ' air changes per hour in your ' +
+            fmt(area, 0) + ' ft² room';
+        }
+        // The equivalence rows: a listing pair (A ACH, S ft²) implies a CADR of
+        // A * S * 8 / 60, so the pair qualifies when S >= needCadr * 7.5 / A.
+        // Printed at the ACH levels listings actually quote, plus the user's own
+        // target when it isn't one of them; ceil keeps every row conservative.
+        if (fixEquivRows) {
+          var levels = [1, 2, 4, 5];
+          if (target > 0 && levels.indexOf(target) === -1) levels.push(target);
+          levels.sort(function (a, b) { return a - b; });
+          fixEquivRows.textContent = '';
+          for (var li = 0; li < levels.length; li++) {
+            var row = document.createElement('li');
+            row.textContent =
+              fmt(levels[li], 2) + ' ACH — covers ' +
+              fmt(Math.ceil((needCadr * 7.5) / levels[li]), 0) + ' ft² or more';
+            fixEquivRows.appendChild(row);
+          }
+        }
+        show(fixEquiv, true);
+      } else {
+        setMetric('fix', fmt(needCadr, 0) + unitSpan('CFM (ft³/min)'));
+        if (fixLabel) fixLabel.textContent = 'combined CADR to shop for';
+        if (fixSub) fixSub.textContent = 'added up across all the air cleaners in the room';
+        show(fixEquiv, false);
+      }
+    };
     var setPrompt = function (on) {
       show(block.querySelector('[data-prompt="empty"]'), on);
     };
@@ -1139,7 +1565,7 @@
         achSub.textContent =
           (pass ? 'Meets' : 'Below') + ' your ' + fmt(target, 2) + ' air changes per hour target';
       }
-      setMetric('fix', fmt(needCadr, 0) + unitSpan('ft³/min'));
+      renderFix();
       show(fixWrap, !pass);
       if (!pass) {
         var neededFlow = (target * vol) / 60;
@@ -1176,20 +1602,54 @@
     } else if (hasRoom) {
       show(achWrap, false);
       show(achEvidence, false);
-      setMetric('fix', fmt(needCadr, 0) + unitSpan('ft³/min'));
+      renderFix();
       show(fixWrap, true);
+      // The over-700 caution stays keyed to needCadr and worded in CFM in BOTH
+      // rating modes — the ceiling it warns about is a limit on how much air a
+      // consumer unit can physically move, which does not change because the stat
+      // above is currently phrased as air changes.
       show(cadrHighEl, needCadr > 700);
       setAnswer('Shop for this rating', 'shop');
       setVerdictCard('shop');
       setPrompt(false);
-      stateNow = 'idle';
-      container.dataset.state = 'idle';
+      if (shopPreview) {
+        // Preview the recommended setup in the scene. The units drawn are the ones
+        // the user PLANS to buy — cleanerCount, the same divisor the CADR guidance
+        // is written against — not blocks.length, so a shopper who entered cleaners
+        // and then answered "No" doesn't get a room full of units they said they
+        // don't have. Clamped to what the scene can draw.
+        sceneN = Math.min(Math.max(1, cleanerCount), MAX_CLEANERS);
+        // Each planned unit pulses at its SHARE of the target, so the ripples
+        // together read as exactly the target rate — the same cadence the pass
+        // state will show once the recommended cleaners are actually in the room.
+        // Lanes past the planned count get 0 and go idle, which is why this
+        // re-syncs the flags: sceneN just moved under them.
+        laneAch.length = 0;
+        for (var si = 0; si < MAX_CLEANERS; si++) laneAch[si] = si < sceneN ? target / sceneN : 0;
+        syncLaneIdle();
+        stateNow = 'shop';
+        container.dataset.state = 'shop';
+        startLoop();
+      } else {
+        // No target entered — there is no rate to preview, so the scene stays idle
+        // exactly as it did before the preview existed. The ghost gate above
+        // already zeroed capSTgt; wake the loop only to ease a residual ghost away,
+        // the same guard the no-room branch uses.
+        stateNow = 'idle';
+        container.dataset.state = 'idle';
+        if (capS > 0.01) startLoop();
+      }
+      // The announcement follows the rating mode, so what is heard matches what is
+      // shown. Spelled out, not "ACH": this string is spoken.
       announce(
-        cleanerCount > 1
-          ? 'To reach ' + fmt(target, 1) + " air changes per hour, your cleaners' combined " +
-              'CADR needs to be at least ' + fmt(needCadr, 0) + '.'
-          : 'To reach ' + fmt(target, 1) + ' air changes per hour in this room, look for an ' +
-              'air cleaner with a CADR of at least ' + fmt(needCadr, 0) + '.'
+        asAch
+          ? 'Look for a listing that covers at least ' + fmt(Math.ceil(needCadr * 7.5), 0) +
+              ' square feet at 1 air change per hour, or a matching size from the on-screen list at a higher ACH.'
+          : cleanerCount > 1
+            ? 'To reach ' + fmt(target, 1) + " air changes per hour, your cleaners' combined " +
+                'CADR needs to be at least ' + fmt(needCadr, 0) + ' CFM.'
+            : 'To reach ' + fmt(target, 1) + ' air changes per hour in this room, look for an ' +
+                'air cleaner with a CADR of at least ' + fmt(needCadr, 0) + ' CFM.'
       );
     } else {
       show(achWrap, false);
@@ -1213,12 +1673,17 @@
   };
 
   var prefillMode = function (method) {
+    // labelK un-clamps the drawn box back to the entered feet, so switching modes
+    // on an over-SCENE_MAX room prefills the TRUE area/volume.
+    var tL = tgt.L * labelK.L;
+    var tW = tgt.W * labelK.W;
+    var tH = tgt.H * labelK.H;
     if (method === 'area') {
       var fa = field('area');
-      if (fa && !raw('area')) setFieldValue(fa, String(Math.round(tgt.L * tgt.W)));
+      if (fa && !raw('area')) setFieldValue(fa, String(Math.round(tL * tW)));
     } else if (method === 'volume') {
       var fv = field('volume');
-      if (fv && !raw('volume')) setFieldValue(fv, String(Math.round(tgt.L * tgt.W * tgt.H)));
+      if (fv && !raw('volume')) setFieldValue(fv, String(Math.round(tL * tW * tH)));
     }
   };
 
@@ -1269,7 +1734,10 @@
     var grip = e.target && e.target.closest ? e.target.closest('[data-grip]') : null;
     if (!grip) return;
     var dim = grip.getAttribute('data-grip');
-    drag = { dim: dim, sx: e.clientX, sy: e.clientY, v0: tgt[KEY[dim]], sc: fitScale };
+    // v0 is the ENTERED value, not tgt — they differ only on a room past
+    // SCENE_MAX, where tgt holds the clamped drawn box and dragging from it would
+    // yank the field down to the clamp.
+    drag = { dim: dim, sx: e.clientX, sy: e.clientY, v0: pos(dim) || tgt[KEY[dim]], sc: fitScale };
     if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
     container.dataset.dragging = dim;
     e.preventDefault();
@@ -1278,7 +1746,7 @@
     if (!drag) return;
     var ax = AXIS[drag.dim];
     var ft = ((e.clientX - drag.sx) * ax[0] + (e.clientY - drag.sy) * ax[1]) / drag.sc;
-    var next = Math.min(100, Math.max(1, Math.round((drag.v0 + ft) * 2) / 2));
+    var next = Math.min(ROOM_MAX[drag.dim], Math.max(ROOM_MIN, Math.round((drag.v0 + ft) * 2) / 2));
     var f = field(drag.dim);
     if (f && getFieldValue(f) !== String(next)) {
       setFieldValue(f, String(next));
@@ -1323,6 +1791,11 @@
     if (dir === undefined) dir = 0;
     var isResult = stepIdx >= plan.length;
     var section = isResult ? RESULT_SECTION : plan[stepIdx];
+    // The narrow layout keys the scene's visibility off the section (result only
+    // — see the 68rem block in styles.css); sceneLive re-reads the same flag so
+    // the rAF loop starts and stops with the band.
+    root.setAttribute('data-section', String(section));
+    syncSceneLive();
     stepSections.forEach(function (s) {
       show(s, Number(s.getAttribute('data-step')) === section);
     });
@@ -1380,6 +1853,10 @@
 
   var toIntro = function () {
     stepIdx = 0;
+    // No section is on screen while the opening slide is — clear the flag so the
+    // narrow layout hides the scene again (and the loop stops with it).
+    root.removeAttribute('data-section');
+    syncSceneLive();
     if (wizardEl) wizardEl.setAttribute('data-phase', 'intro');
     if (introTitle) introTitle.focus();
   };

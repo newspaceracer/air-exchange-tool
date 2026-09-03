@@ -1,0 +1,66 @@
+---
+/**
+ * smaqmd-logo-link — the district logo as a link.
+ *
+ * The asset (public/smaqmd-logo.png, 510x271) is the POSITIVE mark — dark
+ * lettering on transparency — so it sits directly on the light page with no
+ * backing. It links to the district's public site (requested 2026-09-02),
+ * the convention a visitor expects of an agency mark. Note what this means
+ * for the prototype pages: the logo REPLACED the back button and BaseLayout
+ * ships no nav, so those pages no longer link back to the prototype library
+ * at all — deliberate, since the production deliverable is embedded in a
+ * host page where the library doesn't exist.
+ *
+ * bcn-lego-checked: no esa- lego renders a brand-logo image link — esa-button
+ * is label+icon chrome (no image slot), esa-icon-link takes registry icons,
+ * and esa-header-nav/esa-app-bar are full nav bars, far more chrome than a
+ * wizard header slot wants; checked Beacon (logo lives inside its Angular
+ * shell header, not as a standalone piece); smaqmd-logo-link is the reusable
+ * home, shared by the prototype pages.
+ */
+import { withBase } from '../lib/base';
+
+interface Props {
+  /** Link target; defaults to the district's public site. */
+  href?: string;
+  /** Accessible name — states the DESTINATION, per SC 2.4.4. */
+  label?: string;
+}
+const {
+  href = 'https://www.airquality.org/',
+  label = 'Sacramento Metropolitan Air Quality Management District website',
+} = Astro.props;
+---
+<a class="smaqmd-logo-link" href={href}>
+  <img
+    src={withBase('/smaqmd-logo.png')}
+    alt={label}
+    width="510"
+    height="271"
+  />
+</a>
+
+<style>
+  .smaqmd-logo-link {
+    display: inline-block;
+    /* Kill the inline line box so the link hugs the image. */
+    line-height: 0;
+  }
+  .smaqmd-logo-link img {
+    /* Compact header-logo footprint (the 510px asset keeps it crisp on retina).
+       A FIXED size, not min(8.5rem, 100%): inside a flex row the percentage
+       falls out of the anchor's intrinsic contribution, so the link box grew to
+       the image's natural 510px — filling the row (wrapping any sibling, e.g.
+       the page h1) and making the empty span beside the mark clickable. */
+    inline-size: 8.5rem;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+  .smaqmd-logo-link:hover img {
+    opacity: 0.8;
+  }
+  .smaqmd-logo-link:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+</style>

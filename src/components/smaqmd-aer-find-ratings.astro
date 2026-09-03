@@ -1,0 +1,88 @@
+---
+// smaqmd-aer-find-ratings — "Where can I find this information?", the disclosure
+// that tells someone where the CADR / air-flow number actually lives on a product.
+//
+// It is ONE component mounted TWICE (the cleaners step, where the number is being
+// asked for, and the result step, where a shopper is about to go looking for one)
+// precisely so the two copies cannot drift: the same words, in both places the
+// question comes up. Its vanilla twin is the pair of <details> blocks in
+// public/aer-tool/index.html — KEEP IN SYNC with those when the copy changes.
+//
+// Because it mounts twice, NOTHING in here may carry an `id`: two copies of the
+// same id is a duplicate-id defect even when only one is on screen. The disclosure
+// is esa-collapsible (native <details>/<summary>), so it needs none.
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+---
+
+<EsaCollapsible title="Where can I find this information?">
+  <div class="stack" data-gap="sm">
+    <p class="typography-body-sm smaqmd-aer-find__lede">
+      Look for the CADR (Clean Air Delivery Rate) or air flow rating, in CFM (ft³/min):
+    </p>
+    <!-- Own list class, NOT the wizard's .smaqmd-aerb__tips: that rule is scoped to
+         smaqmd-aer-wizard.astro and would not reach a separate component's markup
+         anyway — reaching for it would only look like reuse. -->
+    <ul class="typography-body-sm smaqmd-aer-find__list">
+      <li>On the box — usually a specifications panel on the side or the back.</li>
+      <li>In the manual, in the specifications section.</li>
+      <li>
+        On the manufacturer's website — search the model number and open its
+        specifications page.
+      </li>
+    </ul>
+    <p class="typography-body-sm smaqmd-aer-find__note">
+      If it only lists air changes per hour (ACH), also note the room size that
+      rating was measured in — the tool asks for both.
+    </p>
+
+    <!-- PREPARED PHOTO SLOT — empty on purpose, and `hidden` until it is filled.
+         TO SWAP IN THE PHOTO: drop the image in the project, set `src`, remove the
+         `hidden` attribute, write `alt` text that says WHERE ON THE PRODUCT the
+         rating appears (not "photo of a box" — the alt IS the instruction for
+         anyone who cannot see it), and put the same locating sentence in the
+         <figcaption>. Keep width/height (or the aspect-ratio rule below) so the
+         box reserves its space and the disclosure does not jump when the image
+         decodes.
+         bcn-lego-checked: no esa- lego is a captioned image/media block — the
+         catalog's image-bearing legos are esa-avatar (a circular person chip) and
+         esa-empty-state (an illustration + heading + action for a zero state),
+         neither of which is a figure with a caption; checked Beacon (no
+         figure/media component in its shared ui-* set). So the figure is native
+         HTML with a documented smaqmd- block around it. -->
+    <figure class="smaqmd-aer-find__figure" hidden>
+      <img src="" alt="" width="800" height="600" loading="lazy" />
+      <figcaption class="typography-body-sm"></figcaption>
+    </figure>
+  </div>
+</EsaCollapsible>
+
+<style>
+  /* Quiet supporting copy — the same rung the wizard's result text sits at, so a
+     disclosure opened inside either surface reads as part of it. */
+  .smaqmd-aer-find__lede,
+  .smaqmd-aer-find__note,
+  .smaqmd-aer-find__list {
+    color: var(--color-content-default-secondary, #646464);
+  }
+  .smaqmd-aer-find__list {
+    margin: 0;
+    padding-inline-start: var(--spacing-500, 1.5rem);
+  }
+  .smaqmd-aer-find__list li + li { margin-block-start: var(--spacing-200, 0.5rem); }
+  .smaqmd-aer-find__figure { margin: 0; }
+  /* The image RESERVES its box before it loads: a fixed ratio plus a token-tinted
+     placeholder ground, so opening the disclosure does not reflow when the photo
+     decodes. object-fit keeps a photo of any real ratio from distorting into it. */
+  .smaqmd-aer-find__figure img {
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--color-background-elevation-sunken, #f0f0f0);
+  }
+  .smaqmd-aer-find__figure figcaption {
+    margin-block-start: var(--spacing-200, 0.5rem);
+    color: var(--color-content-default-secondary, #646464);
+  }
+</style>
