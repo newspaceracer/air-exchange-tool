@@ -1,14 +1,14 @@
 /* bcn-lego-checked: zero-dependency client build, hand-ported from src/components/smaqmd-aer-wizard.astro and its @esa/ecology legos (esa-card, esa-stat, esa-alert-box, esa-text-field, esa-radio-group, esa-button) — no esa-* runtime exists outside the Astro build. */
 
-@font-face{
-  font-family: 'Source Sans 3';
+@font-face {
+  font-family: "Source Sans 3";
   font-style: normal;
   font-weight: 200 900;
   font-display: swap;
-  src: url('fonts/SourceSans3-Variable.woff2') format('woff2');
+  src: url("fonts/SourceSans3-Variable.woff2") format("woff2");
 }
 
-.smaqmd-aerb{
+.smaqmd-aerb {
   --smaqmd-brand-2: #f4f9fb;
   --smaqmd-brand-3: #e5f0f5;
   --smaqmd-brand-6: #a8cade;
@@ -115,43 +115,47 @@
   --easing-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
   --transition-fast: 150ms ease;
 
-  --typography-font-family-sans: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system,
-    'Segoe UI', sans-serif;
+  --typography-font-family-sans:
+    "Source Sans 3", "Source Sans Pro", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
   --typography-font-family-display: var(--typography-font-family-sans);
-  --typography-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --typography-font-family-mono:
+    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --typography-font-weight-regular: 350;
   --typography-font-weight-medium: 500;
   --typography-font-weight-semibold: 550;
   --typography-font-weight-bold: 650;
 }
 
-.smaqmd-aerb, .smaqmd-aerb *,
+.smaqmd-aerb,
+.smaqmd-aerb *,
 .smaqmd-aerb *::before,
-.smaqmd-aerb *::after{
+.smaqmd-aerb *::after {
   box-sizing: border-box;
 }
 
-.smaqmd-aer-page{
+.smaqmd-aer-page {
   margin: 0;
   background: #fcfcfc;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
-.smaqmd-aerb :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre){
+.smaqmd-aerb
+  :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {
   margin: 0;
 }
 
 .smaqmd-aerb img,
-.smaqmd-aerb svg{
+.smaqmd-aerb svg {
   max-width: 100%;
 }
 
-.smaqmd-aerb [hidden]{
+.smaqmd-aerb [hidden] {
   display: none !important;
 }
 
-.smaqmd-visually-hidden{
+.smaqmd-visually-hidden {
   position: absolute;
   font-size: 1rem;
   line-height: 1.6;
@@ -166,7 +170,7 @@
   clip-path: inset(50%);
 }
 
-.smaqmd-aerb .smaqmd-type-display-sm{
+.smaqmd-aerb .smaqmd-type-display-sm {
   font-family: var(--typography-font-family-display);
   font-size: 2.25rem;
   font-weight: var(--typography-font-weight-bold);
@@ -174,7 +178,7 @@
   letter-spacing: -0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-heading-lg{
+.smaqmd-aerb .smaqmd-type-heading-lg {
   font-family: var(--typography-font-family-display);
   font-size: 1.875rem;
   font-weight: var(--typography-font-weight-semibold);
@@ -182,7 +186,7 @@
   letter-spacing: -0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-heading-md{
+.smaqmd-aerb .smaqmd-type-heading-md {
   font-family: var(--typography-font-family-display);
   font-size: 1.5rem;
   font-weight: var(--typography-font-weight-semibold);
@@ -190,70 +194,70 @@
   letter-spacing: -0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-title-sm-strong{
+.smaqmd-aerb .smaqmd-type-title-sm-strong {
   font-size: 1.0625rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-body-lg{
+.smaqmd-aerb .smaqmd-type-body-lg {
   font-size: 1.125rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.8;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-body-md{
+.smaqmd-aerb .smaqmd-type-body-md {
   font-size: 1rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-body-sm{
+.smaqmd-aerb .smaqmd-type-body-sm {
   font-size: 0.875rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-label-lg{
+.smaqmd-aerb .smaqmd-type-label-lg {
   font-size: 1.125rem;
   font-weight: var(--typography-font-weight-medium);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-label-md{
+.smaqmd-aerb .smaqmd-type-label-md {
   font-size: 0.9375rem;
   font-weight: var(--typography-font-weight-medium);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-label-sm-strong{
+.smaqmd-aerb .smaqmd-type-label-sm-strong {
   font-size: 0.875rem;
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-type-meta{
+.smaqmd-aerb .smaqmd-type-meta {
   font-size: 0.8125rem;
   font-weight: var(--typography-font-weight-regular);
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
 
-.smaqmd-aerb .smaqmd-stack{
+.smaqmd-aerb .smaqmd-stack {
   --gap: var(--spacing-400);
   display: flex;
   flex-direction: column;
   gap: var(--gap);
 }
 
-.smaqmd-aerb .smaqmd-cluster{
+.smaqmd-aerb .smaqmd-cluster {
   --gap: var(--spacing-300);
   --align: center;
   --justify: flex-start;
@@ -264,7 +268,7 @@
   justify-content: var(--justify);
 }
 
-.smaqmd-aerb .smaqmd-repel{
+.smaqmd-aerb .smaqmd-repel {
   --gap: var(--spacing-400);
   --align: center;
   display: flex;
@@ -274,22 +278,37 @@
   justify-content: space-between;
 }
 
-.smaqmd-aerb .smaqmd-grid{
+.smaqmd-aerb .smaqmd-grid {
   --gap: var(--spacing-400);
   --grid-min: 16rem;
   display: grid;
   gap: var(--gap);
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--grid-min), 100%), 1fr)
+  );
 }
 
-.smaqmd-aerb [data-gap='2xs']{ --gap: var(--spacing-100); }
-.smaqmd-aerb [data-gap='xs']{ --gap: var(--spacing-200); }
-.smaqmd-aerb [data-gap='sm']{ --gap: var(--spacing-300); }
-.smaqmd-aerb [data-gap='md']{ --gap: var(--spacing-400); }
-.smaqmd-aerb [data-gap='lg']{ --gap: var(--spacing-500); }
-.smaqmd-aerb [data-gap='xl']{ --gap: var(--spacing-600); }
+.smaqmd-aerb [data-gap="2xs"] {
+  --gap: var(--spacing-100);
+}
+.smaqmd-aerb [data-gap="xs"] {
+  --gap: var(--spacing-200);
+}
+.smaqmd-aerb [data-gap="sm"] {
+  --gap: var(--spacing-300);
+}
+.smaqmd-aerb [data-gap="md"] {
+  --gap: var(--spacing-400);
+}
+.smaqmd-aerb [data-gap="lg"] {
+  --gap: var(--spacing-500);
+}
+.smaqmd-aerb [data-gap="xl"] {
+  --gap: var(--spacing-600);
+}
 
-.smaqmd-aerb .smaqmd-card{
+.smaqmd-aerb .smaqmd-card {
   --_card-bg: var(--card-bg, var(--color-background-elevation-raised));
   --_card-border: var(--card-border-color, var(--color-border-default));
   --_card-radius: var(--radius-md);
@@ -302,11 +321,11 @@
   overflow: hidden;
 }
 
-.smaqmd-aerb .smaqmd-card__body{
+.smaqmd-aerb .smaqmd-card__body {
   padding: var(--_card-padding);
 }
 
-.smaqmd-aerb .smaqmd-stat{
+.smaqmd-aerb .smaqmd-stat {
   --_stat-value-color: var(--stat-value-color, var(--color-content-default));
   --_stat-label-color: var(--color-content-default-secondary);
   --_stat-accent-color: var(--stat-accent-color, var(--color-content-brand));
@@ -318,29 +337,32 @@
   background: transparent;
 }
 
-.smaqmd-aerb .smaqmd-stat__value{
+.smaqmd-aerb .smaqmd-stat__value {
   color: var(--_stat-value-color);
 }
 
-.smaqmd-aerb .smaqmd-stat--accent .smaqmd-stat__value{
+.smaqmd-aerb .smaqmd-stat--accent .smaqmd-stat__value {
   color: var(--_stat-accent-color);
 }
 
-.smaqmd-aerb .smaqmd-stat__label{
+.smaqmd-aerb .smaqmd-stat__label {
   color: var(--_stat-label-color);
 }
 
-.smaqmd-aerb .smaqmd-stat__sub{
+.smaqmd-aerb .smaqmd-stat__sub {
   color: var(--_stat-label-color);
 }
 
 /* On a FAIL the action statement is the hero, so the CADR stat steps down a rung.
    Shop mode keeps the full display-sm value — there the number IS the action. */
-.smaqmd-aerb .smaqmd-aerb__answer[data-verdict='fail'] [data-metric='fix'] .smaqmd-stat__value{
+.smaqmd-aerb
+  .smaqmd-aerb__answer[data-verdict="fail"]
+  [data-metric="fix"]
+  .smaqmd-stat__value {
   font-size: 1.5rem;
 }
 
-.smaqmd-aerb .smaqmd-alert{
+.smaqmd-aerb .smaqmd-alert {
   --_alert-bg: var(--color-background-utility-info-subtle);
   --_alert-border: var(--color-border-utility-info);
   --_alert-accent: var(--color-content-utility-info);
@@ -357,47 +379,47 @@
   background: var(--_alert-bg);
 }
 
-.smaqmd-aerb .smaqmd-alert--success{
+.smaqmd-aerb .smaqmd-alert--success {
   --_alert-bg: var(--color-background-utility-success-subtle);
   --_alert-border: var(--color-border-utility-success);
   --_alert-accent: var(--color-content-utility-success);
 }
 
-.smaqmd-aerb .smaqmd-alert--warning{
+.smaqmd-aerb .smaqmd-alert--warning {
   --_alert-bg: var(--color-background-utility-warning-subtle);
   --_alert-border: var(--color-border-utility-warning);
   --_alert-accent: var(--color-content-utility-warning);
 }
 
-.smaqmd-aerb .smaqmd-alert--danger{
+.smaqmd-aerb .smaqmd-alert--danger {
   --_alert-bg: var(--color-background-utility-danger-subtle);
   --_alert-border: var(--color-border-utility-danger);
   --_alert-accent: var(--color-content-utility-danger);
 }
 
-.smaqmd-aerb .smaqmd-alert__icon{
+.smaqmd-aerb .smaqmd-alert__icon {
   flex-shrink: 0;
   color: var(--_alert-icon-color);
   padding-top: 1px;
   line-height: 0;
 }
 
-.smaqmd-aerb .smaqmd-alert__body{
+.smaqmd-aerb .smaqmd-alert__body {
   flex: 1;
   min-width: 0;
 }
 
-.smaqmd-aerb .smaqmd-alert__title{
+.smaqmd-aerb .smaqmd-alert__title {
   display: block;
   color: var(--_alert-title-color);
   margin-bottom: var(--spacing-050);
 }
 
-.smaqmd-aerb .smaqmd-alert__message{
+.smaqmd-aerb .smaqmd-alert__message {
   color: var(--_alert-text-color);
 }
 
-.smaqmd-aerb .smaqmd-btn{
+.smaqmd-aerb .smaqmd-btn {
   display: inline-flex;
   margin: 0;
   text-transform: none;
@@ -418,68 +440,70 @@
   color: inherit;
   cursor: pointer;
   text-align: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast),
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
-.smaqmd-aerb .smaqmd-btn__icon{
+.smaqmd-aerb .smaqmd-btn__icon {
   flex-shrink: 0;
 }
 
-.smaqmd-aerb .smaqmd-btn:focus-visible{
+.smaqmd-aerb .smaqmd-btn:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.smaqmd-aerb .smaqmd-btn--primary{
+.smaqmd-aerb .smaqmd-btn--primary {
   background: var(--color-background-brand);
   color: var(--color-content-default-knockout);
 }
 
-.smaqmd-aerb .smaqmd-btn--primary:hover{
+.smaqmd-aerb .smaqmd-btn--primary:hover {
   background: var(--color-background-brand-hover);
 }
 
-.smaqmd-aerb .smaqmd-btn--outline{
+.smaqmd-aerb .smaqmd-btn--outline {
   border-color: var(--color-border-default);
   color: var(--color-content-default);
   background: var(--color-background-elevation-raised);
 }
 
-.smaqmd-aerb .smaqmd-btn--outline:hover{
+.smaqmd-aerb .smaqmd-btn--outline:hover {
   background: var(--color-background-elevation-sunken);
 }
 
-.smaqmd-aerb .smaqmd-btn--chrome{
+.smaqmd-aerb .smaqmd-btn--chrome {
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-aerb .smaqmd-btn--chrome:hover{
+.smaqmd-aerb .smaqmd-btn--chrome:hover {
   background: var(--color-background-overlay-strong-hover);
   color: var(--color-content-default);
 }
 
-.smaqmd-aerb .smaqmd-btn--icon{
+.smaqmd-aerb .smaqmd-btn--icon {
   inline-size: 2.75rem;
   block-size: 2.75rem;
   padding: 0;
 }
 
-.smaqmd-aerb .smaqmd-field{
+.smaqmd-aerb .smaqmd-field {
   display: block;
 }
 
-.smaqmd-aerb .smaqmd-field__label{
+.smaqmd-aerb .smaqmd-field__label {
   display: block;
   margin-block-end: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-aerb .smaqmd-field__control{
+.smaqmd-aerb .smaqmd-field__control {
   display: flex;
 }
 
-.smaqmd-aerb .smaqmd-field__input{
+.smaqmd-aerb .smaqmd-field__input {
   flex: 1 1 auto;
   margin: 0;
   text-transform: none;
@@ -499,42 +523,42 @@
   min-block-size: 2.75rem;
 }
 
-.smaqmd-aerb .smaqmd-field__input:focus-visible{
+.smaqmd-aerb .smaqmd-field__input:focus-visible {
   border-color: var(--form-border-color-focus);
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.smaqmd-aerb .smaqmd-field__input::placeholder{
+.smaqmd-aerb .smaqmd-field__input::placeholder {
   color: var(--color-content-default-secondary);
   opacity: 1;
 }
 
-.smaqmd-aerb .smaqmd-field__help{
+.smaqmd-aerb .smaqmd-field__help {
   margin-block-start: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-aerb .smaqmd-radio{
+.smaqmd-aerb .smaqmd-radio {
   margin: 0;
   padding: 0;
   border: 0;
   min-inline-size: 0;
 }
 
-.smaqmd-aerb .smaqmd-radio__legend{
+.smaqmd-aerb .smaqmd-radio__legend {
   padding: 0;
   margin-block-end: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-aerb .smaqmd-radio__items{
+.smaqmd-aerb .smaqmd-radio__items {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-200);
 }
 
-.smaqmd-aerb .smaqmd-radio__item{
+.smaqmd-aerb .smaqmd-radio__item {
   display: flex;
   align-items: center;
   gap: var(--spacing-200);
@@ -542,7 +566,7 @@
   min-block-size: 2.75rem;
 }
 
-.smaqmd-aerb .smaqmd-radio__item input[type='radio']{
+.smaqmd-aerb .smaqmd-radio__item input[type="radio"] {
   appearance: none;
   font: inherit;
   font-size: 1rem;
@@ -557,11 +581,13 @@
   display: grid;
   place-content: center;
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
-.smaqmd-aerb .smaqmd-radio__item input[type='radio']::before{
-  content: '';
+.smaqmd-aerb .smaqmd-radio__item input[type="radio"]::before {
+  content: "";
   inline-size: 0.75rem;
   block-size: 0.75rem;
   border-radius: 50%;
@@ -570,20 +596,20 @@
   transition: transform 120ms ease;
 }
 
-.smaqmd-aerb .smaqmd-radio__item input[type='radio']:checked::before{
+.smaqmd-aerb .smaqmd-radio__item input[type="radio"]:checked::before {
   transform: scale(1);
 }
 
-.smaqmd-aerb .smaqmd-radio__item input[type='radio']:focus-visible{
+.smaqmd-aerb .smaqmd-radio__item input[type="radio"]:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }
 
-.smaqmd-aerb .smaqmd-radio__label{
+.smaqmd-aerb .smaqmd-radio__label {
   color: var(--color-content-default);
 }
 
-.smaqmd-aerb .smaqmd-toggle{
+.smaqmd-aerb .smaqmd-toggle {
   display: inline-flex;
   margin: 0;
   padding: 0;
@@ -593,11 +619,11 @@
   overflow: hidden;
 }
 
-.smaqmd-aerb .smaqmd-toggle__item{
+.smaqmd-aerb .smaqmd-toggle__item {
   display: flex;
 }
 
-.smaqmd-aerb .smaqmd-toggle__item input[type='radio']{
+.smaqmd-aerb .smaqmd-toggle__item input[type="radio"] {
   position: absolute;
   font: inherit;
   font-size: 1rem;
@@ -608,7 +634,7 @@
   pointer-events: none;
 }
 
-.smaqmd-aerb .smaqmd-toggle__label{
+.smaqmd-aerb .smaqmd-toggle__label {
   display: grid;
   place-items: center;
   min-inline-size: 2.25rem;
@@ -619,46 +645,63 @@
   color: var(--color-content-default-secondary);
   background: var(--color-background-elevation-raised);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
-.smaqmd-aerb .smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label{
+.smaqmd-aerb
+  .smaqmd-toggle__item
+  input[type="radio"]:checked
+  + .smaqmd-toggle__label {
   background: var(--color-background-brand);
   color: var(--color-content-default-knockout);
 }
 
-.smaqmd-aerb .smaqmd-toggle__item input[type='radio']:focus-visible + .smaqmd-toggle__label{
+.smaqmd-aerb
+  .smaqmd-toggle__item
+  input[type="radio"]:focus-visible
+  + .smaqmd-toggle__label {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 @media (forced-colors: active) {
-  .smaqmd-aerb .smaqmd-radio__item input[type='radio']{
+  .smaqmd-aerb .smaqmd-radio__item input[type="radio"] {
     appearance: auto;
     -webkit-appearance: auto;
   }
-  .smaqmd-aerb .smaqmd-toggle__item input[type='radio']:checked + .smaqmd-toggle__label{
+  .smaqmd-aerb
+    .smaqmd-toggle__item
+    input[type="radio"]:checked
+    + .smaqmd-toggle__label {
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
   }
   .smaqmd-aerb .smaqmd-btn,
-.smaqmd-aerb .smaqmd-card,
-.smaqmd-aerb .smaqmd-alert{
+  .smaqmd-aerb .smaqmd-card,
+  .smaqmd-aerb .smaqmd-alert {
     border-color: currentColor;
   }
 }
 
-.smaqmd-aerb [hidden]{ display: none !important; }
-.smaqmd-aerb .smaqmd-aerb__dims{ --grid-min: 6.5rem; }
-.smaqmd-aerb .smaqmd-aerb__ref{ --grid-min: 6.5rem; }
+.smaqmd-aerb [hidden] {
+  display: none !important;
+}
+.smaqmd-aerb .smaqmd-aerb__dims {
+  --grid-min: 6.5rem;
+}
+.smaqmd-aerb .smaqmd-aerb__ref {
+  --grid-min: 6.5rem;
+}
 
-.smaqmd-aerb .smaqmd-aerb__cleaner-note{
+.smaqmd-aerb .smaqmd-aerb__cleaner-note {
   color: var(--color-content-default-secondary);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-.smaqmd-aerb .smaqmd-aerb__context{
+.smaqmd-aerb .smaqmd-aerb__context {
   color: var(--color-content-default-secondary);
   display: flex;
   flex-direction: column;
@@ -669,58 +712,89 @@
 /* Result verdict recolors the header band (renderStep sets data-verdict on the
    wizard root). Fail swaps the sage band for the warning tint; pass lifts the
    title to brand. */
-.smaqmd-aerb .smaqmd-wizard{ --_warn-band: color-mix(in srgb, var(--color-border-utility-warning) 40%, var(--color-background-utility-warning-subtle)); }
-.smaqmd-aerb .smaqmd-wizard[data-verdict='pass'] .smaqmd-wizard__title{ color: var(--smaqmd-color-content-secondary-brand); }
-.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__title{ color: var(--color-content-utility-warning); }
-.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] > .smaqmd-wizard__head{ background: var(--_warn-band); }
-.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__swoop-front{ fill: var(--_warn-band); }
-.smaqmd-aerb .smaqmd-wizard[data-verdict='fail'] .smaqmd-wizard__swoop-back{ fill: var(--color-background-utility-warning-subtle); }
+.smaqmd-aerb .smaqmd-wizard {
+  --_warn-band: color-mix(
+    in srgb,
+    var(--color-border-utility-warning) 40%,
+    var(--color-background-utility-warning-subtle)
+  );
+}
+.smaqmd-aerb .smaqmd-wizard[data-verdict="pass"] .smaqmd-wizard__title {
+  color: var(--smaqmd-color-content-secondary-brand);
+}
+.smaqmd-aerb .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__title {
+  color: var(--color-content-utility-warning);
+}
+.smaqmd-aerb .smaqmd-wizard[data-verdict="fail"] > .smaqmd-wizard__head {
+  background: var(--_warn-band);
+}
+.smaqmd-aerb .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__swoop-front {
+  fill: var(--_warn-band);
+}
+.smaqmd-aerb .smaqmd-wizard[data-verdict="fail"] .smaqmd-wizard__swoop-back {
+  fill: var(--color-background-utility-warning-subtle);
+}
+/* Step + intro headings are programmatic focus targets (tabindex="-1") for the
+   step-change announcement, not tab stops — suppress the ring that would flash on
+   them after navigating. Mirrors [data-step-title]:focus in the Astro source. */
 .smaqmd-aerb [data-step-title]:focus,
-.smaqmd-aerb [data-intro-title]:focus,
+.smaqmd-aerb [data-intro-title]:focus {
+  outline: none;
+}
 
-.smaqmd-aerb .smaqmd-aerb__cleaner{
+.smaqmd-aerb .smaqmd-aerb__cleaner {
   padding-block-start: var(--spacing-300);
   border-block-start: 1px solid var(--color-border-default);
 }
-.smaqmd-aerb .smaqmd-aerb__cleaner:first-of-type{
+.smaqmd-aerb .smaqmd-aerb__cleaner:first-of-type {
   padding-block-start: 0;
   border-block-start: 0;
 }
-.smaqmd-aerb .smaqmd-aerb__cleaner-head{ align-items: center; }
-.smaqmd-aerb .smaqmd-aerb__cleaner-title{
+.smaqmd-aerb .smaqmd-aerb__cleaner-head {
+  align-items: center;
+}
+.smaqmd-aerb .smaqmd-aerb__cleaner-title {
   color: var(--color-content-default);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-.smaqmd-aerb .smaqmd-aerb__heroes{
+.smaqmd-aerb .smaqmd-aerb__heroes {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-400) var(--spacing-600);
 }
-.smaqmd-aerb .smaqmd-aerb__unit{
+/* The CADR/ACH toggle under the "shop for" stat hugs its own width: it shares a
+   .smaqmd-stack with the stat, and a stack stretches its children — an inline-flex
+   fieldset blockifies as a flex item and would span the whole card. */
+.smaqmd-aerb .smaqmd-aerb__rating {
+  align-self: flex-start;
+}
+.smaqmd-aerb .smaqmd-aerb__unit {
   font-size: 0.5em;
   font-weight: var(--typography-font-weight-medium);
   color: var(--color-content-default-secondary);
 }
 /* Result text is ONE color — the subtle gray-11 (content-default-secondary). Only
    the band title, the hero number, and the action line carry color. */
-.smaqmd-aerb [data-result] p.smaqmd-type-body-sm{ color: var(--color-content-default-secondary); }
+.smaqmd-aerb [data-result] p.smaqmd-type-body-sm {
+  color: var(--color-content-default-secondary);
+}
 
 /* Hairline between the CADR stat and the supporting line below it — shared by
    the fail evidence line and the shop explainer. */
-.smaqmd-aerb .smaqmd-aerb__footnote{
+.smaqmd-aerb .smaqmd-aerb__footnote {
   border-block-start: 1px solid var(--color-border-default);
   padding-block-start: var(--spacing-300);
 }
 
 /* Collapsible — hand-port of the hub's esa-collapsible lego (native
    <details>/<summary>, right-aligned caret in place of the disclosure marker). */
-.smaqmd-aerb .smaqmd-collapsible{
+.smaqmd-aerb .smaqmd-collapsible {
   border: var(--border-width-default) solid var(--color-border-default);
   border-radius: var(--radius-md);
   background: var(--color-background-elevation-raised);
 }
-.smaqmd-aerb .smaqmd-collapsible__summary{
+.smaqmd-aerb .smaqmd-collapsible__summary {
   display: flex;
   align-items: center;
   gap: var(--spacing-200);
@@ -729,13 +803,15 @@
   cursor: pointer;
   list-style: none;
 }
-.smaqmd-aerb .smaqmd-collapsible__summary::-webkit-details-marker{ display: none; }
-.smaqmd-aerb .smaqmd-collapsible__summary:focus-visible{
+.smaqmd-aerb .smaqmd-collapsible__summary::-webkit-details-marker {
+  display: none;
+}
+.smaqmd-aerb .smaqmd-collapsible__summary:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
-.smaqmd-aerb .smaqmd-collapsible__summary::after{
-  content: '';
+.smaqmd-aerb .smaqmd-collapsible__summary::after {
+  content: "";
   width: 8px;
   height: 8px;
   border-right: 2px solid var(--color-content-default-secondary);
@@ -744,8 +820,10 @@
   transition: transform 150ms ease;
   margin-left: auto;
 }
-.smaqmd-aerb .smaqmd-collapsible[open] > .smaqmd-collapsible__summary::after{ transform: rotate(45deg); }
-.smaqmd-aerb .smaqmd-collapsible__body{
+.smaqmd-aerb .smaqmd-collapsible[open] > .smaqmd-collapsible__summary::after {
+  transform: rotate(45deg);
+}
+.smaqmd-aerb .smaqmd-collapsible__body {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-400);
@@ -754,16 +832,73 @@
 
 /* Usage-tips list inside the collapsible: default bullets, same quiet gray as
    the other supporting result text. */
-.smaqmd-aerb .smaqmd-aerb__tips{
+.smaqmd-aerb .smaqmd-aerb__tips {
   margin: 0;
   padding-inline-start: var(--spacing-500);
   color: var(--color-content-default-secondary);
 }
-.smaqmd-aerb .smaqmd-aerb__tips li + li{ margin-block-start: var(--spacing-200); }
-.smaqmd-aerb [data-metric='ach']{ --stat-accent-color: var(--color-background-brand); }
-.smaqmd-aerb [data-metric='fix']{ --stat-accent-color: var(--color-content-default); }
+.smaqmd-aerb .smaqmd-aerb__tips li + li {
+  margin-block-start: var(--spacing-200);
+}
+/* ACH-mode equivalence list under the "shop for" stat — same quiet secondary
+   treatment as the tips list, tighter rows (a scannable lookup, not prose).
+   KEEP IN SYNC with smaqmd-aer-wizard.astro. */
+.smaqmd-aerb .smaqmd-aerb__equiv {
+  margin: 0;
+  padding-inline-start: var(--spacing-500);
+  color: var(--color-content-default-secondary);
+}
+.smaqmd-aerb .smaqmd-aerb__equiv li + li {
+  margin-block-start: var(--spacing-100);
+}
+.smaqmd-aerb .smaqmd-aerb__equiv-lede,
+.smaqmd-aerb .smaqmd-aerb__equiv-note {
+  margin: 0;
+  color: var(--color-content-default-secondary);
+}
 
-.smaqmd-aerb{
+/* "Where can I find this information?" — hand-port of the scoped styles in
+   src/components/smaqmd-aer-find-ratings.astro. Its own list class, NOT
+   .smaqmd-aerb__tips: the two lists are different content in different places and
+   sharing a class would tie their futures together for no reason. */
+.smaqmd-aerb .smaqmd-aer-find__lede,
+.smaqmd-aerb .smaqmd-aer-find__note,
+.smaqmd-aerb .smaqmd-aer-find__list {
+  color: var(--color-content-default-secondary);
+}
+.smaqmd-aerb .smaqmd-aer-find__list {
+  margin: 0;
+  padding-inline-start: var(--spacing-500);
+}
+.smaqmd-aerb .smaqmd-aer-find__list li + li {
+  margin-block-start: var(--spacing-200);
+}
+.smaqmd-aerb .smaqmd-aer-find__figure {
+  margin: 0;
+}
+/* The image RESERVES its box before it loads: a fixed ratio plus a token-tinted
+   placeholder ground, so opening the disclosure does not reflow when the photo
+   decodes. object-fit keeps a photo of any real ratio from distorting into it. */
+.smaqmd-aerb .smaqmd-aer-find__figure img {
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--color-background-elevation-sunken);
+}
+.smaqmd-aerb .smaqmd-aer-find__figure figcaption {
+  margin-block-start: var(--spacing-200);
+  color: var(--color-content-default-secondary);
+}
+.smaqmd-aerb [data-metric="ach"] {
+  --stat-accent-color: var(--color-background-brand);
+}
+.smaqmd-aerb [data-metric="fix"] {
+  --stat-accent-color: var(--color-content-default);
+}
+
+.smaqmd-aerb {
   position: relative;
   min-block-size: 100dvh;
   display: block;
@@ -783,225 +918,496 @@
   --aer-gutter: max(var(--spacing-500), calc((100vw - var(--aer-frame)) / 2));
 }
 
-.smaqmd-aerb .smaqmd-cityview{
+.smaqmd-aerb .smaqmd-cityview {
   position: fixed;
   inset-block: 0;
   inset-inline: var(--aer-gutter);
   z-index: 0;
   pointer-events: none;
   --pulse-color: var(--color-background-brand);
-  --out-color: var(--color-content-default-tertiary);
 }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail']{ --pulse-color: var(--color-background-utility-warning); }
-.smaqmd-aerb .smaqmd-cityview__svg{ position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
-
-.smaqmd-aerb .smaqmd-cityview__safe{
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] {
+  --pulse-color: var(--color-background-utility-warning);
+}
+.smaqmd-aerb .smaqmd-cityview__svg {
   position: absolute;
-  inset: var(--spacing-500) var(--spacing-600) 4.5rem calc(32rem + 2 * var(--spacing-500));
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.smaqmd-aerb .smaqmd-cityview__safe {
+  position: absolute;
+  inset: var(--spacing-500) var(--spacing-600) 4.5rem
+    calc(32rem + 2 * var(--spacing-500));
   visibility: hidden;
 }
 
-.smaqmd-aerb .smaqmd-cityview__dot{ fill: var(--color-border-default); }
-.smaqmd-aerb .smaqmd-cityview__ground{
-  fill: color-mix(in srgb, var(--color-background-elevation-sunken) 45%, transparent);
+.smaqmd-aerb .smaqmd-cityview__dot {
+  fill: var(--color-border-default);
+}
+.smaqmd-aerb .smaqmd-cityview__ground {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-elevation-sunken) 45%,
+    transparent
+  );
   stroke: var(--color-border-default-subtle);
   stroke-width: 1;
   stroke-linejoin: round;
 }
 
-.smaqmd-aerb .smaqmd-cityview__road{
+/* One ripple of the cleaning pulse. Shape (points) and fade (stroke-opacity, set
+   inline as the ring travels out) are JS's; everything constant about it lives
+   here. The polygon is a projected circle on the floor, so it needs no linecap —
+   but round joins keep the 28-gon reading as a smooth ellipse. */
+.smaqmd-aerb .smaqmd-cityview__ring {
   fill: none;
-  stroke: var(--color-background-elevation-sunken);
-  stroke-width: 13;
-  stroke-linecap: round;
+  stroke: var(--pulse-color);
+  stroke-width: 2.5;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__track{
-  fill: none;
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.smaqmd-aerb .smaqmd-cityview__track[data-flow='return-track']{ stroke: color-mix(in srgb, var(--pulse-color) 18%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__track[data-flow='out-track']{ stroke: color-mix(in srgb, var(--out-color) 20%, transparent); }
-
-.smaqmd-aerb .smaqmd-cityview__gstop{ stop-color: var(--pulse-color); }
-.smaqmd-aerb .smaqmd-cityview__gstop-out{ stop-color: var(--out-color); }
-.smaqmd-aerb .smaqmd-cityview__wave{
-  fill: none;
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* The pulse sits idle until there's a valid result, then fades in with the
+   verdict. Shown/hidden per GROUP rather than per ring, so one state flip on the
+   container carries all three ripples of every cleaner. */
+.smaqmd-aerb .smaqmd-cityview__rings {
   opacity: 0;
   transition: opacity 220ms ease;
 }
-.smaqmd-aerb .smaqmd-cityview[data-state='pass'] .smaqmd-cityview__wave,
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__wave{ opacity: 1; }
-.smaqmd-aerb .smaqmd-cityview__lanes[data-lane-idle] .smaqmd-cityview__wave{ opacity: 0 !important; }
+/* "shop" is the third live state: no cleaner has been entered yet, but the room
+   and the target are both known, so the pulse previews the RECOMMENDED setup
+   rather than a measured one. It joins pass/fail here (a preview with no ripple
+   would just be a static ghost) but deliberately NOT in the [data-state="fail"]
+   recolours below — a recommendation isn't a shortfall, so it keeps the brand
+   --pulse-color the container already carries. */
+.smaqmd-aerb .smaqmd-cityview[data-state="pass"] .smaqmd-cityview__rings,
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__rings,
+.smaqmd-aerb .smaqmd-cityview[data-state="shop"] .smaqmd-cityview__rings {
+  opacity: 1;
+}
+/* A cleaner with no (or zero) flow contributes no air changes, so it gets no
+   pulse even while the rest of the scene is live — JS flags its group. */
+.smaqmd-aerb .smaqmd-cityview__rings[data-lane-idle] {
+  opacity: 0 !important;
+}
 
-.smaqmd-aerb .smaqmd-cityview__room-face{
+.smaqmd-aerb .smaqmd-cityview__room-face {
   stroke: var(--color-border-default);
   stroke-width: 1.5;
   stroke-linejoin: round;
   transition: fill 200ms ease;
 }
-.smaqmd-aerb .smaqmd-cityview__room-face[data-room='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 80%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__room-face[data-room='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-3) 78%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__room-face[data-room='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 78%, transparent); }
+/* The floor is the SUNKEN surface of the value ramp — you are looking down into
+   it — while the two interior wall faces keep the lit/shaded neutral pair. */
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room="floor"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-elevation-sunken) 72%,
+    transparent
+  );
+}
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room="left"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-3) 78%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__room-face[data-room="right"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-4) 78%, transparent);
+}
 
-.smaqmd-aerb .smaqmd-cityview__cap-face{
+/* The diorama's cut surfaces: the walls' top caps read as the near-white top of
+   a solid wall, their cut edges and the floor slab's front edges one step down. */
+.smaqmd-aerb .smaqmd-cityview__wall-top,
+.smaqmd-aerb .smaqmd-cityview__wall-cap,
+.smaqmd-aerb .smaqmd-cityview__floor-edge {
+  stroke: var(--color-border-default);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.smaqmd-aerb .smaqmd-cityview__wall-top {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-elevation-raised) 92%,
+    transparent
+  );
+}
+.smaqmd-aerb .smaqmd-cityview__wall-cap {
+  fill: color-mix(in srgb, var(--smaqmd-gray-4) 90%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__floor-edge {
+  fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent);
+}
+
+.smaqmd-aerb .smaqmd-cityview__cap-face {
   stroke: color-mix(in srgb, var(--color-background-brand) 55%, transparent);
   stroke-dasharray: 5 4;
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='top']{ fill: color-mix(in srgb, var(--color-background-brand) 8%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='left']{ fill: color-mix(in srgb, var(--color-background-brand) 10%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap='right']{ fill: color-mix(in srgb, var(--color-background-brand) 12%, transparent); }
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap="floor"] {
+  fill: color-mix(in srgb, var(--color-background-brand) 8%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap="left"] {
+  fill: color-mix(in srgb, var(--color-background-brand) 10%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap="right"] {
+  fill: color-mix(in srgb, var(--color-background-brand) 12%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__cap-face[data-cap="top"] {
+  fill: none;
+}
+.smaqmd-aerb .smaqmd-cityview__cap-edge {
+  stroke: color-mix(in srgb, var(--color-background-brand) 55%, transparent);
+  stroke-dasharray: 5 4;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
 
-.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 40%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-3) 38%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__room-face[data-room='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 38%, transparent); }
+.smaqmd-aerb
+  .smaqmd-cityview[data-cap-compare="smaller"]
+  .smaqmd-cityview__room-face[data-room="floor"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-elevation-sunken) 36%,
+    transparent
+  );
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-cap-compare="smaller"]
+  .smaqmd-cityview__room-face[data-room="left"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-3) 38%, transparent);
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-cap-compare="smaller"]
+  .smaqmd-cityview__room-face[data-room="right"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-4) 38%, transparent);
+}
 
-.smaqmd-aerb .smaqmd-cityview__cap-label{ fill: var(--color-background-brand); }
+.smaqmd-aerb .smaqmd-cityview__cap-label {
+  fill: var(--color-background-brand);
+}
 
-.smaqmd-aerb .smaqmd-cityview__details{ transition: opacity 200ms ease; }
-.smaqmd-aerb .smaqmd-cityview__win{
+.smaqmd-aerb .smaqmd-cityview__details {
+  transition: opacity 200ms ease;
+}
+.smaqmd-aerb .smaqmd-cityview__win {
   fill: color-mix(in srgb, var(--color-background-brand) 11%, transparent);
-  stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round;
+  stroke: var(--color-border-default);
+  stroke-width: 1;
+  stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__win[data-win-r]{ fill: color-mix(in srgb, var(--color-background-brand) 15%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__door{
+.smaqmd-aerb .smaqmd-cityview__win[data-win-r] {
+  fill: color-mix(in srgb, var(--color-background-brand) 15%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__door {
   fill: color-mix(in srgb, var(--smaqmd-gray-6) 85%, transparent);
-  stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round;
+  stroke: var(--color-border-default);
+  stroke-width: 1;
+  stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__parapet{ fill: none; stroke: var(--color-border-default-subtle); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-aerb .smaqmd-cityview__rtu-face{ stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__rtu-face[data-rtu-face='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__tower-leg{ stroke: var(--color-border-default); stroke-width: 1.5; stroke-linecap: round; }
-.smaqmd-aerb .smaqmd-cityview__tower-face{ stroke: var(--color-border-default); stroke-width: 1; stroke-linejoin: round; }
-.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='top']{ fill: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='left']{ fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__tower-face[data-tower-face='right']{ fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent); }
-.smaqmd-aerb .smaqmd-cityview__mast-line{ stroke: var(--color-content-default-tertiary); stroke-width: 1.5; stroke-linecap: round; }
-.smaqmd-aerb .smaqmd-cityview__mast-tip{ fill: var(--pulse-color); opacity: 0.9; }
-.smaqmd-aerb .smaqmd-cityview[data-cap-compare='smaller'] .smaqmd-cityview__details{ opacity: 0.45; }
+/* The rug is the one brand-tinted floor mark — barely there, so it reads as a
+   surface under the furniture rather than as data. */
+.smaqmd-aerb .smaqmd-cityview__rug {
+  fill: color-mix(in srgb, var(--color-background-brand) 7%, transparent);
+  stroke: color-mix(in srgb, var(--color-background-brand) 25%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+/* Furniture keeps the three-face value ramp the rooftop units used: lit top,
+   shaded left, shaded-darker right — the same light direction as the room. */
+.smaqmd-aerb .smaqmd-cityview__furn-face {
+  stroke: var(--color-border-default);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="top"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-elevation-raised) 96%,
+    transparent
+  );
+}
+.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="left"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="right"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent);
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-cap-compare="smaller"]
+  .smaqmd-cityview__details {
+  opacity: 0.45;
+}
 
-.smaqmd-aerb .smaqmd-cityview__unit-face{
+.smaqmd-aerb .smaqmd-cityview__unit-face {
   stroke: var(--color-background-brand-hover);
   stroke-width: 1;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='top']{ fill: color-mix(in srgb, var(--color-background-brand) 72%, #fff); }
-.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='left']{ fill: var(--color-background-brand); }
-.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit='right']{ fill: var(--color-background-brand-hover); }
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit="top"] {
+  fill: color-mix(in srgb, var(--color-background-brand) 72%, #fff);
+}
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit="left"] {
+  fill: var(--color-background-brand);
+}
+.smaqmd-aerb .smaqmd-cityview__unit-face[data-unit="right"] {
+  fill: var(--color-background-brand-hover);
+}
 
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face{ stroke: color-mix(in srgb, var(--color-background-utility-warning) 55%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='top']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 8%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='left']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 10%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-face[data-cap='right']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 12%, transparent); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__cap-label{ fill: var(--color-background-utility-warning); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face{ stroke: var(--color-orange-10); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='top']{ fill: color-mix(in srgb, var(--color-background-utility-warning) 72%, #fff); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='left']{ fill: var(--color-background-utility-warning); }
-.smaqmd-aerb .smaqmd-cityview[data-state='fail'] .smaqmd-cityview__unit-face[data-unit='right']{ fill: var(--color-orange-10); }
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face,
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-edge {
+  stroke: color-mix(
+    in srgb,
+    var(--color-background-utility-warning) 55%,
+    transparent
+  );
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__cap-face[data-cap="floor"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-utility-warning) 8%,
+    transparent
+  );
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__cap-face[data-cap="left"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-utility-warning) 10%,
+    transparent
+  );
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__cap-face[data-cap="right"] {
+  fill: color-mix(
+    in srgb,
+    var(--color-background-utility-warning) 12%,
+    transparent
+  );
+}
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label {
+  fill: var(--color-background-utility-warning);
+}
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face {
+  stroke: var(--color-orange-10);
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__unit-face[data-unit="top"] {
+  fill: color-mix(in srgb, var(--color-background-utility-warning) 72%, #fff);
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__unit-face[data-unit="left"] {
+  fill: var(--color-background-utility-warning);
+}
+.smaqmd-aerb
+  .smaqmd-cityview[data-state="fail"]
+  .smaqmd-cityview__unit-face[data-unit="right"] {
+  fill: var(--color-orange-10);
+}
 
-.smaqmd-aerb .smaqmd-cityview__dim{
+.smaqmd-aerb .smaqmd-cityview__dim {
   fill: var(--color-content-default-secondary);
   font-size: 13px;
   font-weight: var(--typography-font-weight-medium);
   font-family: var(--typography-font-family-sans);
 }
 
-.smaqmd-aerb .smaqmd-cityview__hit{
-  stroke: transparent; stroke-width: 28; stroke-linecap: round;
-  pointer-events: stroke; cursor: grab; touch-action: none;
+.smaqmd-aerb .smaqmd-cityview__hit {
+  stroke: transparent;
+  stroke-width: 28;
+  stroke-linecap: round;
+  pointer-events: stroke;
+  cursor: grab;
+  touch-action: none;
 }
-.smaqmd-aerb .smaqmd-cityview__dim[data-grip]{
-  pointer-events: all; cursor: grab; touch-action: none;
-  user-select: none; -webkit-user-select: none;
+.smaqmd-aerb .smaqmd-cityview__dim[data-grip] {
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.smaqmd-aerb .smaqmd-cityview__handle{ pointer-events: all; cursor: grab; touch-action: none; }
-.smaqmd-aerb .smaqmd-cityview__chev{
+.smaqmd-aerb .smaqmd-cityview__handle {
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+.smaqmd-aerb .smaqmd-cityview__chev {
   fill: none;
   stroke: var(--color-content-default-secondary);
   stroke-width: 2;
-  stroke-linecap: round; stroke-linejoin: round;
-  transform-box: fill-box; transform-origin: center;
-  transition: stroke 120ms ease, transform 120ms ease;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    stroke 120ms ease,
+    transform 120ms ease;
 }
 .smaqmd-aerb .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
-.smaqmd-aerb .smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev{
-  stroke: var(--color-text); stroke-width: 2.5;
+.smaqmd-aerb
+  .smaqmd-cityview__hit:hover
+  + .smaqmd-cityview__handle
+  .smaqmd-cityview__chev {
+  stroke: var(--color-text);
+  stroke-width: 2.5;
 }
 .smaqmd-aerb .smaqmd-cityview__handle:active .smaqmd-cityview__chev,
-.smaqmd-aerb .smaqmd-cityview__hit:active + .smaqmd-cityview__handle .smaqmd-cityview__chev{
-  stroke: var(--color-text); transform: scale(0.97);
+.smaqmd-aerb
+  .smaqmd-cityview__hit:active
+  + .smaqmd-cityview__handle
+  .smaqmd-cityview__chev {
+  stroke: var(--color-text);
+  transform: scale(0.97);
 }
 .smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__hit,
 .smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__handle,
-.smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__dim[data-grip]{ cursor: grabbing; }
-
-.smaqmd-aerb .smaqmd-cityview:not([data-entry-mode='dimensions']) [data-grips]{ display: none; }
-.smaqmd-aerb .smaqmd-cityview:not([data-entry-mode='dimensions']) .smaqmd-cityview__dim[data-grip]{
-  pointer-events: none; cursor: default;
+.smaqmd-aerb .smaqmd-cityview[data-dragging] .smaqmd-cityview__dim[data-grip] {
+  cursor: grabbing;
 }
 
-.smaqmd-aerb .smaqmd-cityview__cap{
+.smaqmd-aerb .smaqmd-cityview:not([data-entry-mode="dimensions"]) [data-grips] {
+  display: none;
+}
+.smaqmd-aerb
+  .smaqmd-cityview:not([data-entry-mode="dimensions"])
+  .smaqmd-cityview__dim[data-grip] {
+  pointer-events: none;
+  cursor: default;
+}
+
+.smaqmd-aerb .smaqmd-cityview__cap {
   position: absolute;
-  inset-block-end: var(--spacing-500); inset-inline-end: var(--spacing-500);
-  max-inline-size: 26rem; text-align: end;
+  inset-block-end: var(--spacing-500);
+  inset-inline-end: var(--spacing-500);
+  max-inline-size: 26rem;
+  text-align: end;
   color: var(--color-content-default-tertiary);
 }
 
-.smaqmd-aerb .smaqmd-aerw__col{
-  position: fixed; z-index: 1;
+/* The page heading, first child of the column (app.js moves the whole header
+   above the graphic when the layout goes narrow). The margin reset is spelled out
+   rather than left to the :where() heading reset above: :where() has zero
+   specificity, so a host page's own `.page h1 { margin: … }` would win over it.
+
+   The hairline is the co-branding lockup's separator: the district's mark is
+   itself a wordmark, so without it the header reads as two titles jammed
+   together. Neutral gray, never brand; its height is the h1's own line box, so
+   it brackets the title, not the taller logo. Mirrors the Astro source. */
+.smaqmd-aerb .smaqmd-aerb__page-title {
+  margin: 0;
+}
+/* The divider draws only when the title actually FOLLOWS the mark (the `+`), so
+   an embedding page that deletes the logo anchor (see README, Option B) loses
+   the hairline with it instead of keeping a border that separates nothing. */
+.smaqmd-aerb .smaqmd-logo-link + .smaqmd-aerb__page-title {
+  border-inline-start: 1px solid var(--color-border-default);
+  padding-inline-start: var(--spacing-400);
+}
+/* Once the pair wraps into two rows the divider separates nothing — a bare left
+   border on a second line reads as a mistake. 31rem is where the row (logo +
+   gaps + title) stops fitting the narrow layout's full-width header. */
+@media (max-width: 31rem) {
+  .smaqmd-aerb .smaqmd-logo-link + .smaqmd-aerb__page-title {
+    border-inline-start: none;
+    padding-inline-start: 0;
+  }
+}
+
+/* The district mark, linked out to airquality.org. bcn-lego-checked: standalone
+   hand-maintained build — no lego tier exists here; mirrors smaqmd-logo-link
+   from the Astro source. A FIXED inline-size, not min(8.5rem, 100%): inside the
+   cluster row the percentage falls out of the anchor's intrinsic contribution,
+   so the link box would grow to the image's natural 510px — filling the row
+   (wrapping the h1) and making the empty span beside the mark clickable. */
+.smaqmd-aerb .smaqmd-logo-link {
+  display: inline-block;
+  line-height: 0;
+}
+.smaqmd-aerb .smaqmd-logo-link img {
+  inline-size: 8.5rem;
+  max-inline-size: 100%;
+  block-size: auto;
+}
+.smaqmd-aerb .smaqmd-logo-link:hover img {
+  opacity: 0.8;
+}
+.smaqmd-aerb .smaqmd-logo-link:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.smaqmd-aerb .smaqmd-aerw__col {
+  position: fixed;
+  z-index: 1;
   inset-block: var(--spacing-500);
   inset-inline-start: var(--aer-gutter);
   inline-size: 32rem;
   max-inline-size: calc(100vw - 2 * var(--spacing-500));
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-400);
   max-block-size: calc(100dvh - 2 * var(--spacing-500));
 }
 
-.smaqmd-aerb .smaqmd-aerb__panel{
-  flex: 0 1 auto; min-block-size: 0;
-  overflow-y: auto; overscroll-behavior: contain;
+.smaqmd-aerb .smaqmd-aerb__panel {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--spacing-100);
-  --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent);
+  --card-bg: color-mix(
+    in srgb,
+    var(--color-background-elevation-raised) 96%,
+    transparent
+  );
   --card-border-color: var(--color-border-default-strong);
   scroll-padding-block-end: 6rem;
 }
-.smaqmd-aerb .smaqmd-aerw__panel{ inline-size: auto; }
+.smaqmd-aerb .smaqmd-aerw__panel {
+  inline-size: auto;
+}
 
-.smaqmd-aerb .smaqmd-wizard__dots{ --align: center; }
-.smaqmd-aerb .smaqmd-wizard__dot{
-  display: inline-grid; place-items: center;
-  inline-size: 1.5rem; block-size: 1.5rem;
+.smaqmd-aerb .smaqmd-wizard__dots {
+  --align: center;
+}
+.smaqmd-aerb .smaqmd-wizard__dot {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   border-radius: 999px;
-  font-size: 0.75rem; font-weight: var(--typography-font-weight-medium);
+  font-size: 0.75rem;
+  font-weight: var(--typography-font-weight-medium);
   line-height: 1;
   color: var(--smaqmd-color-content-secondary-brand);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
-  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
-.smaqmd-aerb .smaqmd-wizard__dot[data-done]{
+.smaqmd-aerb .smaqmd-wizard__dot-num {
+  translate: 1px 2px;
+}
+.smaqmd-aerb .smaqmd-wizard__dot[data-done] {
   background: var(--smaqmd-color-background-secondary-brand);
   color: var(--smaqmd-color-content-on-secondary-brand);
   box-shadow: none;
 }
-.smaqmd-aerb .smaqmd-wizard__dot[data-active]{
+.smaqmd-aerb .smaqmd-wizard__dot[data-active] {
   color: var(--smaqmd-color-content-secondary-brand);
   background: var(--color-background-elevation-raised);
   box-shadow: inset 0 0 0 2px var(--smaqmd-color-background-secondary-brand);
   font-weight: var(--typography-font-weight-semibold);
 }
 
-.smaqmd-aerb .smaqmd-wizard__head{
+.smaqmd-aerb .smaqmd-wizard__head {
   margin-block-start: calc(var(--spacing-500) * -1);
   margin-inline: calc(var(--spacing-500) * -1);
   padding: var(--spacing-400) var(--spacing-500);
@@ -1010,7 +1416,7 @@
   border-start-end-radius: var(--radius-md);
   position: relative;
 }
-.smaqmd-aerb .smaqmd-wizard__swoop{
+.smaqmd-aerb .smaqmd-wizard__swoop {
   position: absolute;
   inset-inline: 0;
   inset-block-start: 100%;
@@ -1018,13 +1424,23 @@
   block-size: 1.375rem;
   display: block;
 }
-.smaqmd-aerb .smaqmd-wizard__swoop-front{ fill: var(--smaqmd-color-background-secondary-brand-muted); }
-.smaqmd-aerb .smaqmd-wizard__swoop-back{ fill: var(--smaqmd-color-background-secondary-brand-wash); }
-.smaqmd-aerb .smaqmd-wizard__count{ color: var(--smaqmd-color-content-secondary-brand); }
-.smaqmd-aerb .smaqmd-wizard__title{ color: var(--smaqmd-color-content-on-secondary-brand-muted); }
+.smaqmd-aerb .smaqmd-wizard__swoop-front {
+  fill: var(--smaqmd-color-background-secondary-brand-muted);
+}
+.smaqmd-aerb .smaqmd-wizard__swoop-back {
+  fill: var(--smaqmd-color-background-secondary-brand-wash);
+}
+.smaqmd-aerb .smaqmd-wizard__count {
+  color: var(--smaqmd-color-content-secondary-brand);
+}
+.smaqmd-aerb .smaqmd-wizard__title {
+  color: var(--smaqmd-color-content-on-secondary-brand-muted);
+}
 
-.smaqmd-aerb .smaqmd-wizard{ block-size: min(38rem, calc(100dvh - 14rem)); }
-.smaqmd-aerb .smaqmd-wizard__body{
+.smaqmd-aerb .smaqmd-wizard {
+  block-size: min(38rem, calc(100dvh - 14rem));
+}
+.smaqmd-aerb .smaqmd-wizard__body {
   flex: 1 1 auto;
   min-block-size: 0;
   overflow: hidden auto;
@@ -1032,43 +1448,76 @@
   margin: calc(-1 * var(--spacing-100));
 }
 
-.smaqmd-aerb .smaqmd-wizard__nav{
-  display: flex; align-items: center;
+.smaqmd-aerb .smaqmd-wizard__nav {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-300);
   margin-block-start: var(--spacing-200);
 }
-.smaqmd-aerb .smaqmd-wizard__nav [data-nav='back']{ margin-inline-end: auto; }
+.smaqmd-aerb .smaqmd-wizard__nav [data-nav="back"] {
+  margin-inline-end: auto;
+}
 
 .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
-.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
   animation: var(--duration-base) var(--easing-in-out) both;
 }
-.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd{ animation-name: smaqmd-wizard-step-in-fwd; }
-.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{ animation-name: smaqmd-wizard-step-in-back; }
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd {
+  animation-name: smaqmd-wizard-step-in-fwd;
+}
+.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
+  animation-name: smaqmd-wizard-step-in-back;
+}
 @keyframes smaqmd-wizard-step-in-fwd {
-  from { opacity: 0; transform: translateX(1.5rem); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes smaqmd-wizard-step-in-back {
-  from { opacity: 0; transform: translateX(-1.5rem); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.smaqmd-aerb .smaqmd-aerb__panel > *{ flex-shrink: 0; }
-.smaqmd-aerb .smaqmd-aerb__panel .smaqmd-card{
+.smaqmd-aerb .smaqmd-aerb__panel > * {
+  flex-shrink: 0;
+}
+.smaqmd-aerb .smaqmd-aerb__panel .smaqmd-card {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .smaqmd-aerb .smaqmd-aerb__panel{ --card-bg: color-mix(in srgb, var(--color-background-elevation-raised) 96%, transparent); }
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .smaqmd-aerb .smaqmd-aerb__panel {
+    --card-bg: color-mix(
+      in srgb,
+      var(--color-background-elevation-raised) 96%,
+      transparent
+    );
+  }
 }
 
-.smaqmd-aerb .smaqmd-wizard__intro{ display: none; }
-.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__head,
-.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__body,
-.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__nav{ display: none; }
-.smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro{
+.smaqmd-aerb .smaqmd-wizard__intro {
+  display: none;
+}
+.smaqmd-aerb .smaqmd-wizard[data-phase="intro"] > .smaqmd-wizard__head,
+.smaqmd-aerb .smaqmd-wizard[data-phase="intro"] > .smaqmd-wizard__body,
+.smaqmd-aerb .smaqmd-wizard[data-phase="intro"] > .smaqmd-wizard__nav {
+  display: none;
+}
+.smaqmd-aerb .smaqmd-wizard[data-phase="intro"] > .smaqmd-wizard__intro {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -1079,77 +1528,141 @@
   background: var(--smaqmd-color-background-intro-wash);
   border-radius: var(--radius-md);
 }
-.smaqmd-aerb .smaqmd-wizard__intro-title{
+.smaqmd-aerb .smaqmd-wizard__intro-title {
   color: var(--smaqmd-color-content-intro-title);
   margin: 0;
 }
-.smaqmd-aerb .smaqmd-wizard__intro-actions{ margin-block-start: auto; align-items: flex-start; }
-.smaqmd-aerb .smaqmd-wizard__intro-lede{
+.smaqmd-aerb .smaqmd-wizard__intro-actions {
+  margin-block-start: auto;
+  align-items: flex-start;
+}
+.smaqmd-aerb .smaqmd-wizard__intro-lede {
   margin: 0;
   color: var(--color-content-default-secondary);
   max-inline-size: 60ch;
 }
 
-.smaqmd-aerb[data-variant='responsive'] [data-field='hasCleaner']{ display: none; }
+.smaqmd-aerb[data-variant="responsive"] [data-field="hasCleaner"] {
+  display: none;
+}
 
 @media (max-width: 68rem) {
-  .smaqmd-aer-page{
+  .smaqmd-aer-page {
     scroll-padding-block-end: 7rem;
   }
 
-  .smaqmd-aerb{ position: relative; min-block-size: 0; }
+  .smaqmd-aerb {
+    position: relative;
+    min-block-size: 0;
+  }
 
-  .smaqmd-aerb .smaqmd-cityview{ display: none; }
+  /* Narrow flow: the script moves the page header ABOVE the graphic, out of the
+     column and its padding — so the header carries its own. Mirrors the
+     .smaqmd-aerb__header rule in the same 68rem block of the Astro source. */
+  .smaqmd-aerb .smaqmd-aerb__header {
+    padding: var(--spacing-400) var(--spacing-400) 0;
+  }
 
-  .smaqmd-aerb .smaqmd-aerw__col{
-    position: relative; inset: auto;
-    inline-size: auto; max-inline-size: none; max-block-size: none;
+  .smaqmd-aerb .smaqmd-cityview {
+    display: none;
+  }
+  /* …except on the RESULT step, where the drawing IS part of the answer: the
+     capacity ghost against the room is the picture of the verdict the numbers
+     state. renderStep stamps data-section on the root (toIntro clears it) and the
+     script's sceneLive follows the same condition, so the rAF loop runs only while
+     the band is on screen. Unlike the Astro source, this stylesheet carries no
+     un-scoped narrow presentation for the scene, so the band's geometry is spelled
+     out here. KEEP IN SYNC with the 68rem block in smaqmd-aer-wizard.astro. */
+  .smaqmd-aerb[data-variant="responsive"][data-section="3"] .smaqmd-cityview {
+    display: block;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    block-size: 30dvh;
+  }
+  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
+    .smaqmd-cityview__safe {
+    inset: var(--spacing-300) var(--spacing-400);
+  }
+  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
+    .smaqmd-cityview__cap {
+    display: none;
+  }
+
+  .smaqmd-aerb .smaqmd-aerw__col {
+    position: relative;
+    inset: auto;
+    inline-size: auto;
+    max-inline-size: none;
+    max-block-size: none;
     min-block-size: 70dvh;
     gap: var(--spacing-400);
     padding: var(--spacing-400);
   }
-  .smaqmd-aerb .smaqmd-aerb__panel{ max-block-size: none; overflow: visible; }
+  .smaqmd-aerb .smaqmd-aerb__panel {
+    max-block-size: none;
+    overflow: visible;
+  }
 
-  .smaqmd-aerb .smaqmd-wizard{
+  .smaqmd-aerb .smaqmd-wizard {
     block-size: auto;
     min-block-size: 30rem;
   }
-  .smaqmd-aerb .smaqmd-wizard__body{ overflow: visible; }
+  .smaqmd-aerb .smaqmd-wizard__body {
+    overflow: visible;
+  }
 
-  .smaqmd-aerb .smaqmd-wizard__nav{
-    position: sticky; inset-block-end: 0;
+  .smaqmd-aerb .smaqmd-wizard__nav {
+    position: sticky;
+    inset-block-end: 0;
     background: var(--color-background-elevation-raised);
     padding-block: var(--spacing-300);
   }
 }
 
 @media (max-width: 26rem) {
-  .smaqmd-aerb .smaqmd-aerw__col{ padding: var(--spacing-300); }
-  .smaqmd-aerb .smaqmd-card{ --_card-padding: var(--spacing-400); }
-  .smaqmd-aerb .smaqmd-wizard__head{
+  .smaqmd-aerb .smaqmd-aerw__col {
+    padding: var(--spacing-300);
+  }
+  .smaqmd-aerb .smaqmd-card {
+    --_card-padding: var(--spacing-400);
+  }
+  .smaqmd-aerb .smaqmd-wizard__head {
     margin-block-start: calc(var(--spacing-400) * -1);
     margin-inline: calc(var(--spacing-400) * -1);
     padding: var(--spacing-400);
   }
-  .smaqmd-aerb .smaqmd-wizard[data-phase='intro'] > .smaqmd-wizard__intro{
+  .smaqmd-aerb .smaqmd-wizard[data-phase="intro"] > .smaqmd-wizard__intro {
     margin: calc(var(--spacing-400) * -1);
     padding: var(--spacing-400);
   }
-  .smaqmd-aerb .smaqmd-wizard__nav{ flex-wrap: wrap; }
-  .smaqmd-aerb .smaqmd-wizard__nav [data-nav]{ flex: 1 1 auto; }
-  .smaqmd-aerb .smaqmd-wizard__nav .smaqmd-btn{ inline-size: 100%; }
+  .smaqmd-aerb .smaqmd-wizard__nav {
+    flex-wrap: wrap;
+  }
+  .smaqmd-aerb .smaqmd-wizard__nav [data-nav] {
+    flex: 1 1 auto;
+  }
+  .smaqmd-aerb .smaqmd-wizard__nav .smaqmd-btn {
+    inline-size: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
-.smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back{ animation: none; }
-  .smaqmd-aerb .smaqmd-cityview__wave,
-.smaqmd-aerb .smaqmd-cityview__room-face,
-.smaqmd-aerb .smaqmd-cityview__details,
-.smaqmd-aerb .smaqmd-cityview__chev,
-.smaqmd-aerb .smaqmd-wizard__dot,
-.smaqmd-aerb .smaqmd-radio__item input[type='radio'],
-.smaqmd-aerb .smaqmd-radio__item input[type='radio']::before,
-.smaqmd-aerb .smaqmd-btn,
-.smaqmd-aerb .smaqmd-collapsible__summary::after{ transition: none; }
+  .smaqmd-aerb
+    .smaqmd-wizard__body
+    [data-step].smaqmd-wizard__step--enter-back {
+    animation: none;
+  }
+  .smaqmd-aerb .smaqmd-cityview__rings,
+  .smaqmd-aerb .smaqmd-cityview__room-face,
+  .smaqmd-aerb .smaqmd-cityview__details,
+  .smaqmd-aerb .smaqmd-cityview__chev,
+  .smaqmd-aerb .smaqmd-wizard__dot,
+  .smaqmd-aerb .smaqmd-radio__item input[type="radio"],
+  .smaqmd-aerb .smaqmd-radio__item input[type="radio"]::before,
+  .smaqmd-aerb .smaqmd-btn,
+  .smaqmd-aerb .smaqmd-collapsible__summary::after {
+    transition: none;
+  }
 }

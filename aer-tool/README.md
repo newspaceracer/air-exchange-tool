@@ -9,15 +9,15 @@ The user provides a room size, describes their air cleaner (or confirms they hav
 
 ## What you get
 
-**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. Total weight is about 170 KB, of which 29 KB is the font.
+**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. Total weight is about 200 KB, of which 29 KB is the font.
 
 Everything is namespaced: every CSS class and `id` is prefixed `smaqmd-`, and the JavaScript defines no globals. Nothing in the folder can collide with names on an existing site.
 
 ## How it calculates
 
-**ACH = clean-air flow (ft³/min) × 60 ÷ room volume (ft³).**
+**ACH = clean-air flow (CFM, i.e. ft³/min) × 60 ÷ room volume (ft³).**
 
-One "air change" means the cleaner has filtered a full room's worth of air. The minimum combined CADR to hit a target is **CADR = target × room volume ÷ 60**. Where a cleaner is rated in ACH rather than airflow, its flow is recovered from the manufacturer's reference room: **flow = ACH × reference volume ÷ 60**. The California Air Resources Board recommends at least 2 air changes per hour, which is the tool's default target.
+One "air change" means the cleaner has filtered a full room's worth of air. Airflow is stated in **CFM** — cubic feet of air moved per minute — because that is the unit printed on the box. The minimum combined CADR to hit a target is **CADR = target × room volume ÷ 60**. Where a cleaner is rated in ACH rather than airflow, its flow is recovered from the manufacturer's reference room: **flow = ACH × reference volume ÷ 60**, and that reference room may be entered as length × width × height or as floor area + ceiling height. The California Air Resources Board recommends at least 2 air changes per hour, which is the tool's default target.
 
 ## What's in the folder
 
@@ -26,6 +26,7 @@ aer-tool/
   index.html                       the page
   styles.css                       all styling, including the flattened design tokens
   app.js                           the calculator, the wizard flow and the diagram
+  smaqmd-logo.png                  the district logo in the header (~14 KB, links to airquality.org)
   fonts/SourceSans3-Variable.woff2 the district's typeface (~29 KB)
   fonts/OFL.txt                    that font's licence
   README.md                        this file
@@ -54,14 +55,16 @@ Copy the `aer-tool/` folder onto the server. Then, in the page that will host th
    <link rel="stylesheet" href="/tools/aer-tool/styles.css" />
    ```
 
-2. **Paste the embeddable region.** In `index.html`, the block to copy is marked by comments: `<!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->` and `<!-- ===== end of the embeddable region ===== -->`. Copy everything between them: the `<main class="smaqmd-aerb">` element, including the `<template data-cleaner-template>` before its closing tag. Do not copy the `<h1 class="smaqmd-visually-hidden">` above it—that is the standalone page's own heading; your page supplies its own.
+2. **Paste the embeddable region.** In `index.html`, the block to copy is marked by comments: `<!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->` and `<!-- ===== end of the embeddable region ===== -->`. Copy everything between them: the `<main class="smaqmd-aerb">` element, including the `<template data-cleaner-template>` before its closing tag.
+
+   The visible page `<h1>` is inside that region, in the `.smaqmd-aerb__header` div at the top of `.smaqmd-aerw__col`, on one row with the district logo (which links to airquality.org). Replace the `<h1>` text with your own title, or delete the whole `.smaqmd-aerb__header` div if the host page already supplies an `<h1>` and its own branding. If you keep the header but the host page already shows the district logo, delete just the `.smaqmd-logo-link` anchor — the divider beside the title disappears with it automatically. The logo's `src` is relative (`smaqmd-logo.png`), so an embedding page served from a different directory must either keep the image next to itself or point the `src` at wherever `aer-tool/` lives (e.g. `/tools/aer-tool/smaqmd-logo.png`). (The script relocates the header div above the diagram below 68rem; deleting it is safe—the relocation is a no-op when it is absent.)
 
 3. **Add the script** at the end of `<body>`:
    ```html
    <script defer src="/tools/aer-tool/app.js"></script>
    ```
 
-4. **Include a page `<h1>`.** Every heading inside the tool starts at `<h2>`, so it nests underneath yours. A real `<h1>` keeps the heading outline correct.
+4. **Make sure the page has exactly one `<h1>`.** The tool ships one in `.smaqmd-aerb__header` (step 2); every other heading inside it starts at `<h2>`, so they nest underneath. If your page already has its own `<h1>`, delete the tool's rather than shipping two.
 
 **Styling guarantees:**
 
@@ -84,17 +87,23 @@ The safest option for dropping the tool into an existing page, since host and to
 
 Give the iframe real height: the tool is a full-page composition and a short frame will scroll internally. The `title` attribute is required; it is how screen-reader users identify the frame.
 
+## Relationship to the Astro prototype
+
+This directory is a **hand-maintained vanilla mirror** of `src/components/smaqmd-aer-wizard.astro` in the same repository — same markup, same engine, same class names, rewritten as plain HTML/CSS/ES5 with no build step. The isometric scene in particular (its SVG structure and document order, the scene functions and constants in `app.js`, and the `smaqmd-cityview__*` class and `data-*` names) must stay in lockstep with the Astro component, because the two are compared token-for-token when the scene changes.
+
+Changes land **Astro-first**: edit `smaqmd-aer-wizard.astro`, verify it in the dev server, then port the same change here. Never change the mirror alone — a divergence is a bug in both directions.
+
 ## Accessibility
 
 Built to **WCAG 2.2 Level AA**.
 
-**Structure:** `lang="en"`, a page `<title>`, a `<main>` landmark, and a heading outline with no skipped levels. Every heading inside the tool starts at `<h2>`, leaving the `<h1>` to the host page or standalone shell. Throughout the flow, exactly one section heading is visible at a time: the opening slide's title, the step title, or — on the result screen, where the step title is hidden — the verdict headline.
+**Structure:** `lang="en"`, a page `<title>`, a `<main>` landmark, and a heading outline with no skipped levels. The page `<h1>` sits in `.smaqmd-aerb__header` and is visible on every screen; every other heading starts at `<h2>` and nests beneath it. Beneath that always-visible `<h1>`, exactly one section heading is visible at a time: the opening slide's title, the step title, or — on the result screen, where the step title is replaced — the verdict headline.
 
 **Forms:** Every field has a real programmatic label; placeholders are never used as labels. Hints are wired with `aria-describedby`. Option groups use native `<fieldset>`/`<legend>` with native radios for browser-provided arrow-key selection and group naming. Numeric fields carry `inputmode="decimal"` and render at 18px, above the 16px threshold that prevents mobile Safari from zooming on input.
 
 **Keyboard navigation:** Everything is operable without a mouse, in reading order, with a visible 2px brand focus ring (drawn with `outline` to stay visible in Windows Contrast Themes). No overlays or focus traps. Moving between steps sends focus to the new heading so screen-reader users hear where they landed.
 
-**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
+**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. The two DISPLAY toggles on the result screen — the ft²/ft³ units switch and the CADR/ACH rating switch — are 36px: they only restate a number already on screen, and at 36px they clear SC 2.5.8's 24px floor with room to spare. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
 
 **Live regions and status:** One polite and one assertive live region, mounted at load, are the only live regions on the page (WCAG 4.1.3). Result summaries are announced politely after 600ms to prevent diagram dragging from creating chatter.
 
