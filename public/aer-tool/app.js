@@ -1348,10 +1348,13 @@
     show(fixWrap, on);
     show(ratingWrap, on);
   };
+  var fixStat = fixWrap ? fixWrap.querySelector('.smaqmd-stat') : null;
   var fixLabel = fixWrap ? fixWrap.querySelector('.smaqmd-stat__label') : null;
   var fixSub = fixWrap ? fixWrap.querySelector('.smaqmd-stat__sub') : null;
   var fixEquiv = fixWrap ? fixWrap.querySelector('[data-ach-equiv]') : null;
+  var fixEquivLede = fixWrap ? fixWrap.querySelector('.smaqmd-aerb__equiv-lede') : null;
   var fixEquivRows = fixWrap ? fixWrap.querySelector('[data-ach-equiv-rows]') : null;
+  var fixGapLine = fixWrap ? fixWrap.querySelector('[data-ach-gap]') : null;
   var cadrHighEl = block.querySelector('[data-cadr-high]');
   var setAnswer = function (title, verdict) {
     if (answerTitle) answerTitle.textContent = title;
@@ -1454,15 +1457,27 @@
     var renderFix = function (isGap) {
       var cadrGoal = isGap ? needCadr - flow : needCadr;
       if (asAch) {
-        setMetric('fix', (isGap ? '+' : '') + fmt(isGap ? target - ach : target, 2) + unitSpan('ACH'));
-        if (fixLabel) {
-          fixLabel.textContent = isGap ? 'ACH coverage still needed' : 'ACH coverage to shop for';
-        }
+        // FAIL+ACH: a fractional "+0.7 ACH" hero matches nothing printed on a
+        // box, so the stat hides, the equivalence list leads, and the gap
+        // demotes to a supporting line under the list.
+        show(fixStat, !isGap);
+        setMetric('fix', fmt(target, 2) + unitSpan('ACH'));
+        if (fixLabel) fixLabel.textContent = 'ACH coverage to shop for';
         if (fixSub) {
-          fixSub.textContent = isGap
-            ? 'on top of the ' + fmt(ach, 1) + ' air changes per hour your cleaners already deliver'
-            : fmt(target, 2) + ' air changes per hour in your ' + fmt(area, 0) + ' ft² room';
+          fixSub.textContent =
+            fmt(target, 2) + ' air changes per hour in your ' + fmt(area, 0) + ' ft² room';
         }
+        if (fixEquivLede) {
+          fixEquivLede.textContent = isGap
+            ? 'Your next cleaner qualifies if its listing claims any ONE of these:'
+            : 'A listing qualifies if it claims any ONE of these:';
+        }
+        if (fixGapLine) {
+          fixGapLine.textContent =
+            "That's +" + fmt(target - ach, 2) + ' air changes per hour on top of the ' +
+            fmt(ach, 1) + ' your cleaners already deliver.';
+        }
+        show(fixGapLine, isGap);
         if (fixEquivRows) {
           var levels = [1, 2, 4, 5];
           if (target > 0 && levels.indexOf(target) === -1) levels.push(target);
@@ -1478,6 +1493,7 @@
         }
         show(fixEquiv, true);
       } else {
+        show(fixStat, true);
         setMetric('fix', (isGap ? '+' : '') + fmt(cadrGoal, 0) + unitSpan('CFM (ft³/min)'));
         if (fixLabel) {
           fixLabel.textContent = isGap ? 'combined CADR still needed' : 'combined CADR to shop for';

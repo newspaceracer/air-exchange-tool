@@ -752,6 +752,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                   <p class="typography-body-md smaqmd-aerb__equiv-note">
                     Listing quotes a different ACH? Compare it against the next lower row.
                   </p>
+                  <!-- FAIL+ACH only: the gap restated in ACH terms as a supporting
+                       line. A fractional "+0.7 ACH" hero matches nothing printed on
+                       a box, so in this one state the equivalence list leads and
+                       the stat above is hidden (renderFix). -->
+                  <p class="typography-body-md smaqmd-aerb__equiv-note" data-ach-gap hidden></p>
                 </div>
               </div>
               <!-- Rating toggle, right edge of the heroes row — same row as the
@@ -3305,10 +3310,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     // The fix stat's label + sub are REWRITTEN per rating mode (see renderFix), so
     // they are grabbed once here alongside the wrapper rather than re-queried.
+    const fixStat = fixWrap?.querySelector<HTMLElement>('.esa-stat') ?? null;
     const fixLabel = fixWrap?.querySelector<HTMLElement>('.esa-stat__label') ?? null;
     const fixSub = fixWrap?.querySelector<HTMLElement>('.esa-stat__sub') ?? null;
     const fixEquiv = fixWrap?.querySelector<HTMLElement>('[data-ach-equiv]') ?? null;
+    const fixEquivLede = fixWrap?.querySelector<HTMLElement>('.smaqmd-aerb__equiv-lede') ?? null;
     const fixEquivRows = fixWrap?.querySelector<HTMLElement>('[data-ach-equiv-rows]') ?? null;
+    const fixGapLine = fixWrap?.querySelector<HTMLElement>('[data-ach-gap]') ?? null;
     const cadrHighEl = block.querySelector<HTMLElement>('[data-cadr-high]');
     const setAnswer = (title: string, verdict: 'pass' | 'fail' | 'shop' | null) => {
       if (answerTitle) answerTitle.textContent = title;
@@ -3470,11 +3478,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       const renderFix = (isGap = false) => {
         const cadrGoal = isGap ? needCadr - flow : needCadr;
         if (asAch) {
-          setMetric('fix', `${isGap ? '+' : ''}${fmt(isGap ? target - ach : target, 2)}${unit('ACH')}`);
-          if (fixLabel) fixLabel.textContent = isGap ? 'ACH coverage still needed' : 'ACH coverage to shop for';
-          if (fixSub) fixSub.textContent = isGap
-            ? `on top of the ${fmt(ach, 1)} air changes per hour your cleaners already deliver`
-            : `${fmt(target, 2)} air changes per hour in your ${fmt(area, 0)} ft² room`;
+          // FAIL+ACH: a fractional "+0.7 ACH" hero matches nothing printed on a
+          // box, so the stat hides, the equivalence list leads, and the gap
+          // demotes to a supporting line under the list.
+          show(fixStat, !isGap);
+          setMetric('fix', `${fmt(target, 2)}${unit('ACH')}`);
+          if (fixLabel) fixLabel.textContent = 'ACH coverage to shop for';
+          if (fixSub) fixSub.textContent =
+            `${fmt(target, 2)} air changes per hour in your ${fmt(area, 0)} ft² room`;
+          if (fixEquivLede) fixEquivLede.textContent = isGap
+            ? 'Your next cleaner qualifies if its listing claims any ONE of these:'
+            : 'A listing qualifies if it claims any ONE of these:';
+          if (fixGapLine) fixGapLine.textContent =
+            `That's +${fmt(target - ach, 2)} air changes per hour on top of the ` +
+            `${fmt(ach, 1)} your cleaners already deliver.`;
+          show(fixGapLine, isGap);
           // The equivalence rows: a listing pair (A ACH, S ft²) implies a CADR of
           // A × S × 8 / 60, so the pair qualifies when S ≥ cadrGoal × 7.5 / A.
           // Printed at the ACH levels listings actually quote, plus the user's own
@@ -3492,6 +3510,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           }
           show(fixEquiv, true);
         } else {
+          show(fixStat, true);
           setMetric('fix', `${isGap ? '+' : ''}${fmt(cadrGoal, 0)}${unit('CFM (ft³/min)')}`);
           if (fixLabel) fixLabel.textContent = isGap ? 'combined CADR still needed' : 'combined CADR to shop for';
           if (fixSub) fixSub.textContent = isGap
