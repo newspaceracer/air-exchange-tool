@@ -17,12 +17,6 @@
     <script defer src="app.js"></script>
   </head>
   <body class="smaqmd-aer-page">
-    <!-- The page h1 is INSIDE the region below, in .smaqmd-aerb__header: the tool
-         is a full-page composition, so a heading outside it would sit in its own
-         scroll strip. Embedding in a page that already has an h1? Replace that
-         heading's text with your own title, or delete the whole
-         .smaqmd-aerb__header div — every other heading in the tool starts at h2,
-         so it nests under whatever h1 the host supplies. -->
     <!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->
     <main class="smaqmd-aerb" data-aerb-wizard data-variant="responsive">
       <div
@@ -471,11 +465,6 @@
           </g>
         </svg>
         <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
-        <!-- Pause/play for the ring pulse (SC 2.2.2 — the pulse is auto-playing
-             and indefinite, so it gets an explicit stop). app.js swaps the label
-             and glyph together (see syncPulseToggle); the play icon starts
-             hidden and syncPulseToggle corrects it for reduced-motion users,
-             who begin paused. -->
         <button
           type="button"
           class="smaqmd-btn smaqmd-btn--chrome smaqmd-btn--icon smaqmd-cityview__pause"
@@ -521,13 +510,6 @@
       </div>
 
       <div class="smaqmd-aerw__col">
-        <!-- The page heading row. app.js relocates this whole div above the
-             graphic below 68rem (see placeHeader), so it stays first in reading
-             order at every width. The district mark links out to airquality.org
-             (the agency-mark convention) and the hairline on the h1 separates
-             institution from instrument — mirrors the responsive prototype
-             (2026-09-02), which replaced the earlier "no logo, host page owns
-             branding" stance. -->
         <div class="smaqmd-aerb__header">
           <div class="smaqmd-cluster" data-gap="md">
             <a class="smaqmd-logo-link" href="https://www.airquality.org/">
@@ -853,14 +835,6 @@
                     data-step="1"
                     hidden
                   >
-                    <!-- "Where to find an air cleaner's ratings" — FIRST in the step
-                         so the reader knows what to grab off the box before the
-                         fields ask for it. Hand-port of
-                         src/components/smaqmd-aer-find-ratings.astro, which the Astro build mounts
-                         TWICE from that one file so the two copies cannot drift. Here they are
-                         literal duplicates instead, so: KEEP IN SYNC with the copy on
-                         the RESULT step below, and with the component. No `id` anywhere inside — the same markup appears twice on this
-                         page, and a duplicated id is a defect even when only one copy is shown. -->
                     <details class="smaqmd-collapsible">
                       <summary
                         class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
@@ -898,14 +872,6 @@
                               the tool asks for both.
                             </li>
                           </ul>
-                          <!-- The label photo. `alt` says WHERE ON THE PRODUCT the rating
-                               appears and which of the three numbers to use — it IS the
-                               instruction for anyone who cannot see it, so it carries the
-                               same guidance the <figcaption> does. width/height match
-                               the file's intrinsic 1200×645 so the box reserves its
-                               space and the disclosure does not jump on decode; the
-                               same holds for every figure below. IF A PHOTO IS SWAPPED:
-                               update both, and keep the alt locating + instructing. -->
                           <figure class="smaqmd-aer-find__figure">
                             <img
                               src="aham-label.jpg"
@@ -920,11 +886,6 @@
                               asks for; use the lowest (here, Tobacco Smoke).
                             </figcaption>
                           </figure>
-                          <!-- Two more real labels, side by side where the width
-                               allows: the layout varies box to box, so a shopper
-                               sees the pattern (room size on top, three CADR
-                               numbers below) rather than one box's exact design.
-                               Same alt discipline: the alt IS the instruction. -->
                           <div class="smaqmd-aer-find__examples">
                             <figure class="smaqmd-aer-find__figure">
                               <img
@@ -1029,29 +990,12 @@
                     data-step="2"
                     hidden
                   >
-                    <!-- Quick-set scale ABOVE the field it fills: the shortcut
-                         is the offer, the field is the answer. Hand-port of the
-                         Astro build's esa-range-slider + landmark row (a native
-                         range input styled to the lego's track/thumb, so the
-                         keyboard support — Arrow/Home/End/PageUp/PageDown — is
-                         the browser's, not ours). The landmark labels are
-                         aria-hidden decoration: the target field's help text
-                         carries all three numbers to a screen reader, and the
-                         slider's aria-valuetext names one the moment the thumb
-                         lands on it. -->
                     <div class="smaqmd-aerb__target-scale">
                       <label
                         class="smaqmd-field__label smaqmd-type-label-lg"
                         for="smaqmd-f-target-slider"
                         >Target air changes per hour</label
                       >
-                      <!-- aria-valuetext carries what the aria-hidden landmark
-                           labels show sighted users: the unit, plus the meaning
-                           when the thumb lands exactly on 2, 5 or 6. app.js
-                           rewrites it on every value change (see
-                           targetValueText); this attribute is the initial
-                           value 2. The Astro build cannot do this — its lego's
-                           input is in shadow DOM (known hub gap). -->
                       <input
                         class="smaqmd-range"
                         id="smaqmd-f-target-slider"
@@ -1064,12 +1008,6 @@
                         aria-valuetext="2 air changes per hour — CARB minimum"
                         style="--_fill-percent: 14.2857%"
                       />
-                      <!-- Staggered onto two rows: "5 · box ratings" and
-                           "6 · wildfire" are 1 ACH apart — 14% of the track — so
-                           a single row would overlap them at EVERY width. Each
-                           label is paired with a notch at the SAME percent — a
-                           short one on row 1, a long one down to row 2 — so the
-                           stagger reads as designed rather than accidental. -->
                       <div
                         class="smaqmd-type-meta smaqmd-aerb__target-marks"
                         aria-hidden="true"
@@ -1230,15 +1168,8 @@
                         data-group="answer"
                         hidden
                       >
-                        <!-- Hidden holder for the verdict headline. recompute() writes it
-                             here; renderStep() mirrors it into the header band's h2, which
-                             is THE visible title on the result step. -->
                         <span data-answer-title hidden>—</span>
 
-                        <!-- Action-first: the instruction leads the body at heading-md —
-                             the same rung as the band title, never above it. No alert
-                             chrome and no "Below your target" title: the headline
-                             already delivered the diagnosis. -->
                         <div data-verdict-card="fail" hidden>
                           <div class="smaqmd-stack" data-gap="xs">
                             <p
@@ -1248,7 +1179,7 @@
                               <span data-r="unitnoun">air cleaners</span> like
                               yours
                             </p>
-                            <p class="smaqmd-type-body-sm">
+                            <p class="smaqmd-type-body-md">
                               Or swap in stronger cleaners.
                             </p>
                           </div>
@@ -1267,22 +1198,11 @@
                               >
                                 air changes per hour
                               </div>
-                              <!-- Live verdict line ("Below/Meets your N air changes per hour
-                                   target") written by recompute(). -->
                               <div class="smaqmd-stat__sub smaqmd-type-body-sm">
                                 —
                               </div>
                             </div>
                           </div>
-                          <!-- The "shop for" stat, with the rating toggle under it.
-                               The toggle sits INSIDE the [data-metric="fix"] wrapper
-                               so the existing show/hide covers both. recompute()
-                               rewrites the value, the label AND the sub for the
-                               chosen mode (renderFix), so the strings authored here
-                               are only the CADR default. Outside the cleaner
-                               template, so no uniquifyBlock concerns.
-                               KEEP IN SYNC with the esa-button-toggle in
-                               smaqmd-aer-wizard.astro. -->
                           <div
                             class="smaqmd-stack"
                             data-gap="sm"
@@ -1304,12 +1224,6 @@
                                 added up across all the air cleaners in the room
                               </div>
                             </div>
-                            <!-- ACH mode's equivalence list. A listing's
-                                 (room size × ACH) claim is the cleaner's CADR in
-                                 disguise, so the requirement is printed at the ACH
-                                 levels listings actually quote; renderFix() fills
-                                 the rows from needCadr. Hidden in CADR mode.
-                                 KEEP IN SYNC with smaqmd-aer-wizard.astro. -->
                             <div
                               class="smaqmd-stack"
                               data-gap="2xs"
@@ -1317,17 +1231,17 @@
                               hidden
                             >
                               <p
-                                class="smaqmd-type-body-sm smaqmd-aerb__equiv-lede"
+                                class="smaqmd-type-body-md smaqmd-aerb__equiv-lede"
                               >
                                 A listing qualifies if it claims any ONE of
                                 these:
                               </p>
                               <ul
-                                class="smaqmd-type-body-sm smaqmd-aerb__equiv"
+                                class="smaqmd-type-body-md smaqmd-aerb__equiv"
                                 data-ach-equiv-rows
                               ></ul>
                               <p
-                                class="smaqmd-type-body-sm smaqmd-aerb__equiv-note"
+                                class="smaqmd-type-body-md smaqmd-aerb__equiv-note"
                               >
                                 Listing quotes a different ACH? Compare it
                                 against the next lower row.
@@ -1357,17 +1271,8 @@
                           </div>
                         </div>
 
-                        <!-- Shop mode: the number IS the action, so the CADR stat leads
-                             and this explainer supports it from below — same order as
-                             the fail screen, and no alert chrome for plain copy. -->
-                        <!-- The ONE place the unit is spelled out. CFM is what the box
-                             says, so CFM is what the tool says everywhere else; this
-                             sentence is where a reader who has never met the
-                             abbreviation learns it. It also names WHICH of the three
-                             CADR numbers on a box to compare against — a real box
-                             lists tobacco smoke / dust / pollen, not one "CADR". -->
                         <div data-verdict-card="shop" hidden>
-                          <p class="smaqmd-type-body-sm smaqmd-aerb__footnote">
+                          <p class="smaqmd-type-body-md smaqmd-aerb__footnote">
                             CADR (Clean Air Delivery Rate) is the airflow rating
                             printed on the air cleaner's box, measured in CFM —
                             cubic feet of air moved per minute (ft³/min). Boxes
@@ -1378,10 +1283,8 @@
                           </p>
                         </div>
 
-                        <!-- Evidence, below the action: the delivered rate vs the target.
-                             Fail only — on a pass the ACH hero carries the same numbers. -->
                         <p
-                          class="smaqmd-type-body-sm smaqmd-aerb__footnote"
+                          class="smaqmd-type-body-md smaqmd-aerb__footnote"
                           data-ach-evidence
                           hidden
                         >
@@ -1391,23 +1294,51 @@
                           <strong data-r="target">2</strong>.
                         </p>
 
-                        <p
-                          class="smaqmd-type-body-sm smaqmd-aerb__caution"
-                          data-cadr-high
-                          hidden
-                        >
-                          That's more than most air cleaners deliver (they top
-                          out around
-                          <strong>700 CFM</strong>), so you'll likely need more
-                          than one.
-                        </p>
+                        <div data-cadr-high hidden data-alert>
+                          <div
+                            class="smaqmd-alert smaqmd-alert--warning smaqmd-type-body-sm"
+                          >
+                            <div class="smaqmd-alert__icon">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+                                ></path>
+                                <path d="M12 9v4"></path>
+                                <path d="M12 17h.01"></path>
+                              </svg>
+                            </div>
+                            <div class="smaqmd-alert__body">
+                              <strong
+                                class="smaqmd-alert__title smaqmd-type-label-sm-strong"
+                                >More than one air cleaner needed</strong
+                              >
+                              <div class="smaqmd-alert__message">
+                                Most air cleaners top out around
+                                <strong>700 CFM</strong>, so a single unit can't
+                                reach this rating. Combine two or more — their
+                                CADR ratings add together.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
                         <div
                           class="smaqmd-aerb__context"
                           data-group="secondary"
                           hidden
                         >
-                          <p class="smaqmd-type-body-sm">
+                          <p class="smaqmd-type-body-md">
                             <span data-r="coversubj">Your cleaner covers</span>
                             a room up to <strong data-r="coverarea">—</strong>,
                             while your room is about
@@ -1434,16 +1365,11 @@
                               <span class="smaqmd-toggle__label">ft³</span>
                             </label>
                           </fieldset>
-                          <!-- Why the coverage above can disagree with the box: AHAM's
-                               printed "suggested closed room size" is smoke CADR × 1.55,
-                               which at an 8 ft ceiling works out to ≈ 4.8 air changes per
-                               hour — hence "about 5". Our number is sized to the user's
-                               OWN target, so at 2 or 6 the two legitimately differ.
-                               Static: it is true at every target. -->
-                          <p class="smaqmd-type-body-sm">
-                            The room size printed on a box's AHAM label assumes a
-                            target of about 5 air changes per hour, so it may not
-                            match this estimate at other targets.
+                          <p class="smaqmd-type-body-md">
+                            Box says something different? Air cleaner packaging
+                            lists a room size based on about 5 air changes per
+                            hour, so it won't match the coverage shown here
+                            unless that's your target too.
                           </p>
                         </div>
                       </div>
@@ -1480,12 +1406,6 @@
                       </div>
                     </div>
 
-                    <!-- "Where to find an air cleaner's ratings" — hand-port of
-                         src/components/smaqmd-aer-find-ratings.astro, which the Astro build mounts
-                         TWICE from that one file so the two copies cannot drift. Here they are
-                         literal duplicates instead, so: KEEP IN SYNC with the copy on
-                         the CLEANERS step above, and with the component. No `id` anywhere inside — the same markup appears twice on this
-                         page, and a duplicated id is a defect even when only one copy is shown. -->
                     <details class="smaqmd-collapsible">
                       <summary
                         class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
@@ -1523,14 +1443,6 @@
                               the tool asks for both.
                             </li>
                           </ul>
-                          <!-- The label photo. `alt` says WHERE ON THE PRODUCT the rating
-                               appears and which of the three numbers to use — it IS the
-                               instruction for anyone who cannot see it, so it carries the
-                               same guidance the <figcaption> does. width/height match
-                               the file's intrinsic 1200×645 so the box reserves its
-                               space and the disclosure does not jump on decode; the
-                               same holds for every figure below. IF A PHOTO IS SWAPPED:
-                               update both, and keep the alt locating + instructing. -->
                           <figure class="smaqmd-aer-find__figure">
                             <img
                               src="aham-label.jpg"
@@ -1545,11 +1457,6 @@
                               asks for; use the lowest (here, Tobacco Smoke).
                             </figcaption>
                           </figure>
-                          <!-- Two more real labels, side by side where the width
-                               allows: the layout varies box to box, so a shopper
-                               sees the pattern (room size on top, three CADR
-                               numbers below) rather than one box's exact design.
-                               Same alt discipline: the alt IS the instruction. -->
                           <div class="smaqmd-aer-find__examples">
                             <figure class="smaqmd-aer-find__figure">
                               <img
@@ -1582,10 +1489,6 @@
                       </div>
                     </details>
 
-                    <!-- Usage tips — closed by default so the verdict above stays the
-                         point; outside [data-result] to keep the engine-shared subtree
-                         aligned with the Astro source. Hand-port of the hub's
-                         esa-collapsible lego (native details/summary — no JS). -->
                     <details class="smaqmd-collapsible">
                       <summary
                         class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
@@ -1595,7 +1498,7 @@
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
-                        <ul class="smaqmd-type-body-sm smaqmd-aerb__tips">
+                        <ul class="smaqmd-type-body-md smaqmd-aerb__tips">
                           <li>
                             Remove all plastic wrapping from the filter before
                             installing it.
@@ -1808,17 +1711,9 @@
                 />
               </div>
             </div>
-            <p class="smaqmd-type-body-sm smaqmd-aerb__cleaner-note">
+            <p class="smaqmd-type-body-md smaqmd-aerb__cleaner-note">
               In what size room was that measured?
             </p>
-            <!-- The reference room is entered the same two ways the user's OWN room
-                 is (step 0): dimensions, or floor area + height. The wrappers here
-                 are [data-ref] to the room step's [data-room] and syncVisibility
-                 toggles them with the same rule, but PER BLOCK so two cleaners can
-                 be entered two different ways. Visually-hidden legend: the "In what
-                 size room…" prompt above already names the group on screen.
-                 Every id + label[for] + radio name inside the template is suffixed
-                 per clone by uniquifyBlock in app.js — do not hand-uniquify. -->
             <fieldset class="smaqmd-radio" data-field="refMethod" data-cleaner>
               <legend class="smaqmd-visually-hidden">
                 Choose how to enter that room's size

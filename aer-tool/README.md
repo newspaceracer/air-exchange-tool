@@ -9,7 +9,7 @@ The user provides a room size, describes their air cleaner (or confirms they hav
 
 ## What you get
 
-**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. Total weight is about 200 KB, of which 29 KB is the font.
+**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. Total weight is about 500 KB, of which roughly half is the three AHAM label photographs and 29 KB the font.
 
 Everything is namespaced: every CSS class and `id` is prefixed `smaqmd-`, and the JavaScript defines no globals. Nothing in the folder can collide with names on an existing site.
 
@@ -27,12 +27,15 @@ aer-tool/
   styles.css                       all styling, including the flattened design tokens
   app.js                           the calculator, the wizard flow and the diagram
   smaqmd-logo.png                  the district logo in the header (~14 KB, links to airquality.org)
+  aham-label.jpg                   AHAM Verifide label photo in the "where to find ratings" help (~73 KB)
+  aham-label-100sqft.jpg           second example label, a smaller unit's box (~86 KB)
+  aham-label-246sqft.jpg           third example label, with the 4.8 ACH fine print (~80 KB)
   fonts/SourceSans3-Variable.woff2 the district's typeface (~29 KB)
   fonts/OFL.txt                    that font's licence
   README.md                        this file
 ```
 
-## Integrating it
+## Integrating it to an existing site
 
 Choose one of three options based on your needs:
 
@@ -51,15 +54,17 @@ Nothing to configure. Every path inside the folder is relative, so it works at a
 Copy the `aer-tool/` folder onto the server. Then, in the page that will host the tool:
 
 1. **Add the stylesheet** to the page `<head>`:
+
    ```html
    <link rel="stylesheet" href="/tools/aer-tool/styles.css" />
    ```
 
 2. **Paste the embeddable region.** In `index.html`, the block to copy is marked by comments: `<!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->` and `<!-- ===== end of the embeddable region ===== -->`. Copy everything between them: the `<main class="smaqmd-aerb">` element, including the `<template data-cleaner-template>` before its closing tag.
 
-   The visible page `<h1>` is inside that region, in the `.smaqmd-aerb__header` div at the top of `.smaqmd-aerw__col`, on one row with the district logo (which links to airquality.org). Replace the `<h1>` text with your own title, or delete the whole `.smaqmd-aerb__header` div if the host page already supplies an `<h1>` and its own branding. If you keep the header but the host page already shows the district logo, delete just the `.smaqmd-logo-link` anchor — the divider beside the title disappears with it automatically. The logo's `src` is relative (`smaqmd-logo.png`), so an embedding page served from a different directory must either keep the image next to itself or point the `src` at wherever `aer-tool/` lives (e.g. `/tools/aer-tool/smaqmd-logo.png`). (The script relocates the header div above the diagram below 68rem; deleting it is safe—the relocation is a no-op when it is absent.)
+   The visible page `<h1>` is inside that region, in the `.smaqmd-aerb__header` div at the top of `.smaqmd-aerw__col`, on one row with the district logo (which links to airquality.org). Replace the `<h1>` text with your own title, or delete the whole `.smaqmd-aerb__header` div if the host page already supplies an `<h1>` and its own branding. If you keep the header but the host page already shows the district logo, delete just the `.smaqmd-logo-link` anchor — the divider beside the title disappears with it automatically. The logo's `src` is relative (`smaqmd-logo.png`), and so are the three AHAM label photos inside the "Where to find an air cleaner's ratings" sections (`aham-label*.jpg`) — an embedding page served from a different directory must either keep those images next to itself or point each `src` at wherever `aer-tool/` lives (e.g. `/tools/aer-tool/smaqmd-logo.png`). (The script relocates the header div above the diagram below 68rem; deleting it is safe—the relocation is a no-op when it is absent.)
 
 3. **Add the script** at the end of `<body>`:
+
    ```html
    <script defer src="/tools/aer-tool/app.js"></script>
    ```
@@ -87,12 +92,6 @@ The safest option for dropping the tool into an existing page, since host and to
 
 Give the iframe real height: the tool is a full-page composition and a short frame will scroll internally. The `title` attribute is required; it is how screen-reader users identify the frame.
 
-## Relationship to the Astro prototype
-
-This directory is a **hand-maintained vanilla mirror** of `src/components/smaqmd-aer-wizard.astro` in the same repository — same markup, same engine, same class names, rewritten as plain HTML/CSS/ES5 with no build step. The isometric scene in particular (its SVG structure and document order, the scene functions and constants in `app.js`, and the `smaqmd-cityview__*` class and `data-*` names) must stay in lockstep with the Astro component, because the two are compared token-for-token when the scene changes.
-
-Changes land **Astro-first**: edit `smaqmd-aer-wizard.astro`, verify it in the dev server, then port the same change here. Never change the mirror alone — a divergence is a bug in both directions.
-
 ## Accessibility
 
 Built to **WCAG 2.2 Level AA**.
@@ -109,9 +108,9 @@ Built to **WCAG 2.2 Level AA**.
 
 **Diagram:** Carries `role="img"` and a sentence-long `aria-label`; every number it shows also appears as text in the result.
 
-**Colour:** Every foreground/background pair meets AA, including the two pairs that required a darker palette step: orange warning text and dark text on solid orange fill. No state is conveyed by colour alone—each verdict carries an icon shape and a sentence.
+**Color:** Every foreground/background pair meets AA, including the two pairs that required a darker palette step: orange warning text and dark text on solid orange fill. No state is conveyed by colour alone—each verdict carries an icon shape and a sentence.
 
-**Motion:** `prefers-reduced-motion: reduce` stops the step slide, flow animation, and transitions; all state changes still happen.
+**Motion:** `prefers-reduced-motion: reduce` stops the step slide, flow animation, and transitions; all state changes still happen. The diagram's ring pulse — the one animation that would otherwise run indefinitely — has an explicit pause/play button in the scene's lower-right corner (WCAG 2.2.2); it starts paused for reduced-motion users, who can opt back in.
 
 **Zoom:** No `maximum-scale` or `user-scalable=no`. Reflows to 320px with no horizontal scrolling and survives 400% zoom.
 
@@ -140,5 +139,4 @@ To serve the font from Google's CDN instead of hosting it locally, delete `fonts
 
 ## Customizing the look
 
-Every colour, space, radius, and type size is a custom property declared in one block at the top of `styles.css`, on the `.smaqmd-aerb` region root, under consistent, descriptive names. To re-skin the tool, edit that block and nothing else—every rule below it reads through those names. They are declared on the region rather than on `:root` deliberately, to keep them out of the host page and to prevent host `--color-*` or `--spacing-*` variables from reaching in and changing the tool.
-
+Every color, space, radius, and type size is a custom property declared in one block at the top of `styles.css`, on the `.smaqmd-aerb` region root, under consistent, descriptive names. To re-skin the tool, edit that block and nothing else—every rule below it reads through those names. They are declared on the region rather than on `:root` deliberately, to keep them out of the host page and to prevent host `--color-*` or `--spacing-*` variables from reaching in and changing the tool.
