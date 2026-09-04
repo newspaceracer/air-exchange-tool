@@ -837,7 +837,7 @@
                   >
                     <details class="smaqmd-collapsible">
                       <summary
-                        class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
+                        class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
                           >Where to find an air cleaner's ratings</span
@@ -1246,7 +1246,18 @@
                                 Listing quotes a different ACH? Compare it
                                 against the next lower row.
                               </p>
+                              <p
+                                class="smaqmd-type-body-md smaqmd-aerb__equiv-note"
+                                data-ach-gap
+                                hidden
+                              ></p>
                             </div>
+                          </div>
+                          <div
+                            class="smaqmd-aerb__rating-row"
+                            data-rating-wrap
+                            hidden
+                          >
                             <fieldset
                               class="smaqmd-toggle smaqmd-aerb__rating"
                               data-field="rating"
@@ -1270,29 +1281,6 @@
                             </fieldset>
                           </div>
                         </div>
-
-                        <div data-verdict-card="shop" hidden>
-                          <p class="smaqmd-type-body-md smaqmd-aerb__footnote">
-                            CADR (Clean Air Delivery Rate) is the airflow rating
-                            printed on the air cleaner's box, measured in CFM —
-                            cubic feet of air moved per minute (ft³/min). Boxes
-                            usually list three CADR numbers — tobacco smoke,
-                            dust, and pollen. Compare against the Tobacco Smoke
-                            number (usually the lowest): match or beat it to
-                            reach your target.
-                          </p>
-                        </div>
-
-                        <p
-                          class="smaqmd-type-body-md smaqmd-aerb__footnote"
-                          data-ach-evidence
-                          hidden
-                        >
-                          Your setup delivers
-                          <strong data-r="ach">—</strong> air changes per hour,
-                          against your target of
-                          <strong data-r="target">2</strong>.
-                        </p>
 
                         <div data-cadr-high hidden data-alert>
                           <div
@@ -1333,6 +1321,29 @@
                           </div>
                         </div>
 
+                        <div data-verdict-card="shop" hidden>
+                          <p class="smaqmd-type-body-md smaqmd-aerb__footnote">
+                            CADR (Clean Air Delivery Rate) is the airflow rating
+                            printed on the air cleaner's box, measured in CFM —
+                            cubic feet of air moved per minute (ft³/min). Boxes
+                            usually list three CADR numbers — tobacco smoke,
+                            dust, and pollen. Compare against the Tobacco Smoke
+                            number (usually the lowest): match or beat it to
+                            reach your target.
+                          </p>
+                        </div>
+
+                        <p
+                          class="smaqmd-type-body-md smaqmd-aerb__footnote"
+                          data-ach-evidence
+                          hidden
+                        >
+                          Your setup delivers
+                          <strong data-r="ach">—</strong> air changes per hour,
+                          against your target of
+                          <strong data-r="target">2</strong>.
+                        </p>
+
                         <div
                           class="smaqmd-aerb__context"
                           data-group="secondary"
@@ -1344,27 +1355,6 @@
                             while your room is about
                             <strong data-r="roomarea">—</strong>.
                           </p>
-                          <fieldset
-                            class="smaqmd-toggle smaqmd-aerb__units"
-                            data-field="units"
-                          >
-                            <legend class="smaqmd-visually-hidden">
-                              Units
-                            </legend>
-                            <label class="smaqmd-toggle__item">
-                              <input
-                                type="radio"
-                                name="units"
-                                value="ft2"
-                                checked
-                              />
-                              <span class="smaqmd-toggle__label">ft²</span>
-                            </label>
-                            <label class="smaqmd-toggle__item">
-                              <input type="radio" name="units" value="ft3" />
-                              <span class="smaqmd-toggle__label">ft³</span>
-                            </label>
-                          </fieldset>
                           <p class="smaqmd-type-body-md">
                             Box says something different? Air cleaner packaging
                             lists a room size based on about 5 air changes per
@@ -1408,7 +1398,7 @@
 
                     <details class="smaqmd-collapsible">
                       <summary
-                        class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
+                        class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
                           >Where to find an air cleaner's ratings</span
@@ -1491,7 +1481,7 @@
 
                     <details class="smaqmd-collapsible">
                       <summary
-                        class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
+                        class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
                           >Getting the most from your air cleaner</span
