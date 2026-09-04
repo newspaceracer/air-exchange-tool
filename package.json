@@ -6,9 +6,10 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "check": "node scripts/check-consistency.mjs",
+    "build": "npm run check && astro build",
     "preview": "astro preview",
-    "deploy": "astro build && gh-pages -d dist --dotfiles",
+    "deploy": "npm run build && gh-pages -d dist --dotfiles",
     "doctor": "node ../ecology/scripts/doctor.mjs"
   },
   "dependencies": {

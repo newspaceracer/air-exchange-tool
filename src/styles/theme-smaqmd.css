@@ -271,6 +271,8 @@
      public build's values makes both builds render the same at every width.
      KEEP IN SYNC with public/aer-tool/styles.css .smaqmd-type-* sizes.
      Remove if/when the hub raises the ramp's minima (candidate /request-lego). */
+  --typography-display-font-size:         2.75rem;   /* 44px */
+  --typography-display-sm-font-size:      2.25rem;   /* 36px — result hero number */
   --typography-heading-lg-font-size:      1.875rem;  /* 30px */
   --typography-heading-md-font-size:      1.5rem;    /* 24px */
   --typography-title-font-size:           1.25rem;   /* 20px */
@@ -285,7 +287,45 @@
   --typography-label-md-font-size:        0.9375rem; /* 15px */
   --typography-label-sm-font-size:        0.875rem;
   --typography-label-xs-font-size:        0.8125rem;
+  /* …and the -strong weights of the same rungs: separate tokens in the ramp, so
+     pinning the base rung alone leaves its bold twin fluid (that gap shipped a
+     ~12px collapsible summary on phones). */
+  --typography-label-md-strong-font-size:  0.9375rem;
+  --typography-label-sm-strong-font-size:  0.875rem;
+  --typography-label-xs-strong-font-size:  0.8125rem;
+  --typography-label-2xs-strong-font-size: 0.8125rem;
   --typography-meta-font-size:            0.8125rem; /* 13px, was 10-12px fluid */
+  /* The remaining fluid rungs, pinned to their ramp MAXIMA (the desktop size —
+     which is also what the public build's fixed scale corresponds to). Microcopy
+     is what the form legos read for control text; code/eyebrow/2xs are pinned
+     for completeness so NO rung in this spoke scales with the viewport. */
+  --typography-microcopy-lg-font-size:         1.125rem;
+  --typography-microcopy-lg-strong-font-size:  1.125rem;
+  --typography-microcopy-md-font-size:         0.9375rem;
+  --typography-microcopy-md-strong-font-size:  0.9375rem;
+  --typography-microcopy-sm-font-size:         0.875rem;
+  --typography-microcopy-sm-strong-font-size:  0.875rem;
+  --typography-microcopy-xs-font-size:         0.75rem;
+  --typography-microcopy-xs-strong-font-size:  0.75rem;
+  --typography-microcopy-2xs-font-size:        0.625rem;
+  --typography-microcopy-2xs-strong-font-size: 0.625rem;
+  --typography-microcopy-code-lg-font-size:    1.125rem;
+  --typography-microcopy-code-md-font-size:    0.9375rem;
+  --typography-microcopy-code-sm-font-size:    0.875rem;
+  --typography-code-lg-font-size:              1.125rem;
+  --typography-code-md-font-size:              0.9375rem;
+  --typography-code-sm-font-size:              0.875rem;
+  --typography-code-xs-font-size:              0.75rem;
+  --typography-code-2xs-font-size:             0.625rem;
+  --typography-eyebrow-md-font-size:           0.75rem;
+  --typography-eyebrow-sm-font-size:           0.625rem;
+  --typography-body-2xs-font-size:             0.625rem;
+  --typography-label-2xs-font-size:            0.625rem;
+  /* COMPONENT-token tier (tier 3) sizes that read fluid primitives directly —
+     these bypass the composite pins above entirely, so they get their own.
+     (esa-stat's value token, and the AG-grid row size.) */
+  --stat-value-size:                           2.25rem;
+  --grid-row-font-size:                        0.875rem;
 
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */

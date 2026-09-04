@@ -854,10 +854,25 @@
 .smaqmd-aerb .smaqmd-aerb__heroes {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--spacing-400) var(--spacing-600);
+}
+/* The fix stat claims the row's slack (grow, shrink to a 16rem floor) so the
+   rating toggle keeps the TOP-right corner beside it even when ACH mode makes
+   the stat tall — its long text wraps instead of pushing the toggle to a new
+   row. Below 16rem + toggle the row wraps and the toggle drops under. */
+.smaqmd-aerb .smaqmd-aerb__heroes > [data-metric="fix"] {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
 }
 .smaqmd-aerb .smaqmd-aerb__rating {
   align-self: flex-start;
+}
+/* CADR/ACH toggle, right edge of the heroes row: auto margin pushes it to the
+   inline end of the same row as the stat it controls — no dedicated row, no
+   dead space. */
+.smaqmd-aerb .smaqmd-aerb__rating-row {
+  margin-inline-start: auto;
 }
 .smaqmd-aerb .smaqmd-aerb__target-scale {
   position: relative;

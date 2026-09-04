@@ -1341,6 +1341,13 @@
   var achWrap = block.querySelector('[data-metric="ach"]');
   var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
+  // The rating toggle lives top-right of the answer block, outside fixWrap —
+  // showFix() flips both together so the toggle never orphans its stat.
+  var ratingWrap = block.querySelector('[data-rating-wrap]');
+  var showFix = function (on) {
+    show(fixWrap, on);
+    show(ratingWrap, on);
+  };
   var fixLabel = fixWrap ? fixWrap.querySelector('.smaqmd-stat__label') : null;
   var fixSub = fixWrap ? fixWrap.querySelector('.smaqmd-stat__sub') : null;
   var fixEquiv = fixWrap ? fixWrap.querySelector('[data-ach-equiv]') : null;
@@ -1439,14 +1446,22 @@
     syncLaneIdle();
 
     var needCadr = (target * vol) / 60;
-    var renderFix = function () {
+    // FAIL shops for the GAP, not the room's total: the cleaners already in the
+    // room supply the rest, and stating the total would make the user do the
+    // subtraction themselves. gapCadr = needCadr - flow = (target - ach) * vol
+    // / 60, so the ACH framing and the equivalence rows stay consistent when
+    // they price the gap instead.
+    var renderFix = function (isGap) {
+      var cadrGoal = isGap ? needCadr - flow : needCadr;
       if (asAch) {
-        setMetric('fix', fmt(target, 2) + unitSpan('ACH'));
-        if (fixLabel) fixLabel.textContent = 'ACH coverage to shop for';
+        setMetric('fix', (isGap ? '+' : '') + fmt(isGap ? target - ach : target, 2) + unitSpan('ACH'));
+        if (fixLabel) {
+          fixLabel.textContent = isGap ? 'ACH coverage still needed' : 'ACH coverage to shop for';
+        }
         if (fixSub) {
-          fixSub.textContent =
-            fmt(target, 2) + ' air changes per hour in your ' +
-            fmt(area, 0) + ' ft² room';
+          fixSub.textContent = isGap
+            ? 'on top of the ' + fmt(ach, 1) + ' air changes per hour your cleaners already deliver'
+            : fmt(target, 2) + ' air changes per hour in your ' + fmt(area, 0) + ' ft² room';
         }
         if (fixEquivRows) {
           var levels = [1, 2, 4, 5];
@@ -1457,15 +1472,21 @@
             var row = document.createElement('li');
             row.textContent =
               fmt(levels[li], 2) + ' ACH — covers ' +
-              fmt(Math.ceil((needCadr * 7.5) / levels[li]), 0) + ' ft² or more';
+              fmt(Math.ceil((cadrGoal * 7.5) / levels[li]), 0) + ' ft² or more';
             fixEquivRows.appendChild(row);
           }
         }
         show(fixEquiv, true);
       } else {
-        setMetric('fix', fmt(needCadr, 0) + unitSpan('CFM (ft³/min)'));
-        if (fixLabel) fixLabel.textContent = 'combined CADR to shop for';
-        if (fixSub) fixSub.textContent = 'added up across all the air cleaners in the room';
+        setMetric('fix', (isGap ? '+' : '') + fmt(cadrGoal, 0) + unitSpan('CFM (ft³/min)'));
+        if (fixLabel) {
+          fixLabel.textContent = isGap ? 'combined CADR still needed' : 'combined CADR to shop for';
+        }
+        if (fixSub) {
+          fixSub.textContent = isGap
+            ? 'your cleaners deliver ' + fmt(flow, 0) + ' CFM of the ' + fmt(needCadr, 0) + ' CFM this room needs'
+            : 'added up across all the air cleaners in the room';
+        }
         show(fixEquiv, false);
       }
     };
@@ -1476,7 +1497,7 @@
     if (targetIsInvalid) {
       show(achWrap, false);
       show(achEvidence, false);
-      show(fixWrap, false);
+      showFix(false);
       setAnswer('', null);
       setVerdictCard(null);
       showGroup('secondary', false);
@@ -1494,8 +1515,8 @@
         achSub.textContent =
           (pass ? 'Meets' : 'Below') + ' your ' + fmt(target, 2) + ' air changes per hour target';
       }
-      renderFix();
-      show(fixWrap, !pass);
+      renderFix(!pass);
+      showFix(!pass);
       if (!pass) {
         var neededFlow = (target * vol) / 60;
         var flows = blocks
@@ -1510,7 +1531,11 @@
         setReadout('moreunits', fmt(moreUnits, 0));
         setReadout('unitnoun', moreUnits === 1 ? 'air cleaner' : 'air cleaners');
       }
-      show(cadrHighEl, false);
+      // On a fail the caution keys off the GAP the add-on cleaners must supply:
+      // below 700 CFM one added unit can still close it (and "Add N more"
+      // carries the multi-unit case), but past 700 no single add-on exists —
+      // and the "swap in stronger cleaners" line would otherwise be a dead end.
+      show(cadrHighEl, !pass && needCadr - flow > 700);
       var subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
       var subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
       setAnswer(
@@ -1530,7 +1555,7 @@
       show(achWrap, false);
       show(achEvidence, false);
       renderFix();
-      show(fixWrap, true);
+      showFix(true);
       show(cadrHighEl, needCadr > 700);
       setAnswer('Shop for this rating', 'shop');
       setVerdictCard('shop');
@@ -1561,7 +1586,7 @@
     } else {
       show(achWrap, false);
       show(achEvidence, false);
-      show(fixWrap, false);
+      showFix(false);
       setAnswer('', null);
       setVerdictCard(null);
       stateNow = 'idle';
