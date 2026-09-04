@@ -93,6 +93,25 @@ const ratingToggle = [
   { label: 'CADR', value: 'cadr' },
   { label: 'ACH', value: 'ach' },
 ];
+// The target quick-set scale. 1–8 ACH in half steps covers every target this
+// tool can sensibly recommend: below 1 is not a goal at all (the field's own
+// error says so), above 8 is past any published guidance. The field stays the
+// single source of truth — the slider only writes into it, and recompute()
+// drives the thumb back from whatever the field ends up holding, so a typed 3
+// parks the thumb at 3 rather than the slider claiming a number of its own.
+const TARGET_MIN = 1;
+const TARGET_MAX = 8;
+// The three numbers this tool actually cites (CARB's floor, what box ratings
+// assume, the wildfire-smoke band's top), labelled on the track below the
+// slider. `at` is the ACH value; the CSS turns it into a track percentage.
+// These labels are decoration for sighted scanning ONLY (aria-hidden): the
+// slider's own label and the target field's help text already carry all three
+// numbers to a screen reader, and a second static copy would just be noise.
+const targetLandmarks = [
+  { at: 2, label: '2 · CARB min' },
+  { at: 5, label: '5 · box ratings' },
+  { at: 6, label: '6 · wildfire' },
+];
 
 // THREE VARIANTS, two independent decisions. Same markup, same steps, same calc
 // engine below in every one — so no view can drift from the wizard's maths.
@@ -369,10 +388,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
          cutaway may live, clear of the panel + header; JS observes this rect
          and feeds it to the fit math. -->
     <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
-    <p class="typography-meta smaqmd-cityview__cap">
-      Representative illustration only — not a guide to where an air cleaner
-      should be placed in your room.
-    </p>
   </div>
   )}
 
@@ -540,6 +555,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                pre-stamped blank block, which read as "fill this in" to people who
                had nothing to enter. -->
           <section class="stack" data-gap="md" data-step="1" hidden>
+            <!-- "Where to find an air cleaner's ratings" — FIRST in the step, so
+                 the reader knows what to grab off the box before the fields ask
+                 for it, and OUTSIDE [data-cleaner-entry] so it stays available to
+                 the shopper who answered "No" as well. Closed by default: it is
+                 help, not instruction. The SAME component is mounted again on the
+                 result step. -->
+            <SmaqmdAerFindRatings />
             <esa-radio-group size={ctl}
               data-field="hasCleaner"
               label="Do you have an air cleaner to check?"
@@ -559,23 +581,78 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                 <p class="typography-meta" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
               </div>
             </div>
-            <!-- "Where can I find this information?" — OUTSIDE [data-cleaner-entry]
-                 so it stays available to the shopper who answered "No" as well;
-                 last in the step because it answers a question the fields above
-                 raise. Closed by default: it is help, not instruction.
-                 The SAME component is mounted again on the result step. -->
-            <SmaqmdAerFindRatings />
           </section>
 
           <!-- Step 2 — target -->
           <section class="stack" data-gap="md" data-step="2" hidden>
+            <!-- Quick-set scale ABOVE the field it fills: the shortcut is the
+                 offer, the field is the answer. size={ctl} like every other
+                 control in the step — the old three-button preset row had to drop
+                 a rung because its labels overran the column, which a slider
+                 cannot do, and a thumb is a drag target that wants to be BIGGER
+                 on touch, not smaller (SC 2.5.8: lg is 24px outright; md clears
+                 the bar on the spacing exception, nothing else is within 24px).
+                 show-value is off — the field below IS the readout, and two live
+                 numbers a row apart would just disagree while you drag.
+                 bcn-lego-checked: esa-range-slider IS the slider and is used
+                 unmodified — but it has no marks/ticks prop, so the labelled
+                 landmark row is composed AROUND it here rather than by editing
+                 the hub lego; checked Beacon (no marked-slider component);
+                 .smaqmd-aerb__target-scale is the reusable home for that. -->
+            <div class="smaqmd-aerb__target-scale">
+              <!-- KNOWN HUB GAP (esa-range-slider): the lego exposes no marks/
+                   ticks API, and no hook onto its inner <input> — that input
+                   lives in shadow DOM, so aria-valuetext cannot be set on it
+                   from here. The screen-reader experience of THIS slider is
+                   therefore the bare number ("3.5"), while the hand-ported twin
+                   in public/aer-tool announces "3.5 air changes per hour" and
+                   names the landmark when it lands on one. Not an oversight:
+                   closing it means a marks + valuetext API on the hub lego
+                   (/request-lego), not reaching into its shadow root. -->
+              <esa-range-slider
+                data-field="targetSlider"
+                size={ctl}
+                label="Target air changes per hour"
+                min={TARGET_MIN}
+                max={TARGET_MAX}
+                step="0.5"
+                value="2"
+                show-value="false"
+              ></esa-range-slider>
+              <!-- Landmarks, staggered onto two rows. "5 · box ratings" and
+                   "6 · wildfire" are only 1 ACH apart — 14% of the track, ~60px
+                   even on a wide desktop column — so a single row would overlap
+                   them at EVERY width, not just narrow ones. Alternating rows
+                   (2 and 6 up, 5 down) leaves the two on each row 57% of the
+                   track apart, which clears at 320px without a media query.
+                   Each label is paired with a notch drawn at the SAME percent:
+                   the notch is what makes the stagger read as designed rather
+                   than accidental — it draws the eye from the track down to
+                   whichever row the label sits on. -->
+              <div class="typography-meta smaqmd-aerb__target-marks" aria-hidden="true" style={`--_thumb: ${hasIntro ? '24px' : '20px'}`}>
+                {targetLandmarks.map((m, i) => {
+                  const at = ((m.at - TARGET_MIN) / (TARGET_MAX - TARGET_MIN)) * 100;
+                  const row = i % 2 === 1 ? '2' : '1';
+                  return (
+                    <Fragment>
+                      <span class="smaqmd-aerb__target-tick" data-row={row} style={`--_at: ${at}`}></span>
+                      <span
+                        class="smaqmd-aerb__target-mark"
+                        data-row={row}
+                        style={`--_at: ${at}`}
+                      >{m.label}</span>
+                    </Fragment>
+                  );
+                })}
+              </div>
+            </div>
             <esa-text-field size={ctl}
               data-field="target"
               type="text"
               inputmode="decimal"
-              label="Target air changes per hour"
+              label="Or type an exact target"
               value="2"
-              help-text="One air change means the cleaner has filtered a full room's worth of air. The California Air Resources Board (CARB) recommends at least 2 per hour. During wildfire smoke events, aim for 4–6. This target applies to the whole room — all cleaners together."
+              help-text="One air change means the cleaner has filtered a full room's worth of air. CARB recommends at least 2 per hour; most air-cleaner box ratings assume about 5; during wildfire smoke aim for 4–6."
             ></esa-text-field>
             <!-- Shown by recompute() only when the entered target drops below the
                  CARB-recommended 2, so a low target is an explicit choice. -->
@@ -683,11 +760,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <!-- The place the unit is spelled out IN WORDS. CFM leads everywhere
                    (it's what the box says) with ft³/min as the parenthetical
                    secondary on labels and values; this sentence is where a reader
-                   who has never met either abbreviation learns them. -->
+                   who has never met either abbreviation learns them. It also names
+                   WHICH of the three CADR numbers on a box to compare against —
+                   a real box lists tobacco smoke / dust / pollen, not one "CADR". -->
               <p class="typography-body-sm smaqmd-aerb__footnote">
                 CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
                 cleaner's box, measured in CFM — cubic feet of air moved per minute
-                (ft³/min). Match or beat this number to reach your target.
+                (ft³/min). Boxes usually list three CADR numbers — tobacco smoke, dust,
+                and pollen. Compare against the Tobacco Smoke number (usually the
+                lowest): match or beat it to reach your target.
               </p>
             </div>
             <!-- Evidence, below the action: the delivered rate vs the target. Fail
@@ -720,6 +801,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                 value="ft2"
                 options={JSON.stringify(unitToggle)}
               ></esa-button-toggle>
+              <!-- Why the coverage above can disagree with the box: AHAM's printed
+                   "suggested closed room size" is smoke CADR × 1.55, which at an 8 ft
+                   ceiling works out to ≈ 4.8 air changes per hour — hence "about 5".
+                   Our number is sized to the user's OWN target, so at 2 or 6 the two
+                   legitimately differ. Static: it is true at every target. -->
+              <p class="typography-body-sm">The room size printed on a box's AHAM label assumes a target of about 5 air changes per hour, so it may not match this estimate at other targets.</p>
             </div>
           </div>
 
@@ -733,8 +820,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                after a 600 ms debounce so drag gestures do not chatter. -->
         </div>
 
-        <!-- The SECOND mount of "Where can I find this information?" (the first is
-             on the cleaners step). Shown on every result, not just the shop one: a
+        <!-- The SECOND mount of "Where to find an air cleaner's ratings" (the first
+             leads the cleaners step). Shown on every result, not just the shop one: a
              fail sends you shopping too, and on a pass it is a closed disclosure
              that costs nothing. OUTSIDE [data-result] for the same reason the tips
              are — the engine-shared subtree stays byte-for-byte the classic view's.
@@ -788,9 +875,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   <template data-cleaner-template>
     <div class="smaqmd-aerb__cleaner stack" data-gap="md" data-cleaner-block>
       <div class="smaqmd-aerb__cleaner-head repel">
-        <p class="typography-body-md smaqmd-aerb__cleaner-title">Air cleaner</p>
+        <h3 class="typography-title smaqmd-aerb__cleaner-title">Air cleaner</h3>
         <span data-remove-cleaner hidden>
-          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={hasIntro ? 'lg' : 'sm'} />
+          {/* md, not lg-to-match-the-inputs: the hub's esa-icon size fix means lg
+              now really renders a 24px glyph in a 58px button — a row adornment
+              at heading scale. md is the 20px/44px the vanilla twin ports. */}
+          <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={hasIntro ? 'md' : 'sm'} />
         </span>
       </div>
       <esa-radio-group size={ctl}
@@ -808,7 +898,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           type="text"
           inputmode="decimal"
           label="Air flow rate or CADR in CFM (ft³/min)"
-          help-text="CADR means Clean Air Delivery Rate, in CFM — cubic feet of air per minute (ft³/min). Use the highest air flow, or the lowest CADR if three are listed."
+          help-text="CADR means Clean Air Delivery Rate, in CFM — cubic feet of air per minute (ft³/min). Use the lowest of the three CADR numbers (usually Tobacco Smoke)."
         ></esa-text-field>
       </div>
 
@@ -868,6 +958,69 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--color-content-default-secondary);
     font-weight: var(--typography-font-weight-semibold);
   }
+  /* smaqmd-aerb__target-scale — the esa-range-slider plus a row of labelled
+     landmarks under its track. bcn-lego-checked: esa-range-slider IS the control
+     and is used unmodified; it exposes no marks/ticks API, so the labels are
+     composed AROUND it here instead of being added to the hub lego. Checked
+     Beacon (no marked-slider component). Positioning only — no track, thumb or
+     focus chrome is redrawn, all of that stays the lego's. */
+  .smaqmd-aerb__target-scale {
+    position: relative;
+    /* Inline-size containment makes 1cqw mean "1% of this block's width", which
+       is what lets each mark clamp itself against the container edge below. */
+    container-type: inline-size;
+  }
+  .smaqmd-aerb__target-marks {
+    position: relative;
+    /* A notch band, then two staggered rows of one line each — reserved up front
+       so the absolutely positioned marks can never overlap the target field
+       beneath them. 0.7em (notch + clearance) + 1.6em + 1.6em = 3.9em. */
+    block-size: 3.9em;
+    margin-block-start: var(--spacing-100, 0.25rem);
+    color: var(--color-content-default-secondary);
+  }
+  .smaqmd-aerb__target-mark {
+    position: absolute;
+    inset-block-start: 0.7em;
+    inset-inline-start: 0;
+    inline-size: max-content;
+    white-space: nowrap;
+    /* Centre the label on where the THUMB actually sits at this value, not on
+       the naive track percentage: a native thumb's centre travels from thumb/2
+       to width - thumb/2, so the raw percent drifts up to half a thumb (~9px at
+       the 2 mark) from what the eye aligns to. --_thumb is the lego's thumb
+       size for the mounted control size, set inline on the marks row. Then
+       clamp: the 0 floor stops the box at the container's leading edge and the
+       100cqw - 100% ceiling at the trailing one, so an outermost label is
+       nudged inward rather than spilling out of the card. */
+    translate: clamp(0px, calc(var(--_thumb) / 2 + var(--_at) * (100cqw - var(--_thumb)) / 100 - 50%), calc(100cqw - 100%));
+  }
+  .smaqmd-aerb__target-mark[data-row='2'] { inset-block-start: 2.3em; }
+  /* The notch that ties a label to its place on the track. It starts at the top
+     of this row — spacing-100 under the lego's box, i.e. clear of the thumb's
+     swept band — and runs down to just above its own label: 0.5em for row 1,
+     1.9em for row 2. That difference is the whole point of the tick: the long
+     run down to the lower row reads as a deliberate connector, where a bare
+     two-row stagger reads as a layout accident. Decoration only — the parent
+     row is aria-hidden and the numbers are all in the field's help text. */
+  .smaqmd-aerb__target-tick {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    /* Drawn as a BORDER rather than a 2px background: a background-color is
+       overridden in forced-colors mode (the notch would vanish), while a border
+       is re-coloured to CanvasText and survives — no media query needed. */
+    inline-size: 0;
+    block-size: 0.5em;
+    border-inline-start: 2px solid var(--color-border-default);
+    pointer-events: none;
+    /* Same thumb-travel math as the label, WITHOUT the clamp: a label may be
+       nudged inward to stay in the card, but the notch is the position —
+       moving it would point at the wrong value. */
+    translate: calc(var(--_thumb) / 2 + var(--_at) * (100cqw - var(--_thumb)) / 100 - 50%);
+  }
+  .smaqmd-aerb__target-tick[data-row='2'] { block-size: 1.9em; }
+
   .smaqmd-aerb__context {
     color: var(--color-content-default-secondary);
     display: flex; flex-direction: column;
@@ -918,13 +1071,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     border-block-start: 0;
   }
   .smaqmd-aerb__cleaner-head { align-items: center; }
-  /* Group label for each cleaner block: typography-body-md baseline (15px, not oversized
-     per the design-principles skill) carried to semibold so it reads as a label,
-     not body copy — subordinate to the step's section-title above it. Primary
-     text so the block's own name reads as the strongest label inside the block. */
+  /* Group heading for each cleaner block: typography-title (the 400 rung, same as
+     the classic variants) so it OUTRANKS the label-lg question legends inside the
+     block — at body-md it sat below its own children and the hierarchy inverted.
+     Still a rung under the step's heading-md title. h3 under the step's h2. */
   .smaqmd-aerb__cleaner-title {
+    margin: 0;
     color: var(--color-content-default);
-    font-weight: var(--typography-font-weight-semibold);
   }
   /* The two hero stats (the ACH problem + the CADR fix) sit at EQUAL weight, side
      by side, wrapping only when the panel is too narrow. */
@@ -1190,7 +1343,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="floor"] { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 8%, transparent); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="left"]  { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 10%, transparent); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-face[data-cap="right"] { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 12%, transparent); }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-background-utility-warning, #d9822b); }
+  /* Text-safe warning token, NOT the background token the faces above use: the
+     label is 13px text on the near-white paper, where the orange background
+     step lands ~2.9:1 — under the 4.5:1 SC 1.4.3 floor. KEEP IN SYNC with
+     public/aer-tool/styles.css. */
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label { fill: var(--color-content-utility-warning, #582d1d); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face { stroke: var(--color-orange-10, #c15d10); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 72%, #fff); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-background-utility-warning, #d9822b); }
@@ -1245,13 +1402,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview:not([data-entry-mode="dimensions"]) [data-grips] { display: none; }
   .smaqmd-cityview:not([data-entry-mode="dimensions"]) .smaqmd-cityview__dim[data-grip] {
     pointer-events: none; cursor: default;
-  }
-
-  .smaqmd-cityview__cap {
-    position: absolute;
-    inset-block-end: var(--spacing-500); inset-inline-end: var(--spacing-500);
-    max-inline-size: 26rem; text-align: end;
-    color: var(--color-content-default-tertiary);
   }
 
   /* The wizard's fixed LEFT column: header on top, wizard card below it. Sized to
@@ -1348,9 +1498,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
     transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
-  .smaqmd-wizard__dot-num {
-    translate: 1px 2px;
-  }
   /* Completed steps: filled brand; current step: brand ring + brand text. */
   .smaqmd-wizard__dot[data-done] {
     background: var(--smaqmd-color-background-secondary-brand);
@@ -1403,7 +1550,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      steps (content top, nav pinned bottom) and scrolls internally when a state
      overflows (e.g. several cleaners). Clamped to the viewport so short screens
      shrink the frame rather than overflow it. */
-  .smaqmd-wizard { block-size: min(38rem, calc(100dvh - 14rem)); }
+  .smaqmd-wizard { block-size: min(40rem, calc(100dvh - 14rem)); }
   .smaqmd-wizard__body {
     flex: 1 1 auto;
     min-block-size: 0;
@@ -1504,7 +1651,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       block-size: 30dvh;
     }
     .smaqmd-cityview__safe { inset: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); }
-    .smaqmd-cityview__cap { display: none; }
     .smaqmd-aerw__col {
       position: relative; inset: auto;
       inline-size: auto; max-inline-size: none; max-block-size: none;
@@ -1542,7 +1688,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     /* Mirror: one frame height for every slide, as a MIN so tall steps can grow. */
     .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard {
       block-size: auto;
-      min-block-size: 30rem;   /* = 480px */
+      min-block-size: 32rem;   /* = 512px */
     }
     .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard__body { overflow: visible; }
     /* Mirror: 44px radio rows (touch-target stopgap for esassoc/ecology#37). */
@@ -1681,6 +1827,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-radio-group';
   import '@esa/ecology/esa-button-toggle';
+  import '@esa/ecology/esa-range-slider';
 
   const root = document.querySelector<HTMLElement>('[data-aerb-wizard]');
   if (root) {
@@ -2897,6 +3044,28 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const targetWarn = root.querySelector<HTMLElement>('[data-target-warn]');
     const targetInvalid = root.querySelector<HTMLElement>('[data-target-invalid]');
     const roomWarn = root.querySelector<HTMLElement>('[data-room-warn]');
+    // The quick-set slider above the target field. It FOLLOWS the field — every
+    // path that can alter the target (a drag, typing, the initial paint) ends in
+    // recompute(), so the sync lives there and nowhere else.
+    const targetSliderEl = root.querySelector<HTMLElement & { value?: number }>('[data-field="targetSlider"]');
+    const SLIDER_MIN = 1, SLIDER_MAX = 8, SLIDER_STEP = 0.5;
+    const syncTargetSlider = (entered: number) => {
+      if (!targetSliderEl) return;
+      // A blank or junk field leaves the thumb exactly where it is: there is no
+      // "no value" position on a slider, and snapping it to the minimum would
+      // announce a target the user never asked for.
+      if (!Number.isFinite(entered)) return;
+      // Clamp to the track, then round to the step. The native input snaps the
+      // THUMB to the step anyway, but the lego paints its fill from the raw
+      // property — rounding here keeps the fill and the thumb from disagreeing
+      // by half a step on a typed 3.3. The field keeps the exact 3.3.
+      const clamped = Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, entered));
+      const next = Math.round(clamped / SLIDER_STEP) * SLIDER_STEP;
+      // Assigning the property re-renders WITHOUT firing change (the lego only
+      // dispatches from its own @input handler), so this can never loop back into
+      // onEdit — the guard is the lego's contract, not a flag.
+      if (targetSliderEl.value !== next) targetSliderEl.value = next;
+    };
     const achWrap = block.querySelector<HTMLElement>('[data-metric="ach"]');
     const achEvidence = block.querySelector<HTMLElement>('[data-ach-evidence]');
     const fixWrap = block.querySelector<HTMLElement>('[data-metric="fix"]');
@@ -2945,6 +3114,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       show(targetInvalid, targetIsInvalid);
       show(roomWarn, roomOversize());
       show(targetWarn, Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
+      syncTargetSlider(enteredTarget);
 
       const flow = combinedFlow();
       const vol = roomVolume();
@@ -3251,6 +3421,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Prefill before the mode's fields are read for the scene box.
       if (el && el.tagName === 'ESA-RADIO-GROUP' && el.dataset?.field === 'roomMethod') {
         prefillMode(el.value ?? 'dimensions');
+      }
+      // The slider writes its number into the target field and stops being
+      // consulted — everything downstream reads the field. No synthetic input
+      // event: this IS the pipeline, and the recompute() below re-derives the
+      // thumb from the field it just wrote. The branch catches both events the
+      // lego produces per drag tick (its own composed `change`, and the inner
+      // native `input` retargeted to the host); writing the same string twice is
+      // a no-op, so neither needs to be filtered out.
+      if (el && el.dataset?.field === 'targetSlider') {
+        const f = field('target');
+        const v = (el as unknown as { value?: number }).value;
+        if (f && v != null) f.value = String(v);
       }
       morphScene();
       recompute();

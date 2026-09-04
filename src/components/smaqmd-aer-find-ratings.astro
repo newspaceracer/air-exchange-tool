@@ -1,6 +1,8 @@
 ---
-// smaqmd-aer-find-ratings — "Where can I find this information?", the disclosure
+// smaqmd-aer-find-ratings — "Where to find an air cleaner's ratings", the disclosure
 // that tells someone where the CADR / air-flow number actually lives on a product.
+// Titled as a statement, not a question: it leads the cleaners step (before the
+// fields exist to ask about) and must read the same on the result step's mount.
 //
 // It is ONE component mounted TWICE (the cleaners step, where the number is being
 // asked for, and the result step, where a shopper is about to go looking for one)
@@ -12,9 +14,12 @@
 // same id is a duplicate-id defect even when only one is on screen. The disclosure
 // is esa-collapsible (native <details>/<summary>), so it needs none.
 import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+// The label photo lives in public/ (shared with the vanilla twin), so Astro will
+// NOT rewrite its path for the production `base` — withBase() does it.
+import { withBase } from '../lib/base';
 ---
 
-<EsaCollapsible title="Where can I find this information?">
+<EsaCollapsible title="Where to find an air cleaner's ratings">
   <div class="stack" data-gap="sm">
     <p class="typography-body-sm smaqmd-aer-find__lede">
       Look for the CADR (Clean Air Delivery Rate) or air flow rating, in CFM (ft³/min):
@@ -23,36 +28,83 @@ import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
          smaqmd-aer-wizard.astro and would not reach a separate component's markup
          anyway — reaching for it would only look like reuse. -->
     <ul class="typography-body-sm smaqmd-aer-find__list">
-      <li>On the box — usually a specifications panel on the side or the back.</li>
+      <li>
+        On the front of the box — the AHAM Verifide label lists three CADR
+        numbers (tobacco smoke, dust, pollen). Use the lowest, usually Tobacco
+        Smoke.
+      </li>
+      <li>On a specifications panel on the side or the back of the box.</li>
       <li>In the manual, in the specifications section.</li>
       <li>
         On the manufacturer's website — search the model number and open its
         specifications page.
       </li>
+      <li>
+        If it only lists air changes per hour (ACH), also note the room size
+        that rating was measured in — the tool asks for both.
+      </li>
     </ul>
-    <p class="typography-body-sm smaqmd-aer-find__note">
-      If it only lists air changes per hour (ACH), also note the room size that
-      rating was measured in — the tool asks for both.
-    </p>
 
-    <!-- PREPARED PHOTO SLOT — empty on purpose, and `hidden` until it is filled.
-         TO SWAP IN THE PHOTO: drop the image in the project, set `src`, remove the
-         `hidden` attribute, write `alt` text that says WHERE ON THE PRODUCT the
-         rating appears (not "photo of a box" — the alt IS the instruction for
-         anyone who cannot see it), and put the same locating sentence in the
-         <figcaption>. Keep width/height (or the aspect-ratio rule below) so the
-         box reserves its space and the disclosure does not jump when the image
-         decodes.
+    <!-- The label photo. `alt` says WHERE ON THE PRODUCT the rating appears and
+         which of the three numbers to use — it IS the instruction for anyone who
+         cannot see it, so it carries the same guidance the <figcaption> does.
+         width/height match the file's intrinsic 1200×645 so the box reserves
+         its space and the disclosure does not jump when the image decodes.
+         IF THE PHOTO IS EVER SWAPPED: update both, and keep the alt locating +
+         instructing.
          bcn-lego-checked: no esa- lego is a captioned image/media block — the
          catalog's image-bearing legos are esa-avatar (a circular person chip) and
          esa-empty-state (an illustration + heading + action for a zero state),
          neither of which is a figure with a caption; checked Beacon (no
          figure/media component in its shared ui-* set). So the figure is native
          HTML with a documented smaqmd- block around it. -->
-    <figure class="smaqmd-aer-find__figure" hidden>
-      <img src="" alt="" width="800" height="600" loading="lazy" />
-      <figcaption class="typography-body-sm"></figcaption>
+    <figure class="smaqmd-aer-find__figure">
+      <img
+        src={withBase('/aer-tool/aham-label.jpg')}
+        alt="AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR numbers — Tobacco Smoke 189, Dust 196, Pollen 191. The lowest, 189, is the one to use."
+        width="1200"
+        height="645"
+        loading="lazy"
+      />
+      <figcaption class="typography-body-sm">
+        The AHAM Verifide label on the front of the box — the three circled CADR
+        numbers are what this tool asks for; use the lowest (here, Tobacco
+        Smoke).
+      </figcaption>
     </figure>
+
+    <!-- Two more real labels, side by side where the width allows: the layout
+         varies box to box, so a shopper sees the pattern (room size on top,
+         three CADR numbers below) rather than one box's exact design. Same alt
+         discipline as the hero figure: the alt IS the instruction. -->
+    <div class="smaqmd-aer-find__examples">
+      <figure class="smaqmd-aer-find__figure">
+        <img
+          src={withBase('/aer-tool/aham-label-100sqft.jpg')}
+          alt="A second AHAM Verifide label, on a smaller air cleaner's box: suggested closed room size 100 square feet, then three CADR numbers — Tobacco Smoke 62, Dust 68, Pollen 65. The lowest is Tobacco Smoke, 62."
+          width="769"
+          height="784"
+          loading="lazy"
+        />
+        <figcaption class="typography-body-sm">
+          A smaller unit's label — same three numbers; the lowest here is
+          Tobacco Smoke, 62.
+        </figcaption>
+      </figure>
+      <figure class="smaqmd-aer-find__figure">
+        <img
+          src={withBase('/aer-tool/aham-label-246sqft.jpg')}
+          alt="A third AHAM Verifide label: suggested closed room size 246 square feet, then three CADR numbers — Tobacco Smoke 159, Dust 167, Pollen 170. The lowest is Tobacco Smoke, 159. The fine print notes the suggested room size is based on 4.8 air changes per hour."
+          width="800"
+          height="789"
+          loading="lazy"
+        />
+        <figcaption class="typography-body-sm">
+          Another box — its fine print confirms the printed room size assumes
+          4.8 air changes per hour.
+        </figcaption>
+      </figure>
+    </div>
   </div>
 </EsaCollapsible>
 
@@ -60,7 +112,6 @@ import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
   /* Quiet supporting copy — the same rung the wizard's result text sits at, so a
      disclosure opened inside either surface reads as part of it. */
   .smaqmd-aer-find__lede,
-  .smaqmd-aer-find__note,
   .smaqmd-aer-find__list {
     color: var(--color-content-default-secondary, #646464);
   }
@@ -70,16 +121,22 @@ import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
   }
   .smaqmd-aer-find__list li + li { margin-block-start: var(--spacing-200, 0.5rem); }
   .smaqmd-aer-find__figure { margin: 0; }
-  /* The image RESERVES its box before it loads: a fixed ratio plus a token-tinted
-     placeholder ground, so opening the disclosure does not reflow when the photo
-     decodes. object-fit keeps a photo of any real ratio from distorting into it. */
+  /* The image RESERVES its box before it loads — the width/height attributes
+     give the browser each photo's intrinsic ratio (the figures are different
+     shapes), so opening the disclosure does not reflow when a photo decodes.
+     The token-tinted ground shows while it loads. */
   .smaqmd-aer-find__figure img {
     inline-size: 100%;
     block-size: auto;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
     border-radius: var(--radius-md, 0.5rem);
     background: var(--color-background-elevation-sunken, #f0f0f0);
+  }
+  /* The two extra examples share a row when the disclosure is wide enough for
+     two ~12rem columns, and stack below that. */
+  .smaqmd-aer-find__examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--spacing-300, 0.75rem);
   }
   .smaqmd-aer-find__figure figcaption {
     margin-block-start: var(--spacing-200, 0.5rem);

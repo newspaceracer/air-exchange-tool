@@ -471,10 +471,6 @@
           </g>
         </svg>
         <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
-        <p class="smaqmd-type-meta smaqmd-cityview__cap">
-          Representative illustration only — not a guide to where an air cleaner
-          should be placed in your room.
-        </p>
       </div>
 
       <div class="smaqmd-aerw__col">
@@ -810,6 +806,110 @@
                     data-step="1"
                     hidden
                   >
+                    <!-- "Where to find an air cleaner's ratings" — FIRST in the step
+                         so the reader knows what to grab off the box before the
+                         fields ask for it. Hand-port of
+                         src/components/smaqmd-aer-find-ratings.astro, which the Astro build mounts
+                         TWICE from that one file so the two copies cannot drift. Here they are
+                         literal duplicates instead, so: KEEP IN SYNC with the copy on
+                         the RESULT step below, and with the component. No `id` anywhere inside — the same markup appears twice on this
+                         page, and a duplicated id is a defect even when only one copy is shown. -->
+                    <details class="smaqmd-collapsible">
+                      <summary
+                        class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
+                      >
+                        <span class="smaqmd-collapsible__title"
+                          >Where to find an air cleaner's ratings</span
+                        >
+                      </summary>
+                      <div class="smaqmd-collapsible__body">
+                        <div class="smaqmd-stack" data-gap="sm">
+                          <p class="smaqmd-type-body-sm smaqmd-aer-find__lede">
+                            Look for the CADR (Clean Air Delivery Rate) or air
+                            flow rating, in CFM (ft³/min):
+                          </p>
+                          <ul class="smaqmd-type-body-sm smaqmd-aer-find__list">
+                            <li>
+                              On the front of the box — the AHAM Verifide label
+                              lists three CADR numbers (tobacco smoke, dust,
+                              pollen). Use the lowest, usually Tobacco Smoke.
+                            </li>
+                            <li>
+                              On a specifications panel on the side or the back
+                              of the box.
+                            </li>
+                            <li>
+                              In the manual, in the specifications section.
+                            </li>
+                            <li>
+                              On the manufacturer's website — search the model
+                              number and open its specifications page.
+                            </li>
+                            <li>
+                              If it only lists air changes per hour (ACH), also
+                              note the room size that rating was measured in —
+                              the tool asks for both.
+                            </li>
+                          </ul>
+                          <!-- The label photo. `alt` says WHERE ON THE PRODUCT the rating
+                               appears and which of the three numbers to use — it IS the
+                               instruction for anyone who cannot see it, so it carries the
+                               same guidance the <figcaption> does. width/height match
+                               the file's intrinsic 1200×645 so the box reserves its
+                               space and the disclosure does not jump on decode; the
+                               same holds for every figure below. IF A PHOTO IS SWAPPED:
+                               update both, and keep the alt locating + instructing. -->
+                          <figure class="smaqmd-aer-find__figure">
+                            <img
+                              src="aham-label.jpg"
+                              alt="AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR numbers — Tobacco Smoke 189, Dust 196, Pollen 191. The lowest, 189, is the one to use."
+                              width="1200"
+                              height="645"
+                              loading="lazy"
+                            />
+                            <figcaption class="smaqmd-type-body-sm">
+                              The AHAM Verifide label on the front of the box —
+                              the three circled CADR numbers are what this tool
+                              asks for; use the lowest (here, Tobacco Smoke).
+                            </figcaption>
+                          </figure>
+                          <!-- Two more real labels, side by side where the width
+                               allows: the layout varies box to box, so a shopper
+                               sees the pattern (room size on top, three CADR
+                               numbers below) rather than one box's exact design.
+                               Same alt discipline: the alt IS the instruction. -->
+                          <div class="smaqmd-aer-find__examples">
+                            <figure class="smaqmd-aer-find__figure">
+                              <img
+                                src="aham-label-100sqft.jpg"
+                                alt="A second AHAM Verifide label, on a smaller air cleaner's box: suggested closed room size 100 square feet, then three CADR numbers — Tobacco Smoke 62, Dust 68, Pollen 65. The lowest is Tobacco Smoke, 62."
+                                width="769"
+                                height="784"
+                                loading="lazy"
+                              />
+                              <figcaption class="smaqmd-type-body-sm">
+                                A smaller unit's label — same three numbers; the
+                                lowest here is Tobacco Smoke, 62.
+                              </figcaption>
+                            </figure>
+                            <figure class="smaqmd-aer-find__figure">
+                              <img
+                                src="aham-label-246sqft.jpg"
+                                alt="A third AHAM Verifide label: suggested closed room size 246 square feet, then three CADR numbers — Tobacco Smoke 159, Dust 167, Pollen 170. The lowest is Tobacco Smoke, 159. The fine print notes the suggested room size is based on 4.8 air changes per hour."
+                                width="800"
+                                height="789"
+                                loading="lazy"
+                              />
+                              <figcaption class="smaqmd-type-body-sm">
+                                Another box — its fine print confirms the printed
+                                room size assumes 4.8 air changes per hour.
+                              </figcaption>
+                            </figure>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+
                     <fieldset class="smaqmd-radio" data-field="hasCleaner">
                       <legend class="smaqmd-radio__legend smaqmd-type-label-lg">
                         Do you have an air cleaner to check?
@@ -874,66 +974,6 @@
                       </div>
                     </div>
 
-                    <!-- "Where can I find this information?" — hand-port of
-                         src/components/smaqmd-aer-find-ratings.astro, which the Astro build mounts
-                         TWICE from that one file so the two copies cannot drift. Here they are
-                         literal duplicates instead, so: KEEP IN SYNC with the copy on
-                         the RESULT step below, and with the component. No `id` anywhere inside — the same markup appears twice on this
-                         page, and a duplicated id is a defect even when only one copy is shown. -->
-                    <details class="smaqmd-collapsible">
-                      <summary
-                        class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
-                      >
-                        <span class="smaqmd-collapsible__title"
-                          >Where can I find this information?</span
-                        >
-                      </summary>
-                      <div class="smaqmd-collapsible__body">
-                        <div class="smaqmd-stack" data-gap="sm">
-                          <p class="smaqmd-type-body-sm smaqmd-aer-find__lede">
-                            Look for the CADR (Clean Air Delivery Rate) or air
-                            flow rating, in CFM (ft³/min):
-                          </p>
-                          <ul class="smaqmd-type-body-sm smaqmd-aer-find__list">
-                            <li>
-                              On the box — usually a specifications panel on the
-                              side or the back.
-                            </li>
-                            <li>
-                              In the manual, in the specifications section.
-                            </li>
-                            <li>
-                              On the manufacturer's website — search the model
-                              number and open its specifications page.
-                            </li>
-                          </ul>
-                          <p class="smaqmd-type-body-sm smaqmd-aer-find__note">
-                            If it only lists air changes per hour (ACH), also
-                            note the room size that rating was measured in — the
-                            tool asks for both.
-                          </p>
-                          <!-- PREPARED PHOTO SLOT — empty on purpose, and `hidden` until it is
-                               filled. TO SWAP IN THE PHOTO: put the image next to index.html, set
-                               `src`, remove the `hidden` attribute, write `alt` text that says WHERE
-                               ON THE PRODUCT the rating appears (not "photo of a box" — the alt IS
-                               the instruction for anyone who cannot see it), and put the same
-                               locating sentence in the <figcaption>. Keep width/height so the box
-                               reserves its space and the disclosure does not jump on decode. -->
-                          <figure class="smaqmd-aer-find__figure" hidden>
-                            <img
-                              src=""
-                              alt=""
-                              width="800"
-                              height="600"
-                              loading="lazy"
-                            />
-                            <figcaption
-                              class="smaqmd-type-body-sm"
-                            ></figcaption>
-                          </figure>
-                        </div>
-                      </div>
-                    </details>
                   </section>
 
                   <section
@@ -942,11 +982,92 @@
                     data-step="2"
                     hidden
                   >
+                    <!-- Quick-set scale ABOVE the field it fills: the shortcut
+                         is the offer, the field is the answer. Hand-port of the
+                         Astro build's esa-range-slider + landmark row (a native
+                         range input styled to the lego's track/thumb, so the
+                         keyboard support — Arrow/Home/End/PageUp/PageDown — is
+                         the browser's, not ours). The landmark labels are
+                         aria-hidden decoration: the target field's help text
+                         carries all three numbers to a screen reader, and the
+                         slider's aria-valuetext names one the moment the thumb
+                         lands on it. -->
+                    <div class="smaqmd-aerb__target-scale">
+                      <label
+                        class="smaqmd-field__label smaqmd-type-label-lg"
+                        for="smaqmd-f-target-slider"
+                        >Target air changes per hour</label
+                      >
+                      <!-- aria-valuetext carries what the aria-hidden landmark
+                           labels show sighted users: the unit, plus the meaning
+                           when the thumb lands exactly on 2, 5 or 6. app.js
+                           rewrites it on every value change (see
+                           targetValueText); this attribute is the initial
+                           value 2. The Astro build cannot do this — its lego's
+                           input is in shadow DOM (known hub gap). -->
+                      <input
+                        class="smaqmd-range"
+                        id="smaqmd-f-target-slider"
+                        data-field="targetSlider"
+                        type="range"
+                        min="1"
+                        max="8"
+                        step="0.5"
+                        value="2"
+                        aria-valuetext="2 air changes per hour — CARB minimum"
+                        style="--_fill-percent: 14.2857%"
+                      />
+                      <!-- Staggered onto two rows: "5 · box ratings" and
+                           "6 · wildfire" are 1 ACH apart — 14% of the track — so
+                           a single row would overlap them at EVERY width. Each
+                           label is paired with a notch at the SAME percent — a
+                           short one on row 1, a long one down to row 2 — so the
+                           stagger reads as designed rather than accidental. -->
+                      <div
+                        class="smaqmd-type-meta smaqmd-aerb__target-marks"
+                        aria-hidden="true"
+                      >
+                        <span
+                          class="smaqmd-aerb__target-tick"
+                          data-row="1"
+                          style="--_at: 14.2857"
+                        ></span>
+                        <span
+                          class="smaqmd-aerb__target-mark"
+                          data-row="1"
+                          style="--_at: 14.2857"
+                          >2 · CARB min</span
+                        >
+                        <span
+                          class="smaqmd-aerb__target-tick"
+                          data-row="2"
+                          style="--_at: 57.1429"
+                        ></span>
+                        <span
+                          class="smaqmd-aerb__target-mark"
+                          data-row="2"
+                          style="--_at: 57.1429"
+                          >5 · box ratings</span
+                        >
+                        <span
+                          class="smaqmd-aerb__target-tick"
+                          data-row="1"
+                          style="--_at: 71.4286"
+                        ></span>
+                        <span
+                          class="smaqmd-aerb__target-mark"
+                          data-row="1"
+                          style="--_at: 71.4286"
+                          >6 · wildfire</span
+                        >
+                      </div>
+                    </div>
+
                     <div class="smaqmd-field">
                       <label
                         class="smaqmd-field__label smaqmd-type-label-lg"
                         for="smaqmd-f-target"
-                        >Target air changes per hour</label
+                        >Or type an exact target</label
                       >
                       <div class="smaqmd-field__control">
                         <input
@@ -966,10 +1087,9 @@
                         id="smaqmd-h-target"
                       >
                         One air change means the cleaner has filtered a full
-                        room's worth of air. The California Air Resources Board
-                        (CARB) recommends at least 2 per hour. During wildfire
-                        smoke events, aim for 4–6. This target applies to the
-                        whole room — all cleaners together.
+                        room's worth of air. CARB recommends at least 2 per
+                        hour; most air-cleaner box ratings assume about 5;
+                        during wildfire smoke aim for 4–6.
                       </p>
                     </div>
 
@@ -1196,13 +1316,18 @@
                         <!-- The ONE place the unit is spelled out. CFM is what the box
                              says, so CFM is what the tool says everywhere else; this
                              sentence is where a reader who has never met the
-                             abbreviation learns it. -->
+                             abbreviation learns it. It also names WHICH of the three
+                             CADR numbers on a box to compare against — a real box
+                             lists tobacco smoke / dust / pollen, not one "CADR". -->
                         <div data-verdict-card="shop" hidden>
                           <p class="smaqmd-type-body-sm smaqmd-aerb__footnote">
                             CADR (Clean Air Delivery Rate) is the airflow rating
                             printed on the air cleaner's box, measured in CFM —
-                            cubic feet of air moved per minute (ft³/min). Match
-                            or beat this number to reach your target.
+                            cubic feet of air moved per minute (ft³/min). Boxes
+                            usually list three CADR numbers — tobacco smoke,
+                            dust, and pollen. Compare against the Tobacco Smoke
+                            number (usually the lowest): match or beat it to
+                            reach your target.
                           </p>
                         </div>
 
@@ -1262,6 +1387,17 @@
                               <span class="smaqmd-toggle__label">ft³</span>
                             </label>
                           </fieldset>
+                          <!-- Why the coverage above can disagree with the box: AHAM's
+                               printed "suggested closed room size" is smoke CADR × 1.55,
+                               which at an 8 ft ceiling works out to ≈ 4.8 air changes per
+                               hour — hence "about 5". Our number is sized to the user's
+                               OWN target, so at 2 or 6 the two legitimately differ.
+                               Static: it is true at every target. -->
+                          <p class="smaqmd-type-body-sm">
+                            The room size printed on a box's AHAM label assumes a
+                            target of about 5 air changes per hour, so it may not
+                            match this estimate at other targets.
+                          </p>
                         </div>
                       </div>
 
@@ -1297,7 +1433,7 @@
                       </div>
                     </div>
 
-                    <!-- "Where can I find this information?" — hand-port of
+                    <!-- "Where to find an air cleaner's ratings" — hand-port of
                          src/components/smaqmd-aer-find-ratings.astro, which the Astro build mounts
                          TWICE from that one file so the two copies cannot drift. Here they are
                          literal duplicates instead, so: KEEP IN SYNC with the copy on
@@ -1308,7 +1444,7 @@
                         class="smaqmd-collapsible__summary smaqmd-type-label-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
-                          >Where can I find this information?</span
+                          >Where to find an air cleaner's ratings</span
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
@@ -1319,8 +1455,13 @@
                           </p>
                           <ul class="smaqmd-type-body-sm smaqmd-aer-find__list">
                             <li>
-                              On the box — usually a specifications panel on the
-                              side or the back.
+                              On the front of the box — the AHAM Verifide label
+                              lists three CADR numbers (tobacco smoke, dust,
+                              pollen). Use the lowest, usually Tobacco Smoke.
+                            </li>
+                            <li>
+                              On a specifications panel on the side or the back
+                              of the box.
                             </li>
                             <li>
                               In the manual, in the specifications section.
@@ -1329,31 +1470,67 @@
                               On the manufacturer's website — search the model
                               number and open its specifications page.
                             </li>
+                            <li>
+                              If it only lists air changes per hour (ACH), also
+                              note the room size that rating was measured in —
+                              the tool asks for both.
+                            </li>
                           </ul>
-                          <p class="smaqmd-type-body-sm smaqmd-aer-find__note">
-                            If it only lists air changes per hour (ACH), also
-                            note the room size that rating was measured in — the
-                            tool asks for both.
-                          </p>
-                          <!-- PREPARED PHOTO SLOT — empty on purpose, and `hidden` until it is
-                               filled. TO SWAP IN THE PHOTO: put the image next to index.html, set
-                               `src`, remove the `hidden` attribute, write `alt` text that says WHERE
-                               ON THE PRODUCT the rating appears (not "photo of a box" — the alt IS
-                               the instruction for anyone who cannot see it), and put the same
-                               locating sentence in the <figcaption>. Keep width/height so the box
-                               reserves its space and the disclosure does not jump on decode. -->
-                          <figure class="smaqmd-aer-find__figure" hidden>
+                          <!-- The label photo. `alt` says WHERE ON THE PRODUCT the rating
+                               appears and which of the three numbers to use — it IS the
+                               instruction for anyone who cannot see it, so it carries the
+                               same guidance the <figcaption> does. width/height match
+                               the file's intrinsic 1200×645 so the box reserves its
+                               space and the disclosure does not jump on decode; the
+                               same holds for every figure below. IF A PHOTO IS SWAPPED:
+                               update both, and keep the alt locating + instructing. -->
+                          <figure class="smaqmd-aer-find__figure">
                             <img
-                              src=""
-                              alt=""
-                              width="800"
-                              height="600"
+                              src="aham-label.jpg"
+                              alt="AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR numbers — Tobacco Smoke 189, Dust 196, Pollen 191. The lowest, 189, is the one to use."
+                              width="1200"
+                              height="645"
                               loading="lazy"
                             />
-                            <figcaption
-                              class="smaqmd-type-body-sm"
-                            ></figcaption>
+                            <figcaption class="smaqmd-type-body-sm">
+                              The AHAM Verifide label on the front of the box —
+                              the three circled CADR numbers are what this tool
+                              asks for; use the lowest (here, Tobacco Smoke).
+                            </figcaption>
                           </figure>
+                          <!-- Two more real labels, side by side where the width
+                               allows: the layout varies box to box, so a shopper
+                               sees the pattern (room size on top, three CADR
+                               numbers below) rather than one box's exact design.
+                               Same alt discipline: the alt IS the instruction. -->
+                          <div class="smaqmd-aer-find__examples">
+                            <figure class="smaqmd-aer-find__figure">
+                              <img
+                                src="aham-label-100sqft.jpg"
+                                alt="A second AHAM Verifide label, on a smaller air cleaner's box: suggested closed room size 100 square feet, then three CADR numbers — Tobacco Smoke 62, Dust 68, Pollen 65. The lowest is Tobacco Smoke, 62."
+                                width="769"
+                                height="784"
+                                loading="lazy"
+                              />
+                              <figcaption class="smaqmd-type-body-sm">
+                                A smaller unit's label — same three numbers; the
+                                lowest here is Tobacco Smoke, 62.
+                              </figcaption>
+                            </figure>
+                            <figure class="smaqmd-aer-find__figure">
+                              <img
+                                src="aham-label-246sqft.jpg"
+                                alt="A third AHAM Verifide label: suggested closed room size 246 square feet, then three CADR numbers — Tobacco Smoke 159, Dust 167, Pollen 170. The lowest is Tobacco Smoke, 159. The fine print notes the suggested room size is based on 4.8 air changes per hour."
+                                width="800"
+                                height="789"
+                                loading="lazy"
+                              />
+                              <figcaption class="smaqmd-type-body-sm">
+                                Another box — its fine print confirms the printed
+                                room size assumes 4.8 air changes per hour.
+                              </figcaption>
+                            </figure>
+                          </div>
                         </div>
                       </div>
                     </details>
@@ -1481,9 +1658,9 @@
           data-cleaner-block
         >
           <div class="smaqmd-aerb__cleaner-head smaqmd-repel">
-            <p class="smaqmd-type-body-md smaqmd-aerb__cleaner-title">
+            <h3 class="smaqmd-type-title smaqmd-aerb__cleaner-title">
               Air cleaner
-            </p>
+            </h3>
             <span data-remove-cleaner hidden>
               <button
                 type="button"
@@ -1558,8 +1735,8 @@
                 id="smaqmd-c-airflow-help"
               >
                 CADR means Clean Air Delivery Rate, in CFM — cubic feet of air
-                per minute (ft³/min). Use the highest air flow, or the lowest
-                CADR if three are listed.
+                per minute (ft³/min). Use the lowest of the three CADR numbers
+                (usually Tobacco Smoke).
               </p>
             </div>
           </div>
