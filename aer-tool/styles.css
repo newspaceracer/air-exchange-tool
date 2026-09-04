@@ -94,6 +94,7 @@
   --spacing-050: 0.125rem;
   --spacing-100: 0.25rem;
   --spacing-200: 0.5rem;
+  --spacing-250: 0.625rem;
   --spacing-300: 0.75rem;
   --spacing-400: 1rem;
   --spacing-500: 1.5rem;
@@ -102,6 +103,7 @@
   --radius-sm: 0.25rem;
   --radius-md: 0.25rem;
   --border-width-default: 1px;
+  --elevation-1: 0 1px 4px 0 rgba(0, 0, 0, 0.03);
   --elevation-2: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
 
   --focus-ring-color: var(--color-background-brand);
@@ -192,6 +194,13 @@
   font-weight: var(--typography-font-weight-semibold);
   line-height: 1.3;
   letter-spacing: -0.01em;
+}
+
+.smaqmd-aerb .smaqmd-type-title {
+  font-size: 1.25rem;
+  font-weight: var(--typography-font-weight-medium);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
 
 .smaqmd-aerb .smaqmd-type-title-sm-strong {
@@ -539,6 +548,114 @@
   color: var(--color-content-default-secondary);
 }
 
+/* smaqmd-range — hand-port of the esa-range-slider lego's chrome onto a native
+   <input type="range">, at the lego's `lg` scale (8px track, 24px thumb) to match
+   this build's lg controls. The element itself is native, so Arrow/Home/End/
+   PageUp/PageDown keyboard support is the browser's and not ours.
+   --_fill-percent is written by app.js using the lego's own arithmetic
+   ((value - min) / (max - min)); it is the only part a stylesheet cannot compute.
+   Both vendor families are declared and kept in SEPARATE rules on purpose: a
+   selector list mixing ::-webkit-* with ::-moz-* is dropped whole by whichever
+   engine does not know one of them. */
+.smaqmd-aerb .smaqmd-range {
+  --_track-height: 8px;
+  --_thumb-size: 24px;
+  display: block;
+  width: 100%;
+  height: var(--_thumb-size);
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+/* Blink/WebKit: one track pseudo-element, so the fill is a hard-stop gradient. */
+.smaqmd-aerb .smaqmd-range::-webkit-slider-runnable-track {
+  height: var(--_track-height);
+  border-radius: calc(var(--_track-height) / 2);
+  background: linear-gradient(
+    to right,
+    var(--color-background-brand) 0%,
+    var(--color-background-brand) var(--_fill-percent, 0%),
+    var(--color-border-default) var(--_fill-percent, 0%),
+    var(--color-border-default) 100%
+  );
+}
+.smaqmd-aerb .smaqmd-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--_thumb-size);
+  height: var(--_thumb-size);
+  margin-top: calc((var(--_track-height) - var(--_thumb-size)) / 2);
+  border: 2px solid var(--color-background-brand);
+  border-radius: 50%;
+  background: var(--color-background-elevation-raised);
+  box-shadow: var(--elevation-1);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+/* Gecko: trough and fill are separate pseudo-elements, so no gradient is needed. */
+.smaqmd-aerb .smaqmd-range::-moz-range-track {
+  height: var(--_track-height);
+  border-radius: calc(var(--_track-height) / 2);
+  background: var(--color-border-default);
+}
+.smaqmd-aerb .smaqmd-range::-moz-range-progress {
+  height: var(--_track-height);
+  border-radius: calc(var(--_track-height) / 2);
+  background: var(--color-background-brand);
+}
+.smaqmd-aerb .smaqmd-range::-moz-range-thumb {
+  width: var(--_thumb-size);
+  height: var(--_thumb-size);
+  border: 2px solid var(--color-background-brand);
+  border-radius: 50%;
+  background: var(--color-background-elevation-raised);
+  box-shadow: var(--elevation-1);
+}
+/* The ring goes on the THUMB, not the input box: a ring around the full-width
+   input would say "this whole row is focused" and hide where the value is. */
+.smaqmd-aerb .smaqmd-range:focus-visible {
+  outline: none;
+}
+.smaqmd-aerb .smaqmd-range:focus-visible::-webkit-slider-thumb {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.smaqmd-aerb .smaqmd-range:focus-visible::-moz-range-thumb {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.smaqmd-aerb .smaqmd-range:hover::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+/* The fill is a non-url() background-image, which forced colours flatten to
+   'none' — the track would read as empty at every position. Re-state it in the
+   user's own system colours rather than opting out and keeping brand blue.
+   The thumb survives unaided (a real 2px border). */
+@media (forced-colors: active) {
+  .smaqmd-aerb .smaqmd-range::-webkit-slider-runnable-track {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    background: linear-gradient(
+      to right,
+      Highlight 0%,
+      Highlight var(--_fill-percent, 0%),
+      Canvas var(--_fill-percent, 0%),
+      Canvas 100%
+    );
+  }
+  .smaqmd-aerb .smaqmd-range::-moz-range-track {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+  .smaqmd-aerb .smaqmd-range::-moz-range-progress {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}
+
 .smaqmd-aerb .smaqmd-radio {
   margin: 0;
   padding: 0;
@@ -666,6 +783,17 @@
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
+/* The ring must stay INSET (the .smaqmd-toggle wrapper's overflow:hidden would
+   clip an outside ring), so on the CHECKED segment — whose fill IS the ring
+   color, and which is where Tab lands and the arrow-moved check lives — it
+   switches to the knockout color to stay visible (5:1 on the brand fill). */
+.smaqmd-aerb
+  .smaqmd-toggle__item
+  input[type="radio"]:focus-visible:checked
+  + .smaqmd-toggle__label {
+  outline-color: var(--color-content-default-knockout);
+}
+
 @media (forced-colors: active) {
   .smaqmd-aerb .smaqmd-radio__item input[type="radio"] {
     appearance: auto;
@@ -753,9 +881,11 @@
 .smaqmd-aerb .smaqmd-aerb__cleaner-head {
   align-items: center;
 }
+/* type-title (the 20px rung, mirroring the wizard) so the block heading outranks
+   the 18px label-lg question legends inside it — at body-md it inverted. */
 .smaqmd-aerb .smaqmd-aerb__cleaner-title {
+  margin: 0;
   color: var(--color-content-default);
-  font-weight: var(--typography-font-weight-semibold);
 }
 
 .smaqmd-aerb .smaqmd-aerb__heroes {
@@ -769,6 +899,84 @@
 .smaqmd-aerb .smaqmd-aerb__rating {
   align-self: flex-start;
 }
+/* smaqmd-aerb__target-scale — the range slider plus a row of labelled landmarks
+   under its track. Mirrors the Astro build's block of the same name; positioning
+   only, no control chrome (that is .smaqmd-range above). */
+.smaqmd-aerb .smaqmd-aerb__target-scale {
+  position: relative;
+  /* Inline-size containment makes 1cqw mean "1% of this block's width", which is
+     what lets each mark clamp itself against the container edge below. */
+  container-type: inline-size;
+  /* The range input's thumb size, re-declared here so the marks row can do the
+     thumb-travel math below. KEEP IN SYNC with .smaqmd-range's --_thumb-size. */
+  --_thumb-size: 24px;
+}
+.smaqmd-aerb .smaqmd-aerb__target-marks {
+  position: relative;
+  /* A notch band, then two staggered rows of one line each — reserved up front
+     so the absolutely positioned marks can never overlap the target field
+     beneath them. 0.7em (notch + clearance) + 1.6em + 1.6em = 3.9em. */
+  block-size: 3.9em;
+  margin-block-start: var(--spacing-100);
+  color: var(--color-content-default-secondary);
+}
+.smaqmd-aerb .smaqmd-aerb__target-mark {
+  position: absolute;
+  inset-block-start: 0.7em;
+  inset-inline-start: 0;
+  inline-size: max-content;
+  white-space: nowrap;
+  /* Centre the label on where the THUMB actually sits at this value, not on the
+     naive track percentage: a native thumb's centre travels from thumb/2 to
+     width - thumb/2, so the raw percent drifts up to half a thumb (~9px at the
+     2 mark) from what the eye aligns to. Then clamp: the 0 floor stops the box
+     at the container's leading edge and the 100cqw - 100% ceiling at the
+     trailing one, so an outermost label is nudged inward, not spilled. */
+  translate: clamp(
+    0px,
+    calc(
+      var(--_thumb-size) / 2 + var(--_at) * (100cqw - var(--_thumb-size)) / 100 -
+        50%
+    ),
+    calc(100cqw - 100%)
+  );
+}
+/* "5 · box ratings" and "6 · wildfire" are 1 ACH apart — 14% of the track — so a
+   single row would overlap them at EVERY width. Alternating rows (2 and 6 up, 5
+   down) leaves the pair on each row 57% of the track apart, clear at 320px. */
+.smaqmd-aerb .smaqmd-aerb__target-mark[data-row="2"] {
+  inset-block-start: 2.3em;
+}
+/* The notch that ties a label to its place on the track. It starts at the top of
+   this row — spacing-100 under the input's box, i.e. clear of the 24px thumb's
+   swept band — and runs down to just above its own label: 0.5em for row 1, 1.9em
+   for row 2. That difference is the point: the long run down to the lower row
+   reads as a deliberate connector, where a bare two-row stagger reads as a
+   layout accident. Decoration only — the parent row is aria-hidden, and the
+   slider's own aria-valuetext carries the same meanings to a screen reader. */
+.smaqmd-aerb .smaqmd-aerb__target-tick {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  /* Drawn as a BORDER rather than a 2px background: a background-color is
+     overridden in forced-colors mode (the notch would vanish), while a border
+     is re-coloured to CanvasText and survives — no media query needed. */
+  inline-size: 0;
+  block-size: 0.5em;
+  border-inline-start: 2px solid var(--color-border-default);
+  pointer-events: none;
+  /* Same thumb-travel math as the label, WITHOUT the clamp: a label may be
+     nudged inward to stay in the card, but the notch IS the position — moving
+     it would point at the wrong value. */
+  translate: calc(
+    var(--_thumb-size) / 2 + var(--_at) * (100cqw - var(--_thumb-size)) / 100 -
+      50%
+  );
+}
+.smaqmd-aerb .smaqmd-aerb__target-tick[data-row="2"] {
+  block-size: 1.9em;
+}
+
 .smaqmd-aerb .smaqmd-aerb__unit {
   font-size: 0.5em;
   font-weight: var(--typography-font-weight-medium);
@@ -862,7 +1070,6 @@
    .smaqmd-aerb__tips: the two lists are different content in different places and
    sharing a class would tie their futures together for no reason. */
 .smaqmd-aerb .smaqmd-aer-find__lede,
-.smaqmd-aerb .smaqmd-aer-find__note,
 .smaqmd-aerb .smaqmd-aer-find__list {
   color: var(--color-content-default-secondary);
 }
@@ -879,17 +1086,24 @@
 /* The image RESERVES its box before it loads: a fixed ratio plus a token-tinted
    placeholder ground, so opening the disclosure does not reflow when the photo
    decodes. object-fit keeps a photo of any real ratio from distorting into it. */
+/* Each image reserves its box from its own width/height attributes (the figures
+   are different shapes), so opening the disclosure does not reflow on decode. */
 .smaqmd-aerb .smaqmd-aer-find__figure img {
   inline-size: 100%;
   block-size: auto;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
   border-radius: var(--radius-md);
   background: var(--color-background-elevation-sunken);
 }
 .smaqmd-aerb .smaqmd-aer-find__figure figcaption {
   margin-block-start: var(--spacing-200);
   color: var(--color-content-default-secondary);
+}
+/* The two extra examples share a row when the disclosure is wide enough for two
+   ~12rem columns, and stack below that. */
+.smaqmd-aerb .smaqmd-aer-find__examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--spacing-300);
 }
 .smaqmd-aerb [data-metric="ach"] {
   --stat-accent-color: var(--color-background-brand);
@@ -1187,8 +1401,12 @@
     transparent
   );
 }
+/* Text-safe warning token, NOT the background token the faces above use: the
+   label is 13px text on the near-white paper, where the orange background step
+   lands ~2.9:1 — under the 4.5:1 SC 1.4.3 floor. KEEP IN SYNC with
+   smaqmd-aer-wizard.astro. */
 .smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__cap-label {
-  fill: var(--color-background-utility-warning);
+  fill: var(--color-content-utility-warning);
 }
 .smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face {
   stroke: var(--color-orange-10);
@@ -1278,15 +1496,6 @@
   .smaqmd-cityview__dim[data-grip] {
   pointer-events: none;
   cursor: default;
-}
-
-.smaqmd-aerb .smaqmd-cityview__cap {
-  position: absolute;
-  inset-block-end: var(--spacing-500);
-  inset-inline-end: var(--spacing-500);
-  max-inline-size: 26rem;
-  text-align: end;
-  color: var(--color-content-default-tertiary);
 }
 
 /* The page heading, first child of the column (app.js moves the whole header
@@ -1392,9 +1601,6 @@
     color 160ms ease,
     box-shadow 160ms ease;
 }
-.smaqmd-aerb .smaqmd-wizard__dot-num {
-  translate: 1px 2px;
-}
 .smaqmd-aerb .smaqmd-wizard__dot[data-done] {
   background: var(--smaqmd-color-background-secondary-brand);
   color: var(--smaqmd-color-content-on-secondary-brand);
@@ -1438,7 +1644,7 @@
 }
 
 .smaqmd-aerb .smaqmd-wizard {
-  block-size: min(38rem, calc(100dvh - 14rem));
+  block-size: min(40rem, calc(100dvh - 14rem));
 }
 .smaqmd-aerb .smaqmd-wizard__body {
   flex: 1 1 auto;
@@ -1584,11 +1790,6 @@
     .smaqmd-cityview__safe {
     inset: var(--spacing-300) var(--spacing-400);
   }
-  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
-    .smaqmd-cityview__cap {
-    display: none;
-  }
-
   .smaqmd-aerb .smaqmd-aerw__col {
     position: relative;
     inset: auto;
@@ -1606,7 +1807,7 @@
 
   .smaqmd-aerb .smaqmd-wizard {
     block-size: auto;
-    min-block-size: 30rem;
+    min-block-size: 32rem;
   }
   .smaqmd-aerb .smaqmd-wizard__body {
     overflow: visible;

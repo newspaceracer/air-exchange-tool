@@ -1378,6 +1378,59 @@
   var targetWarn = root.querySelector('[data-target-warn]');
   var targetInvalid = root.querySelector('[data-target-invalid]');
   var roomWarn = root.querySelector('[data-room-warn]');
+  // The quick-set slider above the target field. It FOLLOWS the field — every
+  // path that can alter the target (a drag, typing, the initial paint) ends in
+  // recompute(), so the sync lives there and nowhere else.
+  var targetSliderEl = root.querySelector('[data-field="targetSlider"]');
+  var SLIDER_MIN = 1;
+  var SLIDER_MAX = 8;
+  var SLIDER_STEP = 0.5;
+  // What the notched landmark labels say, for the ear. The label row is
+  // aria-hidden decoration, and a bare range announces "3.5" — no unit, no hint
+  // that 2 or 5 or 6 means anything — so aria-valuetext carries both. Only the
+  // three landmark values get a meaning; every other stop is just the number and
+  // its unit. Both paths that can move this thumb (a drag, and the programmatic
+  // sync below) go through here, so the two can never disagree.
+  var TARGET_LANDMARK_TEXT = {
+    2: 'CARB minimum',
+    5: 'what box ratings assume',
+    6: 'wildfire smoke level',
+  };
+  var targetValueText = function (v) {
+    var meaning = TARGET_LANDMARK_TEXT[v];
+    return v + ' air changes per hour' + (meaning ? ' — ' + meaning : '');
+  };
+  var setTargetValueText = function (v) {
+    if (!targetSliderEl) return;
+    targetSliderEl.setAttribute('aria-valuetext', targetValueText(v));
+  };
+  var syncTargetSlider = function (entered) {
+    if (!targetSliderEl) return;
+    // A blank or junk field leaves the thumb exactly where it is: there is no
+    // "no value" position on a slider, and snapping it to the minimum would show
+    // a target the user never asked for.
+    if (!isFinite(entered)) return;
+    // Clamp to the track, then round to the step — the native input snaps the
+    // THUMB to the step anyway, and the painted fill below is computed from this
+    // same number, so rounding here keeps the two from disagreeing by half a step
+    // on a typed 3.3. The field keeps the exact 3.3.
+    var clamped = Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, entered));
+    var next = Math.round(clamped / SLIDER_STEP) * SLIDER_STEP;
+    // Writing .value fires no event, so this can never loop back into onEdit.
+    if (parseFloat(targetSliderEl.value) !== next) {
+      targetSliderEl.value = String(next);
+    }
+    // The lego paints its track fill from (value - min) / (max - min); a native
+    // input has no such hook, so app.js hands the same number to the stylesheet.
+    targetSliderEl.style.setProperty(
+      '--_fill-percent',
+      ((next - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100 + '%'
+    );
+    // Announce the rounded number the thumb actually sits on, not the raw 3.3
+    // still in the field — the two are the field's business, and a slider that
+    // reads out a position it is not in would be a lie.
+    setTargetValueText(next);
+  };
   var achWrap = block.querySelector('[data-metric="ach"]');
   var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
@@ -1422,6 +1475,7 @@
     show(targetInvalid, targetIsInvalid);
     show(roomWarn, roomOversize());
     show(targetWarn, isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
+    syncTargetSlider(enteredTarget);
 
     var flow = combinedFlow();
     var vol = roomVolume();
@@ -1699,6 +1753,21 @@
       if (group && group.getAttribute('data-field') === 'roomMethod') {
         prefillMode(getFieldValue(group) || 'dimensions');
       }
+    }
+    // The slider writes its number into the target field and stops being
+    // consulted — everything downstream reads the field. No synthetic input
+    // event: this IS the pipeline, and the recompute() below re-derives the thumb
+    // (and the painted fill) from the field it just wrote. A native range fires
+    // 'input' on every drag tick, so the existing delegation already carries it.
+    if (el.getAttribute && el.getAttribute('data-field') === 'targetSlider') {
+      var ft = field('target');
+      if (ft) setFieldValue(ft, el.value);
+      // Rewrite the readout from the thumb's OWN value, in the same tick as the
+      // input event: recompute() below reaches the same string via
+      // syncTargetSlider, but a screen reader reads aria-valuetext as the event
+      // is handled, so it has to be current before the round trip through the
+      // field, not after it.
+      setTargetValueText(parseFloat(el.value));
     }
     morphScene();
     recompute();
