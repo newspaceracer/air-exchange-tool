@@ -260,6 +260,33 @@
   --smaqmd-color-background-intro-wash: var(--smaqmd-brand-3);
   --smaqmd-color-content-intro-title:   var(--smaqmd-brand-12);
 
+  /* ===== PINNED TYPE SCALE (hub ramp gap) =====
+     The hub's --font-size-* ramp is FLUID (clamps on vw) and its minima undershoot
+     the design-principles floors on phones: body-md renders ~12px and meta ~10px
+     at 390px wide — under the 16px body default / 14px dense / 13px meta floors
+     the system itself mandates. The hand-maintained public build
+     (public/aer-tool/styles.css) already pins fixed sizes for exactly this
+     reason, so the prototype previewed SMALLER text than the shipped artifact.
+     Re-pointing the tier-2 composite size tokens (not the primitives) to the
+     public build's values makes both builds render the same at every width.
+     KEEP IN SYNC with public/aer-tool/styles.css .smaqmd-type-* sizes.
+     Remove if/when the hub raises the ramp's minima (candidate /request-lego). */
+  --typography-heading-lg-font-size:      1.875rem;  /* 30px */
+  --typography-heading-md-font-size:      1.5rem;    /* 24px */
+  --typography-title-font-size:           1.25rem;   /* 20px */
+  --typography-title-strong-font-size:    1.25rem;
+  --typography-title-sm-strong-font-size: 1.0625rem; /* 17px */
+  --typography-body-lg-font-size:         1.125rem;  /* 18px */
+  --typography-body-md-font-size:         1rem;      /* 16px */
+  --typography-body-sm-font-size:         0.875rem;  /* 14px */
+  --typography-body-xs-font-size:         0.8125rem; /* 13px — the meta floor */
+  --typography-label-lg-font-size:        1.125rem;
+  --typography-label-lg-strong-font-size: 1.125rem;
+  --typography-label-md-font-size:        0.9375rem; /* 15px */
+  --typography-label-sm-font-size:        0.875rem;
+  --typography-label-xs-font-size:        0.8125rem;
+  --typography-meta-font-size:            0.8125rem; /* 13px, was 10-12px fluid */
+
   /* Add any further spoke-only tokens below (status palettes, progress pairs,
      citation surfaces, etc.) — see theme-beacon.css for examples. */
 }

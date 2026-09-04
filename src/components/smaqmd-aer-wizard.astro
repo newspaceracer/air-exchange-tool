@@ -388,6 +388,24 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
          cutaway may live, clear of the panel + header; JS observes this rect
          and feeds it to the fit math. -->
     <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
+    <!-- Pause/play for the ring pulse (SC 2.2.2 — auto-playing, indefinite
+         motion needs an explicit stop). The script swaps label + glyph together
+         (syncPulseToggle); the play icon starts hidden and the initial sync
+         corrects it for reduced-motion users, who begin paused.
+         bcn-lego-checked: esa-button is compile-time (.astro) so it cannot swap
+         icon/label at runtime, and the icon registry ships no pause/play
+         glyphs; checked Beacon (no media-toggle control); .smaqmd-cityview__pause
+         is the reusable home, mirrored in public/aer-tool. -->
+    <button
+      type="button"
+      class="smaqmd-cityview__pause"
+      data-pulse-toggle
+      aria-label="Pause the air-cleaning animation"
+      title="Pause the air-cleaning animation"
+    >
+      <svg data-icon="pause" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg>
+      <svg data-icon="play" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+    </button>
   </div>
   )}
 
@@ -704,7 +722,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                   Add <strong data-r="moreunits">—</strong> more
                   <span data-r="unitnoun">air cleaners</span> like yours
                 </p>
-                <p class="typography-body-sm">
+                <p class="typography-body-md">
                   Or swap in stronger cleaners.
                 </p>
               </div>
@@ -735,11 +753,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                      computed by renderFix() from needCadr, so the user's real
                      ceiling height is already priced in. Hidden in CADR mode. -->
                 <div class="stack" data-gap="2xs" data-ach-equiv hidden>
-                  <p class="typography-body-sm smaqmd-aerb__equiv-lede">
+                  <p class="typography-body-md smaqmd-aerb__equiv-lede">
                     A listing qualifies if it claims any ONE of these:
                   </p>
-                  <ul class="typography-body-sm smaqmd-aerb__equiv" data-ach-equiv-rows></ul>
-                  <p class="typography-body-sm smaqmd-aerb__equiv-note">
+                  <ul class="typography-body-md smaqmd-aerb__equiv" data-ach-equiv-rows></ul>
+                  <p class="typography-body-md smaqmd-aerb__equiv-note">
                     Listing quotes a different ACH? Compare it against the next lower row.
                   </p>
                 </div>
@@ -763,7 +781,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                    who has never met either abbreviation learns them. It also names
                    WHICH of the three CADR numbers on a box to compare against —
                    a real box lists tobacco smoke / dust / pollen, not one "CADR". -->
-              <p class="typography-body-sm smaqmd-aerb__footnote">
+              <p class="typography-body-md smaqmd-aerb__footnote">
                 CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
                 cleaner's box, measured in CFM — cubic feet of air moved per minute
                 (ft³/min). Boxes usually list three CADR numbers — tobacco smoke, dust,
@@ -773,7 +791,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             </div>
             <!-- Evidence, below the action: the delivered rate vs the target. Fail
                  only — on a pass the ACH hero above carries the same numbers. -->
-            <p class="typography-body-sm smaqmd-aerb__footnote" data-ach-evidence hidden>
+            <p class="typography-body-md smaqmd-aerb__footnote" data-ach-evidence hidden>
               Your setup delivers <strong data-r="ach">—</strong> air changes per hour,
               against your target of <strong data-r="target">2</strong>.
             </p>
@@ -781,18 +799,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  CFM, so a required CADR above that isn't reachable with a single
                  unit. Shown by recompute() whenever the CADR-to-buy exceeds 700 —
                  a limit on PHYSICAL AIRFLOW, so it stays worded in CFM even when
-                 the stat above is showing the ACH framing. -->
-            <p class="typography-body-sm smaqmd-aerb__caution" data-cadr-high hidden>
-              That's more than most air cleaners deliver (they top out around
-              <strong>700 CFM</strong>), so you'll likely need more than one.
-            </p>
+                 the stat above is showing the ACH framing. Same alert pattern as
+                 the target warnings: data-alert makes show() announce it. -->
+            <div data-cadr-high hidden data-alert>
+              <EsaAlertBox variant="warning" title="More than one air cleaner needed">
+                Most air cleaners top out around <strong>700 CFM</strong>, so a
+                single unit can't reach this rating. Combine two or more — their
+                CADR ratings add together.
+              </EsaAlertBox>
+            </div>
             <!-- SECONDARY — the evidence for the number, as one legend sentence: what
                  the cleaner(s) cover vs how big the room is (floor area, the relatable
                  unit). Nested INSIDE the answer block (sm gap) so it reads as part of
                  the same result. Only shown with a cleaner delivering flow, so the
                  comparison is always complete. -->
             <div class="smaqmd-aerb__context" data-group="secondary" hidden>
-              <p class="typography-body-sm"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
+              <p class="typography-body-md"><span data-r="coversubj">Your cleaner covers</span> a room up to <strong data-r="coverarea">—</strong>, while your room is about <strong data-r="roomarea">—</strong>.</p>
               <esa-button-toggle
                 class="smaqmd-aerb__units"
                 data-field="units"
@@ -806,7 +828,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                    ceiling works out to ≈ 4.8 air changes per hour — hence "about 5".
                    Our number is sized to the user's OWN target, so at 2 or 6 the two
                    legitimately differ. Static: it is true at every target. -->
-              <p class="typography-body-sm">The room size printed on a box's AHAM label assumes a target of about 5 air changes per hour, so it may not match this estimate at other targets.</p>
+              <p class="typography-body-md">Box says something different? Air cleaner packaging lists a room size based on about 5 air changes per hour, so it won't match the coverage shown here unless that's your target too.</p>
             </div>
           </div>
 
@@ -833,7 +855,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
              OUTSIDE [data-result] so the engine-shared subtree stays byte-for-byte
              the classic view's. -->
         <EsaCollapsible title="Getting the most from your air cleaner">
-          <ul class="typography-body-sm smaqmd-aerb__tips">
+          <ul class="typography-body-md smaqmd-aerb__tips">
             <li>Remove all plastic wrapping from the filter before installing it.</li>
             <li>Keep windows and doors closed while it runs.</li>
             <li>Use it in the room where you spend the most time, usually a bedroom.</li>
@@ -910,7 +932,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           inputmode="decimal"
           label="Air changes per hour (ACH)"
         ></esa-text-field>
-        <p class="typography-body-sm smaqmd-aerb__cleaner-note">
+        <p class="typography-body-md smaqmd-aerb__cleaner-note">
           In what size room was that measured?
         </p>
         <!-- The reference room is entered the same two ways the user's OWN room is
@@ -952,8 +974,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
   /* Prompt labelling the reference-room fields (ACH mode). A question the user
-     must answer → a real label: body-small (14px) + secondary + semibold, not a
-     faint 12px caption. */
+     must answer → a real label: body-md (16px, the reading baseline) + secondary
+     + semibold, not a faint 12px caption. */
   .smaqmd-aerb__cleaner-note {
     color: var(--color-content-default-secondary);
     font-weight: var(--typography-font-weight-semibold);
@@ -1105,7 +1127,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      5.6:1 on the gray-1 ground). Only the band title, the hero number, and the
      "Add N more…" action line carry color; every supporting line (stat labels,
      subs, evidence, caution, coverage) sits at the same quiet rung. */
-  [data-result] p.typography-body-sm,
+  [data-result] p.typography-body-md,
   .smaqmd-aerb :global(.esa-stat__label),
   .smaqmd-aerb :global(.esa-stat__sub) { color: var(--color-content-default-secondary, #646464); }
   /* Hero numbers: the pass-state ACH keeps the primary brand hue; the CADR
@@ -1404,6 +1426,33 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     pointer-events: none; cursor: default;
   }
 
+  /* The pulse's pause/play control, lower right of the stage. The stage opts
+     out of pointer events (only the grips opt back in), so the button re-enables
+     its own; raised surface + border so the glyph reads over the dotted paper.
+     Mirrors .smaqmd-btn--chrome/--icon in the vanilla twin (public/aer-tool). */
+  .smaqmd-cityview__pause {
+    position: absolute;
+    inset-block-end: var(--spacing-500, 1.5rem);
+    inset-inline-end: var(--spacing-500, 1.5rem);
+    pointer-events: auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    inline-size: 2.75rem; block-size: 2.75rem; padding: 0;
+    border: var(--border-width-default, 1px) solid var(--color-border-default-subtle, #d9d9d9);
+    border-radius: var(--radius-md, 0.25rem);
+    background: var(--color-background-elevation-raised, #fcfcfc);
+    box-shadow: var(--elevation-1, 0 1px 4px 0 rgba(0, 0, 0, 0.03));
+    color: var(--color-content-default-secondary, #646464);
+    cursor: pointer;
+  }
+  .smaqmd-cityview__pause:hover {
+    background: var(--color-background-elevation-sunken, #f0f0f0);
+    color: var(--color-content-default, #121212);
+  }
+  .smaqmd-cityview__pause:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #0073b2);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+
   /* The wizard's fixed LEFT column: header on top, wizard card below it. Sized to
      be the prominent element on the page; the scene fits into what's left (right). */
   .smaqmd-aerw__col {
@@ -1651,6 +1700,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       block-size: 30dvh;
     }
     .smaqmd-cityview__safe { inset: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); }
+    .smaqmd-cityview__pause {
+      inset-block-end: var(--spacing-300, 0.75rem);
+      inset-inline-end: var(--spacing-400, 1rem);
+    }
     .smaqmd-aerw__col {
       position: relative; inset: auto;
       inline-size: auto; max-inline-size: none; max-block-size: none;
@@ -1955,6 +2008,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const sceneSentinel = root.querySelector<HTMLElement>('[data-safe]');
     const sentinel = sceneSentinel ?? document.createElement('div');
     const hasScene = !!(sceneSvg && sceneStage && sceneSentinel);
+    // The pulse's pause/play control, queried HERE rather than in the toggle
+    // section below: it floats over the stage's lower-right corner, which is
+    // exactly where the capacity caption lands, so syncViewport must be able to
+    // measure it. The toggle wiring further down reuses this reference.
+    const pulseToggle = root.querySelector<HTMLButtonElement>('[data-pulse-toggle]');
+    // …its rect in STAGE coordinates, refreshed by syncViewport. Same contract as
+    // `safe`: CSS owns where the button sits (and at which breakpoint), JS only
+    // measures. null = not rendered, so no keep-out.
+    let pauseBox: { x: number; y: number; w: number; h: number } | null = null;
+    // Half of the ghost's dashed outline paints OUTSIDE the corner points the fit
+    // is handed, so computeFit gives that half back on every side. Read off the
+    // rendered stroke rather than typed, so the CSS stays the single source.
+    const capStrokeEl = svg.querySelector<SVGElement>('[data-cap="top"]');
+    const capStroke = capStrokeEl ? parseFloat(getComputedStyle(capStrokeEl).strokeWidth) || 0 : 0;
     // hasScene answers "is the scene in the document"; sceneLive answers "is it
     // WORTH DRAWING right now". They differ for exactly one case: the responsive
     // variant ships the scene at every width but CSS-hides it under 68rem — except
@@ -1975,6 +2042,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       const s = sentinel.getBoundingClientRect();
       const c = container.getBoundingClientRect();
       safe = { x: s.left - c.left, y: s.top - c.top, w: s.width, h: s.height };
+      // The button's box, in the same stage coordinates — measured on re-layout
+      // only (never per frame): its position is CSS, and CSS only moves it when
+      // the breakpoint does, which is a resize. A zero rect means it is not being
+      // rendered, which is no keep-out at all.
+      const p = pulseToggle?.getBoundingClientRect();
+      pauseBox = p && p.width
+        ? { x: p.left - c.left, y: p.top - c.top, w: p.width, h: p.height }
+        : null;
       drawScene(cur.L, cur.W, cur.H);
     };
     if (hasScene) new ResizeObserver(syncViewport).observe(sentinel);
@@ -2283,6 +2358,76 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       };
     };
 
+    // ---- capacity caption placement ----
+    // The caption is the ONE piece of the scene drawn outside the fitted geometry:
+    // it hangs off the ghost's near corner, and a height-limited fit puts that
+    // corner ON the safe-area edge — so the raw anchor pushes ~19px of text box
+    // past the safe edge, which on the narrow band (12px inset) is past the stage
+    // itself and the SVG slices it mid-glyph. Feeding the text to the fit is the
+    // wrong lever (it would shrink the whole composition at every width for a
+    // label that is usually nowhere near an edge), so the ANCHOR is clamped
+    // instead, against the measured text box, under two constraints in order:
+    //   1. the box sits inside the stage, inset by edgeInset()
+    //   2. the box never meets the pause control's keep-out
+    // This lives in drawScene's call path, which every draw routes through — the
+    // rAF tick, syncViewport, and the paused / reduced-motion draws alike.
+    const CAP_GAP = 8;   // px from the ghost's near corner to the caption box
+    const capLabelEl = svg.querySelector<SVGGraphicsElement>('[data-label="capacity"]');
+    // Cached per string, so a getBBox costs one layout per NEW reading: the number
+    // changes in recompute() only, never across the frames of a morph.
+    let capMetrics: { key: string; w: number; h: number; dx: number; dy: number } | null = null;
+    // How far the caption keeps off the stage edge: the SMALLEST inset the safe
+    // area already declares at this breakpoint (12px narrow, 24px wide). Derived
+    // from the measured rect rather than typed, so it inherits the CSS spacing
+    // tokens and follows them whenever they change.
+    const edgeInset = () => Math.max(2, Math.min(
+      safe.x, safe.y, viewW - (safe.x + safe.w), viewH - (safe.y + safe.h),
+    ));
+    const capLabelMetrics = (text: string) => {
+      if (!capLabelEl) return null;
+      if (capMetrics && capMetrics.key === text) return capMetrics;
+      capLabelEl.textContent = text;
+      capLabelEl.setAttribute('x', '0'); capLabelEl.setAttribute('y', '0');
+      // dx/dy are the box's offset from the ANCHOR at (0,0) — left side bearing and
+      // -ascent — which is what lets the clamp work in box space and back-solve the
+      // anchor. getBBox is unusable inside a display:none subtree (the narrow
+      // variant hides the whole stage off the result step): no metrics, no clamp,
+      // and nothing cached, so the next visible draw measures for real.
+      let b: DOMRect | null = null;
+      try { b = capLabelEl.getBBox(); } catch { b = null; }
+      if (!b || !b.width) return null;
+      capMetrics = { key: text, w: b.width, h: b.height, dx: b.x, dy: b.y };
+      return capMetrics;
+    };
+    const capLabelAt = (cx: number, cy: number, text: string): Pt => {
+      // Preferred spot: down-right of the corner, over open paper at any scale.
+      let x = cx + CAP_GAP, y = cy + 2 * CAP_GAP;
+      const m = capLabelMetrics(text);
+      if (!m) return [x, y];
+      const pad = edgeInset();
+      // place() takes the BOX's top-left and back-solves the text anchor.
+      const place = (bx: number, by: number) => { x = bx - m.dx; y = by - m.dy; };
+      place(
+        clamp(x + m.dx, pad, Math.max(pad, viewW - pad - m.w)),
+        clamp(y + m.dy, pad, Math.max(pad, viewH - pad - m.h)),
+      );
+      if (pauseBox) {
+        // The button's rect grown by the same edge margin, so the caption clears it
+        // by the gap it keeps from the stage edge rather than merely touching it.
+        const k0x = pauseBox.x - pad, k0y = pauseBox.y - pad;
+        const k1x = pauseBox.x + pauseBox.w + pad, k1y = pauseBox.y + pauseBox.h + pad;
+        const bx = x + m.dx, by = y + m.dy;
+        if (bx < k1x && bx + m.w > k0x && by < k1y && by + m.h > k0y) {
+          // Prefer sliding LEFT of the button — same baseline, still reading off the
+          // ghost's corner. Only when the caption is too long for that row does it
+          // lift clear above, which always fits (the button is a corner control).
+          if (k0x - m.w >= pad) place(k0x - m.w, by);
+          else place(bx, Math.max(pad, k0y - m.h));
+        }
+      }
+      return [x, y];
+    };
+
     // Draw the whole scene at the given (already-eased) room dimensions. Every
     // world point is projected, then the entire figure is scaled + centred to
     // fill the frame, so proportions stay truthful at any absolute size.
@@ -2338,9 +2483,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         const ys = fitPts.map((p) => p[1]);
         const minX = Math.min(...xs), maxX = Math.max(...xs);
         const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const scale = Math.min(safe.w / (maxX - minX || 1), safe.h / (maxY - minY || 1), MAX_SCALE);
-        const ox = safe.x + (safe.w - (maxX - minX) * scale) / 2 - minX * scale;
-        const oy = safe.y + (safe.h - (maxY - minY) * scale) / 2 - minY * scale;
+        // Fit into the safe area MINUS the ghost's stroke bleed. Every point above
+        // is a geometric corner, but the ghost is drawn with a centred dashed
+        // stroke, so half of it paints outside the corner it belongs to — and when
+        // the ghost is what drives the fit (bigger than the room) that corner lands
+        // exactly ON the safe edge, putting the outline's outer half past it.
+        const bleed = capStroke / 2;
+        const fw = Math.max(1, safe.w - capStroke);
+        const fh = Math.max(1, safe.h - capStroke);
+        const scale = Math.min(fw / (maxX - minX || 1), fh / (maxY - minY || 1), MAX_SCALE);
+        const ox = safe.x + bleed + (fw - (maxX - minX) * scale) / 2 - minX * scale;
+        const oy = safe.y + bleed + (fh - (maxY - minY) * scale) / 2 - minY * scale;
         return { scale, ox, oy };
       };
 
@@ -2470,12 +2623,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Label just past the ghost's near corner (L, gy1) — its front edge on
         // the open side — nudged down-right so it sits over open paper at any
         // scale (the label itself paints above the room contents regardless).
+        // capLabelAt() owns the rest: that corner is a fit boundary, so the nudge
+        // alone would run the text off the band and under the pause control.
         const [cx, cy] = w(L, gy1, 0);
         const prefix = capClamped ? '≥' : '';
         // Match the results card's unit toggle: ft² floor area (default) or ft³ volume.
         const capFt3 = raw('units') === 'ft3';
         const capText = capFt3 ? `${fmt(capMaxVol, 0)} ft³` : `${fmt(capMaxVol / 8, 0)} ft²`;
-        setLabel('capacity', [cx + 8, cy + 16], `covers a room up to ${prefix}${capText}`);
+        const capCaption = `covers a room up to ${prefix}${capText}`;
+        setLabel('capacity', capLabelAt(cx, cy, capCaption), capCaption);
       }
 
       // Per cleaner: its cleaning-pulse group (rings lying on the floor) and its
@@ -2585,6 +2741,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // even a slow cadence reads as a continuous ripple rather than a lone blip.
     const HOUR_SECONDS = 5;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // The pulse's explicit stop (SC 2.2.2: auto-playing, indefinite motion needs
+    // one). Toggled by the corner button; starts paused under
+    // prefers-reduced-motion — the same standstill those users always got, now
+    // reversible in either direction.
+    let pulsePaused = reduced;
     const cur = { L: 12, W: 10, H: 8 };
     const tgt = { L: 12, W: 10, H: 8 };
     // Capacity ghost: the eased footprint scale (capS) toward its target
@@ -2617,7 +2778,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // change for THAT cleaner; ring k rides k/RING_COUNT ahead of the phase, which
     // is what keeps the three ripples evenly spaced no matter the cadence.
     const ringPhase = new Array<number>(MAX_CLEANERS).fill(0);
-    const animating = () => stateNow !== 'idle' && !reduced;
+    const animating = () => stateNow !== 'idle' && !pulsePaused;
 
     // Paint every drawn cleaner's rings at the CURRENT phase, off the screen bases
     // drawScene cached. A ring's radius travels linearly from r0 out to rMax across
@@ -2632,9 +2793,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         for (let k = 0; k < RING_COUNT; k++) {
           const poly = polys[k];
           if (!poly) continue;
-          // Under prefers-reduced-motion the phase never advances, so the rings
-          // park at their static offsets (p = k/RING_COUNT): the cleaning-radius
-          // cue still reads, it just doesn't travel.
+          // While paused (the corner button, or prefers-reduced-motion's
+          // initial state) the phase never advances, so the rings park at their
+          // static offsets (p = k/RING_COUNT): the cleaning-radius cue still
+          // reads, it just doesn't travel.
           const p = (ringPhase[i] + k / RING_COUNT) % 1;
           const r = d.r0 + (d.rMax - d.r0) * p;
           const pts: string[] = [];
@@ -2658,7 +2820,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // runs immediately after on the same tick. Skip cleaners past sceneN, cleaners
     // with no flow, and (with the whole pulse) an idle scene.
     const updateRings = (dt: number) => {
-      if (stateNow === 'idle' || reduced) return;
+      if (stateNow === 'idle' || pulsePaused) return;
       for (let i = 0; i < MAX_CLEANERS && i < sceneN; i++) {
         const ach = laneAch[i];
         if (!ach || !Number.isFinite(ach)) continue;
@@ -2825,6 +2987,29 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     if (isResponsive && hasScene) mqMobile.addEventListener('change', syncSceneLive);
 
+    // ---- pulse pause/play ----
+    // Label + glyph swap together (a media-style toggle, not aria-pressed).
+    // Resuming must call startLoop(): a fully settled scene has no rAF in
+    // flight to pick the phase back up. (`pulseToggle` is queried up with the
+    // scene nodes — syncViewport measures the same button as a caption keep-out.)
+    const syncPulseToggle = () => {
+      if (!pulseToggle) return;
+      const label = `${pulsePaused ? 'Play' : 'Pause'} the air-cleaning animation`;
+      pulseToggle.setAttribute('aria-label', label);
+      pulseToggle.setAttribute('title', label);
+      pulseToggle.querySelectorAll<SVGElement>('[data-icon]').forEach((icon) => {
+        icon.style.display = (icon.dataset.icon === 'pause') === pulsePaused ? 'none' : '';
+      });
+    };
+    if (pulseToggle) {
+      syncPulseToggle();
+      pulseToggle.addEventListener('click', () => {
+        pulsePaused = !pulsePaused;
+        syncPulseToggle();
+        if (!pulsePaused) startLoop();
+      });
+    }
+
     // ---- air-cleaner list (add / remove any number, capped at MAX_CLEANERS) ----
     const cleanersHost = root.querySelector<HTMLElement>('[data-cleaners]')!;
     const template = root.querySelector<HTMLTemplateElement>('[data-cleaner-template]')!;
@@ -2905,6 +3090,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // It's excluded from cleanerBlocks() the moment it starts collapsing, so the
     // scene + result update immediately while the row animates out.
     const removeCleaner = (b: HTMLElement) => {
+      // Move focus OFF the doomed block before anything collapses — the
+      // activated Remove button is inside it, and removing a focused element
+      // drops focus to <body>. Nearest surviving block's Remove button when 2+
+      // remain (theirs stay visible); otherwise the Add button (the sole
+      // survivor's Remove button is about to hide).
+      const all = cleanerBlocks();
+      const idx = all.indexOf(b);
+      const rest = all.filter((x) => x !== b);
+      let next: HTMLButtonElement | null = null;
+      if (rest.length > 1) {
+        const neighbor = rest[Math.min(idx, rest.length - 1)];
+        next = neighbor.querySelector<HTMLButtonElement>('[data-remove-cleaner] button');
+      }
+      if (!next) next = root.querySelector<HTMLButtonElement>('[data-add-cleaner] button');
+      next?.focus();
+      kitAnnounce(`Air cleaner ${idx + 1} removed.`);
       b.setAttribute('data-removing', '');
       const finishNow = () => { b.remove(); morphScene(); recompute(); };
       if (reduced) { finishNow(); return; }
@@ -2955,8 +3156,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         if (title) title.textContent = `Air cleaner ${i + 1}`;
         const rm = b.querySelector('[data-remove-cleaner]');
         showEl(rm, blocks.length > 1);
-        const btn = rm?.querySelector<HTMLElement>('esa-icon-button, [label]');
-        if (btn) btn.setAttribute('label', `Remove air cleaner ${i + 1}`);
+        // The lego rendered a NATIVE <button aria-label title> at build time —
+        // rewrite those, not the compile-time `label` prop, which no longer
+        // exists as anything settable.
+        const btn = rm?.querySelector<HTMLButtonElement>('button');
+        if (btn) {
+          const rmLabel = `Remove air cleaner ${i + 1}`;
+          btn.setAttribute('aria-label', rmLabel);
+          btn.setAttribute('title', rmLabel);
+        }
         // Per-cleaner unit mode: show the airflow or the ACH sub-form.
         const unit = raw('unit', b.dataset.cleanerBlock!);
         showEl(b.querySelector('[data-unit-mode="airflow"]'), unit !== 'ach');
@@ -3453,6 +3661,23 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         addCleaner({ copyLast: true, animate: true });
         morphScene();
         recompute();
+        // The add that reaches the cap hides this very button (syncVisibility
+        // inside recompute), which would drop focus to <body>. Land it on the
+        // new block's first control, and say why the button went away — the cap
+        // note appears silently otherwise.
+        const atCapNow = cleanerBlocks();
+        if (atCapNow.length >= MAX_CLEANERS) {
+          // The new block's Remove button: the one control of its own that is
+          // guaranteed light-DOM (the esa form fields are shadow), and its
+          // renumbered label announces where focus landed.
+          const newest = atCapNow[atCapNow.length - 1];
+          newest?.querySelector<HTMLButtonElement>('[data-remove-cleaner] button')?.focus();
+          const capNote = root.querySelector('[data-cap-note]');
+          kitAnnounce(
+            capNote?.textContent?.trim()
+              || 'You have added the maximum number of air cleaners.',
+          );
+        }
         return;
       }
       const rm = t.closest('[data-remove-cleaner]');

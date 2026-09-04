@@ -21,13 +21,13 @@ import { withBase } from '../lib/base';
 
 <EsaCollapsible title="Where to find an air cleaner's ratings">
   <div class="stack" data-gap="sm">
-    <p class="typography-body-sm smaqmd-aer-find__lede">
+    <p class="typography-body-md smaqmd-aer-find__lede">
       Look for the CADR (Clean Air Delivery Rate) or air flow rating, in CFM (ft³/min):
     </p>
     <!-- Own list class, NOT the wizard's .smaqmd-aerb__tips: that rule is scoped to
          smaqmd-aer-wizard.astro and would not reach a separate component's markup
          anyway — reaching for it would only look like reuse. -->
-    <ul class="typography-body-sm smaqmd-aer-find__list">
+    <ul class="typography-body-md smaqmd-aer-find__list">
       <li>
         On the front of the box — the AHAM Verifide label lists three CADR
         numbers (tobacco smoke, dust, pollen). Use the lowest, usually Tobacco
@@ -66,7 +66,7 @@ import { withBase } from '../lib/base';
         height="645"
         loading="lazy"
       />
-      <figcaption class="typography-body-sm">
+      <figcaption class="typography-body-md">
         The AHAM Verifide label on the front of the box — the three circled CADR
         numbers are what this tool asks for; use the lowest (here, Tobacco
         Smoke).
@@ -86,7 +86,7 @@ import { withBase } from '../lib/base';
           height="784"
           loading="lazy"
         />
-        <figcaption class="typography-body-sm">
+        <figcaption class="typography-body-md">
           A smaller unit's label — same three numbers; the lowest here is
           Tobacco Smoke, 62.
         </figcaption>
@@ -99,7 +99,7 @@ import { withBase } from '../lib/base';
           height="789"
           loading="lazy"
         />
-        <figcaption class="typography-body-sm">
+        <figcaption class="typography-body-md">
           Another box — its fine print confirms the printed room size assumes
           4.8 air changes per hour.
         </figcaption>
