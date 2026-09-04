@@ -471,6 +471,53 @@
           </g>
         </svg>
         <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>
+        <!-- Pause/play for the ring pulse (SC 2.2.2 — the pulse is auto-playing
+             and indefinite, so it gets an explicit stop). app.js swaps the label
+             and glyph together (see syncPulseToggle); the play icon starts
+             hidden and syncPulseToggle corrects it for reduced-motion users,
+             who begin paused. -->
+        <button
+          type="button"
+          class="smaqmd-btn smaqmd-btn--chrome smaqmd-btn--icon smaqmd-cityview__pause"
+          data-pulse-toggle
+          aria-label="Pause the air-cleaning animation"
+          title="Pause the air-cleaning animation"
+        >
+          <svg
+            class="smaqmd-btn__icon"
+            data-icon="pause"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+          <svg
+            class="smaqmd-btn__icon"
+            data-icon="play"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            style="display: none"
+          >
+            <polygon points="6 3 20 12 6 21 6 3"></polygon>
+          </svg>
+        </button>
       </div>
 
       <div class="smaqmd-aerw__col">
@@ -824,11 +871,11 @@
                       </summary>
                       <div class="smaqmd-collapsible__body">
                         <div class="smaqmd-stack" data-gap="sm">
-                          <p class="smaqmd-type-body-sm smaqmd-aer-find__lede">
+                          <p class="smaqmd-type-body-md smaqmd-aer-find__lede">
                             Look for the CADR (Clean Air Delivery Rate) or air
                             flow rating, in CFM (ft³/min):
                           </p>
-                          <ul class="smaqmd-type-body-sm smaqmd-aer-find__list">
+                          <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
                               On the front of the box — the AHAM Verifide label
                               lists three CADR numbers (tobacco smoke, dust,
@@ -867,7 +914,7 @@
                               height="645"
                               loading="lazy"
                             />
-                            <figcaption class="smaqmd-type-body-sm">
+                            <figcaption class="smaqmd-type-body-md">
                               The AHAM Verifide label on the front of the box —
                               the three circled CADR numbers are what this tool
                               asks for; use the lowest (here, Tobacco Smoke).
@@ -887,7 +934,7 @@
                                 height="784"
                                 loading="lazy"
                               />
-                              <figcaption class="smaqmd-type-body-sm">
+                              <figcaption class="smaqmd-type-body-md">
                                 A smaller unit's label — same three numbers; the
                                 lowest here is Tobacco Smoke, 62.
                               </figcaption>
@@ -900,7 +947,7 @@
                                 height="789"
                                 loading="lazy"
                               />
-                              <figcaption class="smaqmd-type-body-sm">
+                              <figcaption class="smaqmd-type-body-md">
                                 Another box — its fine print confirms the printed
                                 room size assumes 4.8 air changes per hour.
                               </figcaption>
@@ -1449,11 +1496,11 @@
                       </summary>
                       <div class="smaqmd-collapsible__body">
                         <div class="smaqmd-stack" data-gap="sm">
-                          <p class="smaqmd-type-body-sm smaqmd-aer-find__lede">
+                          <p class="smaqmd-type-body-md smaqmd-aer-find__lede">
                             Look for the CADR (Clean Air Delivery Rate) or air
                             flow rating, in CFM (ft³/min):
                           </p>
-                          <ul class="smaqmd-type-body-sm smaqmd-aer-find__list">
+                          <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
                               On the front of the box — the AHAM Verifide label
                               lists three CADR numbers (tobacco smoke, dust,
@@ -1492,7 +1539,7 @@
                               height="645"
                               loading="lazy"
                             />
-                            <figcaption class="smaqmd-type-body-sm">
+                            <figcaption class="smaqmd-type-body-md">
                               The AHAM Verifide label on the front of the box —
                               the three circled CADR numbers are what this tool
                               asks for; use the lowest (here, Tobacco Smoke).
@@ -1512,7 +1559,7 @@
                                 height="784"
                                 loading="lazy"
                               />
-                              <figcaption class="smaqmd-type-body-sm">
+                              <figcaption class="smaqmd-type-body-md">
                                 A smaller unit's label — same three numbers; the
                                 lowest here is Tobacco Smoke, 62.
                               </figcaption>
@@ -1525,7 +1572,7 @@
                                 height="789"
                                 loading="lazy"
                               />
-                              <figcaption class="smaqmd-type-body-sm">
+                              <figcaption class="smaqmd-type-body-md">
                                 Another box — its fine print confirms the printed
                                 room size assumes 4.8 air changes per hour.
                               </figcaption>

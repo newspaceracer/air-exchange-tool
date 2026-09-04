@@ -1498,6 +1498,20 @@
   cursor: default;
 }
 
+/* The pulse's pause/play control, lower right of the scene. The container
+   opts out of pointer events (only the grips opt back in), so the button
+   re-enables its own; raised surface + border so the glyph reads over the
+   dotted paper rather than sitting on artwork. */
+.smaqmd-aerb .smaqmd-cityview__pause {
+  position: absolute;
+  inset-block-end: var(--spacing-500);
+  inset-inline-end: var(--spacing-500);
+  pointer-events: auto;
+  background: var(--color-background-elevation-raised);
+  border-color: var(--color-border-default-subtle);
+  box-shadow: var(--elevation-1);
+}
+
 /* The page heading, first child of the column (app.js moves the whole header
    above the graphic when the layout goes narrow). The margin reset is spelled out
    rather than left to the :where() heading reset above: :where() has zero
@@ -1789,6 +1803,11 @@
   .smaqmd-aerb[data-variant="responsive"][data-section="3"]
     .smaqmd-cityview__safe {
     inset: var(--spacing-300) var(--spacing-400);
+  }
+  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
+    .smaqmd-cityview__pause {
+    inset-block-end: var(--spacing-300);
+    inset-inline-end: var(--spacing-400);
   }
   .smaqmd-aerb .smaqmd-aerw__col {
     position: relative;

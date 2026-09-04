@@ -892,6 +892,11 @@
   // in flight at a time, evenly spaced through the cycle.
   var HOUR_SECONDS = 5;
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The pulse's explicit stop (SC 2.2.2: auto-playing, indefinite motion needs
+  // one). Toggled by the corner button; starts paused under
+  // prefers-reduced-motion — the same standstill those users always got, now
+  // reversible in either direction.
+  var pulsePaused = reduced;
   var cur = { L: 12, W: 10, H: 8 };
   var tgt = { L: 12, W: 10, H: 8 };
   var capS = 0;
@@ -923,7 +928,7 @@
   var ringPhase = [];
   for (var rf = 0; rf < MAX_CLEANERS; rf++) ringPhase[rf] = 0;
   var animating = function () {
-    return stateNow !== 'idle' && !reduced;
+    return stateNow !== 'idle' && !pulsePaused;
   };
 
   // Paint every drawn cleaner's rings at the CURRENT phase, off the screen bases
@@ -938,8 +943,9 @@
       for (var k = 0; k < RING_COUNT; k++) {
         var poly = polys[k];
         if (!poly) continue;
-        // Under prefers-reduced-motion the phase never advances, so the rings
-        // park at their static offsets (p = k/RING_COUNT).
+        // While paused (the corner button, or prefers-reduced-motion's initial
+        // state) the phase never advances, so the rings park at their static
+        // offsets (p = k/RING_COUNT).
         var p = (ringPhase[i] + k / RING_COUNT) % 1;
         var r = d.r0 + (d.rMax - d.r0) * p;
         var pts = [];
@@ -964,7 +970,7 @@
   // still visibly moves. Pure arithmetic: the repaint is drawScene's job and runs
   // immediately after on the same tick.
   var updateRings = function (dt) {
-    if (stateNow === 'idle' || reduced) return;
+    if (stateNow === 'idle' || pulsePaused) return;
     for (var i = 0; i < MAX_CLEANERS && i < sceneN; i++) {
       var ach = laneAch[i];
       if (!ach || !isFinite(ach)) continue;
@@ -1133,6 +1139,31 @@
   };
   if (isResponsive && hasScene) mqMobile.addEventListener('change', syncSceneLive);
 
+  // ---- pulse pause/play ----
+  // Label + glyph swap together (a media-style toggle, not aria-pressed).
+  // Resuming must call startLoop(): a fully settled scene has no rAF in flight
+  // to pick the phase back up.
+  var pulseToggle = root.querySelector('[data-pulse-toggle]');
+  var syncPulseToggle = function () {
+    if (!pulseToggle) return;
+    var label = (pulsePaused ? 'Play' : 'Pause') + ' the air-cleaning animation';
+    pulseToggle.setAttribute('aria-label', label);
+    pulseToggle.setAttribute('title', label);
+    var icons = pulseToggle.querySelectorAll('[data-icon]');
+    for (var ic = 0; ic < icons.length; ic++) {
+      icons[ic].style.display =
+        (icons[ic].getAttribute('data-icon') === 'pause') === pulsePaused ? 'none' : '';
+    }
+  };
+  if (pulseToggle) {
+    syncPulseToggle();
+    pulseToggle.addEventListener('click', function () {
+      pulsePaused = !pulsePaused;
+      syncPulseToggle();
+      if (!pulsePaused) startLoop();
+    });
+  }
+
   var cleanersHost = root.querySelector('[data-cleaners]');
   var template = root.querySelector('[data-cleaner-template]');
   var cleanerBlocks = function () {
@@ -1236,6 +1267,24 @@
   };
 
   var removeCleaner = function (b) {
+    // Move focus OFF the doomed block before anything collapses — the activated
+    // Remove button is inside it, and removing a focused element drops focus to
+    // <body>. Nearest surviving block's Remove button when 2+ remain (theirs
+    // stay visible); otherwise the Add button (the sole survivor's Remove
+    // button is about to hide).
+    var all = cleanerBlocks();
+    var idx = all.indexOf(b);
+    var rest = all.filter(function (x) {
+      return x !== b;
+    });
+    var next = null;
+    if (rest.length > 1) {
+      var neighbor = rest[Math.min(idx, rest.length - 1)];
+      next = neighbor.querySelector('[data-remove-cleaner] button');
+    }
+    if (!next) next = root.querySelector('[data-add-cleaner] button');
+    if (next) next.focus();
+    kitAnnounce('Air cleaner ' + (idx + 1) + ' removed.');
     b.setAttribute('data-removing', '');
     var finishNow = function () {
       b.remove();
@@ -1784,6 +1833,22 @@
       addCleaner({ copyLast: true, animate: true });
       morphScene();
       recompute();
+      // The add that reaches the cap hides this very button (syncVisibility
+      // inside recompute), which would drop focus to <body>. Land it on the new
+      // block's first control, and say why the button went away — the cap note
+      // appears silently otherwise.
+      var atCapNow = cleanerBlocks();
+      if (atCapNow.length >= MAX_CLEANERS) {
+        var newest = atCapNow[atCapNow.length - 1];
+        var firstInput = newest ? newest.querySelector('input') : null;
+        if (firstInput) firstInput.focus();
+        var capNote = root.querySelector('[data-cap-note]');
+        kitAnnounce(
+          capNote && capNote.textContent
+            ? capNote.textContent.trim()
+            : 'You have added the maximum number of air cleaners.'
+        );
+      }
       return;
     }
     var rm = t.closest('[data-remove-cleaner]');
