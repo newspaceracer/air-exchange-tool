@@ -346,6 +346,19 @@
 
 .smaqmd-aerb .smaqmd-stat__value {
   color: var(--_stat-value-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.smaqmd-aerb :is(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+.smaqmd-aerb p {
+  text-wrap: pretty;
+}
+
+.smaqmd-aerb {
+  color-scheme: light;
 }
 
 .smaqmd-aerb .smaqmd-stat--accent .smaqmd-stat__value {
@@ -445,9 +458,14 @@
   cursor: pointer;
   text-align: center;
   transition:
-    background var(--transition-fast),
+    background-color var(--transition-fast),
     border-color var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    scale var(--transition-fast);
+}
+
+.smaqmd-aerb .smaqmd-btn:active:not(:disabled) {
+  scale: 0.97;
 }
 
 .smaqmd-aerb .smaqmd-btn__icon {
@@ -464,8 +482,10 @@
   color: var(--color-content-default-knockout);
 }
 
-.smaqmd-aerb .smaqmd-btn--primary:hover {
-  background: var(--color-background-brand-hover);
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-btn--primary:hover {
+    background: var(--color-background-brand-hover);
+  }
 }
 
 .smaqmd-aerb .smaqmd-btn--outline {
@@ -474,17 +494,33 @@
   background: var(--color-background-elevation-raised);
 }
 
-.smaqmd-aerb .smaqmd-btn--outline:hover {
-  background: var(--color-background-elevation-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-btn--outline:hover {
+    background: var(--color-background-elevation-sunken);
+  }
+}
+
+.smaqmd-aerb .smaqmd-btn--ghost {
+  border-color: transparent;
+  color: var(--color-content-default);
+  background: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-btn--ghost:hover {
+    background: var(--color-background-elevation-sunken);
+  }
 }
 
 .smaqmd-aerb .smaqmd-btn--chrome {
   color: var(--color-content-default-secondary);
 }
 
-.smaqmd-aerb .smaqmd-btn--chrome:hover {
-  background: var(--color-background-overlay-strong-hover);
-  color: var(--color-content-default);
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-btn--chrome:hover {
+    background: var(--color-background-overlay-strong-hover);
+    color: var(--color-content-default);
+  }
 }
 
 .smaqmd-aerb .smaqmd-btn--icon {
@@ -542,97 +578,6 @@
   margin-block-start: var(--spacing-100);
   color: var(--color-content-default-secondary);
 }
-.smaqmd-aerb .smaqmd-range {
-  --_track-height: 8px;
-  --_thumb-size: 24px;
-  display: block;
-  width: 100%;
-  height: var(--_thumb-size);
-  margin: 0;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-.smaqmd-aerb .smaqmd-range::-webkit-slider-runnable-track {
-  height: var(--_track-height);
-  border-radius: calc(var(--_track-height) / 2);
-  background: linear-gradient(
-    to right,
-    var(--color-background-brand) 0%,
-    var(--color-background-brand) var(--_fill-percent, 0%),
-    var(--color-border-default) var(--_fill-percent, 0%),
-    var(--color-border-default) 100%
-  );
-}
-.smaqmd-aerb .smaqmd-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: var(--_thumb-size);
-  height: var(--_thumb-size);
-  margin-top: calc((var(--_track-height) - var(--_thumb-size)) / 2);
-  border: 2px solid var(--color-background-brand);
-  border-radius: 50%;
-  background: var(--color-background-elevation-raised);
-  box-shadow: var(--elevation-1);
-  transition:
-    box-shadow var(--transition-fast),
-    transform var(--transition-fast);
-}
-.smaqmd-aerb .smaqmd-range::-moz-range-track {
-  height: var(--_track-height);
-  border-radius: calc(var(--_track-height) / 2);
-  background: var(--color-border-default);
-}
-.smaqmd-aerb .smaqmd-range::-moz-range-progress {
-  height: var(--_track-height);
-  border-radius: calc(var(--_track-height) / 2);
-  background: var(--color-background-brand);
-}
-.smaqmd-aerb .smaqmd-range::-moz-range-thumb {
-  width: var(--_thumb-size);
-  height: var(--_thumb-size);
-  border: 2px solid var(--color-background-brand);
-  border-radius: 50%;
-  background: var(--color-background-elevation-raised);
-  box-shadow: var(--elevation-1);
-}
-.smaqmd-aerb .smaqmd-range:focus-visible {
-  outline: none;
-}
-.smaqmd-aerb .smaqmd-range:focus-visible::-webkit-slider-thumb {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-.smaqmd-aerb .smaqmd-range:focus-visible::-moz-range-thumb {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-.smaqmd-aerb .smaqmd-range:hover::-webkit-slider-thumb {
-  transform: scale(1.1);
-}
-@media (forced-colors: active) {
-  .smaqmd-aerb .smaqmd-range::-webkit-slider-runnable-track {
-    forced-color-adjust: none;
-    border: 1px solid CanvasText;
-    background: linear-gradient(
-      to right,
-      Highlight 0%,
-      Highlight var(--_fill-percent, 0%),
-      Canvas var(--_fill-percent, 0%),
-      Canvas 100%
-    );
-  }
-  .smaqmd-aerb .smaqmd-range::-moz-range-track {
-    forced-color-adjust: none;
-    border: 1px solid CanvasText;
-    background: Canvas;
-  }
-  .smaqmd-aerb .smaqmd-range::-moz-range-progress {
-    forced-color-adjust: none;
-    background: Highlight;
-  }
-}
-
 .smaqmd-aerb .smaqmd-radio {
   margin: 0;
   padding: 0;
@@ -740,7 +685,7 @@
   background: var(--color-background-elevation-raised);
   cursor: pointer;
   transition:
-    background var(--transition-fast),
+    background-color var(--transition-fast),
     color var(--transition-fast);
 }
 
@@ -801,6 +746,13 @@
   font-weight: var(--typography-font-weight-semibold);
 }
 
+.smaqmd-aerb .smaqmd-aerb__target-readout {
+  font-variant-numeric: tabular-nums;
+}
+.smaqmd-aerb .smaqmd-aerb__target-hint {
+  color: var(--color-content-default-secondary);
+}
+
 .smaqmd-aerb .smaqmd-aerb__context {
   color: var(--color-content-default-secondary);
   display: flex;
@@ -857,10 +809,6 @@
   align-items: flex-start;
   gap: var(--spacing-400) var(--spacing-600);
 }
-/* The fix stat claims the row's slack (grow, shrink to a 16rem floor) so the
-   rating toggle keeps the TOP-right corner beside it even when ACH mode makes
-   the stat tall — its long text wraps instead of pushing the toggle to a new
-   row. Below 16rem + toggle the row wraps and the toggle drops under. */
 .smaqmd-aerb .smaqmd-aerb__heroes > [data-metric="fix"] {
   flex: 1 1 16rem;
   min-inline-size: 0;
@@ -868,56 +816,8 @@
 .smaqmd-aerb .smaqmd-aerb__rating {
   align-self: flex-start;
 }
-/* CADR/ACH toggle, right edge of the heroes row: auto margin pushes it to the
-   inline end of the same row as the stat it controls — no dedicated row, no
-   dead space. */
 .smaqmd-aerb .smaqmd-aerb__rating-row {
   margin-inline-start: auto;
-}
-.smaqmd-aerb .smaqmd-aerb__target-scale {
-  position: relative;
-  container-type: inline-size;
-  --_thumb-size: 24px;
-}
-.smaqmd-aerb .smaqmd-aerb__target-marks {
-  position: relative;
-  block-size: 3.9em;
-  margin-block-start: var(--spacing-100);
-  color: var(--color-content-default-secondary);
-}
-.smaqmd-aerb .smaqmd-aerb__target-mark {
-  position: absolute;
-  inset-block-start: 0.7em;
-  inset-inline-start: 0;
-  inline-size: max-content;
-  white-space: nowrap;
-  translate: clamp(
-    0px,
-    calc(
-      var(--_thumb-size) / 2 + var(--_at) * (100cqw - var(--_thumb-size)) / 100 -
-        50%
-    ),
-    calc(100cqw - 100%)
-  );
-}
-.smaqmd-aerb .smaqmd-aerb__target-mark[data-row="2"] {
-  inset-block-start: 2.3em;
-}
-.smaqmd-aerb .smaqmd-aerb__target-tick {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  inline-size: 0;
-  block-size: 0.5em;
-  border-inline-start: 2px solid var(--color-border-default);
-  pointer-events: none;
-  translate: calc(
-    var(--_thumb-size) / 2 + var(--_at) * (100cqw - var(--_thumb-size)) / 100 -
-      50%
-  );
-}
-.smaqmd-aerb .smaqmd-aerb__target-tick[data-row="2"] {
-  block-size: 1.9em;
 }
 
 .smaqmd-aerb .smaqmd-aerb__unit {
@@ -980,9 +880,6 @@
 .smaqmd-aerb .smaqmd-aerb__tips li + li {
   margin-block-start: var(--spacing-200);
 }
-/* Air-cleaner certification note at the foot of the result — twin of the rule in
-   smaqmd-aer-wizard.astro. Plain prose at the same quiet rung as the rest of the
-   supporting text, separated from the disclosures above it by a hairline. */
 .smaqmd-aerb .smaqmd-aerb__cert {
   padding-block-start: var(--spacing-400);
   border-block-start: 1px solid var(--color-border-default-subtle);
@@ -1324,6 +1221,7 @@
   font-size: 13px;
   font-weight: var(--typography-font-weight-medium);
   font-family: var(--typography-font-family-sans);
+  font-variant-numeric: tabular-nums;
 }
 
 .smaqmd-aerb .smaqmd-cityview__hit {
@@ -1358,13 +1256,15 @@
     stroke 120ms ease,
     transform 120ms ease;
 }
-.smaqmd-aerb .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
-.smaqmd-aerb
-  .smaqmd-cityview__hit:hover
-  + .smaqmd-cityview__handle
-  .smaqmd-cityview__chev {
-  stroke: var(--color-text);
-  stroke-width: 2.5;
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
+  .smaqmd-aerb
+    .smaqmd-cityview__hit:hover
+    + .smaqmd-cityview__handle
+    .smaqmd-cityview__chev {
+    stroke: var(--color-text);
+    stroke-width: 2.5;
+  }
 }
 .smaqmd-aerb .smaqmd-cityview__handle:active .smaqmd-cityview__chev,
 .smaqmd-aerb
@@ -1398,8 +1298,10 @@
   border-color: var(--color-border-default-subtle);
   box-shadow: var(--elevation-1);
 }
-.smaqmd-aerb .smaqmd-cityview__pause:hover {
-  background: var(--color-background-elevation-sunken);
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-cityview__pause:hover {
+    background: var(--color-background-elevation-sunken);
+  }
 }
 .smaqmd-aerb .smaqmd-aerb__page-title {
   margin: 0;
@@ -1423,8 +1325,10 @@
   max-inline-size: 100%;
   block-size: auto;
 }
-.smaqmd-aerb .smaqmd-logo-link:hover img {
-  opacity: 0.8;
+@media (hover: hover) and (pointer: fine) {
+  .smaqmd-aerb .smaqmd-logo-link:hover img {
+    opacity: 0.8;
+  }
 }
 .smaqmd-aerb .smaqmd-logo-link:focus-visible {
   outline: 2px solid var(--focus-ring-color);
@@ -1478,7 +1382,7 @@
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
   transition:
-    background 160ms ease,
+    background-color 160ms ease,
     color 160ms ease,
     box-shadow 160ms ease;
 }
@@ -1548,7 +1452,7 @@
 
 .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
 .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
-  animation: var(--duration-base) var(--easing-in-out) both;
+  animation: 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 .smaqmd-aerb .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd {
   animation-name: smaqmd-wizard-step-in-fwd;
@@ -1564,6 +1468,14 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+@keyframes smaqmd-wizard-step-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 @keyframes smaqmd-wizard-step-in-back {
@@ -1649,18 +1561,18 @@
   .smaqmd-aerb .smaqmd-cityview {
     display: none;
   }
-  .smaqmd-aerb[data-variant="responsive"][data-section="3"] .smaqmd-cityview {
+  .smaqmd-aerb[data-variant="responsive"][data-section] .smaqmd-cityview {
     display: block;
     position: relative;
     inset: auto;
     z-index: auto;
     block-size: 30dvh;
   }
-  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
+  .smaqmd-aerb[data-variant="responsive"][data-section]
     .smaqmd-cityview__safe {
     inset: var(--spacing-300) var(--spacing-400);
   }
-  .smaqmd-aerb[data-variant="responsive"][data-section="3"]
+  .smaqmd-aerb[data-variant="responsive"][data-section]
     .smaqmd-cityview__pause {
     inset-block-end: var(--spacing-300);
     inset-inline-end: var(--spacing-400);
@@ -1728,16 +1640,18 @@
   .smaqmd-aerb
     .smaqmd-wizard__body
     [data-step].smaqmd-wizard__step--enter-back {
-    animation: none;
+    animation-name: smaqmd-wizard-step-fade;
   }
-  .smaqmd-aerb .smaqmd-cityview__rings,
-  .smaqmd-aerb .smaqmd-cityview__room-face,
-  .smaqmd-aerb .smaqmd-cityview__details,
-  .smaqmd-aerb .smaqmd-cityview__chev,
-  .smaqmd-aerb .smaqmd-wizard__dot,
-  .smaqmd-aerb .smaqmd-radio__item input[type="radio"],
+  .smaqmd-aerb .smaqmd-cityview__chev {
+    transition-property: stroke;
+  }
+  .smaqmd-aerb .smaqmd-btn {
+    transition-property: background-color, border-color, color;
+  }
+  .smaqmd-aerb .smaqmd-btn:active:not(:disabled) {
+    scale: none;
+  }
   .smaqmd-aerb .smaqmd-radio__item input[type="radio"]::before,
-  .smaqmd-aerb .smaqmd-btn,
   .smaqmd-aerb .smaqmd-collapsible__summary::after {
     transition: none;
   }

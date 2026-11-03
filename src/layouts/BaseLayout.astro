@@ -7,14 +7,24 @@ import '@esa/tokens/component-tokens.css';
 import '@esa/tokens/type-roles.css';
 import '@esa/tokens/layouts.css';
 import '../styles/theme-smaqmd.css';
-// Runtime handoff inspector — self-gating: dormant unless the current route
-// has a bundle at public/handoff/<slug>/ (generated via `npx handoff`).
+// Runtime handoff inspector — dormant unless the current route has a bundle at
+// public/handoff/<slug>/ (generated via `npx handoff`). Its own self-gate is a
+// runtime fetch of that manifest, which logs a 404 on every route WITHOUT one;
+// so we check at build/render time and mount it only where a bundle exists.
+// The slug mirrors routeSlug() in @esa/handoff's inspector.client.ts.
 import HandoffInspector from '@esa/handoff/HandoffInspector.astro';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 interface Props {
   title?: string;
 }
 const { title = 'SMAQMD' } = Astro.props;
+const base = import.meta.env.BASE_URL;
+let routePath = Astro.url.pathname;
+if (routePath.startsWith(base)) routePath = routePath.slice(base.length);
+const handoffSlug = routePath.replace(/^\/|\/$/g, '').replace(/\//g, '-') || 'index';
+const hasHandoff = existsSync(join(process.cwd(), 'public', 'handoff', handoffSlug, 'manifest.json'));
 ---
 <!doctype html>
 <html lang="en" data-theme="smaqmd" data-a11y-assurance="wcag-aa">
@@ -45,6 +55,6 @@ const { title = 'SMAQMD' } = Astro.props;
   </head>
   <body>
     <slot />
-    <HandoffInspector />
+    {hasHandoff && <HandoffInspector />}
   </body>
 </html>

@@ -247,6 +247,8 @@
 
   var detailsG = svg.querySelector('[data-room-details]');
   var furnG = svg.querySelector('[data-furniture]');
+  var furnBackG = svg.querySelector('[data-furniture-back]');
+  var furnLayerSig = '';
   var setDetail = function (sel, on, pts) {
     var el = svg.querySelector(sel);
     if (!el) return;
@@ -654,6 +656,7 @@
 
     if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
     if (furnG) furnG.style.visibility = det.degenerate ? 'hidden' : '';
+    if (furnBackG) furnBackG.style.visibility = det.degenerate ? 'hidden' : '';
     if (det.degenerate) setDetail('[data-rug]', false);
     if (!det.degenerate) {
       var hw = WIN_W / 2;
@@ -697,6 +700,32 @@
           : undefined
       );
 
+      // Paint order: the back-wall cleaners sit between the two furniture
+      // layers. A piece wholly behind a back cleaner (viewer looks from +x,+y,
+      // so smaller x or y is farther) goes in the back layer; everything else
+      // stays in the main layer, which paints over them. Re-parent only when
+      // the assignment changes — drawScene runs every animation frame.
+      var layer = [];
+      for (var kb = 0; kb < FURN_DEFS.length; kb++) {
+        var fb = det.furn[kb];
+        var behind = false;
+        for (var cb = 0; fb && cb < n; cb++) {
+          var cbx = cleaners[cb];
+          if (cbx.side !== 'back') continue;
+          var fBehind = fb.x1 <= cbx.x0 + 1e-6 || fb.y1 <= cbx.y0 + 1e-6;
+          var fFront = cbx.x1 <= fb.x0 + 1e-6 || cbx.y1 <= fb.y0 + 1e-6;
+          if (fBehind && !fFront) behind = true;
+        }
+        layer.push(behind ? 'b' : 'f');
+      }
+      var sig = layer.join('');
+      if (furnBackG && furnG && sig !== furnLayerSig) {
+        furnLayerSig = sig;
+        for (var kl = 0; kl < FURN_DEFS.length; kl++) {
+          var gl = svg.querySelector('[data-furn="' + (kl + 1) + '"]');
+          if (gl) (layer[kl] === 'b' ? furnBackG : furnG).appendChild(gl);
+        }
+      }
       for (var k2 = 0; k2 < FURN_DEFS.length; k2++) {
         var u2 = det.furn[k2];
         var g = svg.querySelector('[data-furn="' + (k2 + 1) + '"]');
@@ -745,7 +774,8 @@
       var prefix = capClamped ? '≥' : '';
       var capFt3 = raw('units') === 'ft3';
       var capText = capFt3 ? fmt(capMaxVol, 0) + ' ft³' : fmt(capMaxVol / 8, 0) + ' ft²';
-      setLabel('capacity', [capPt[0] + 8, capPt[1] + 16], 'covers a room up to ' + prefix + capText);
+      var capCaption = 'covers a room up to ' + prefix + capText;
+      setLabel('capacity', capLabelAt(capPt[0], capPt[1], capCaption), capCaption);
     }
 
     ringDefs.length = 0;
@@ -917,10 +947,11 @@
     var dt = Math.min(0.05, (ts - last) / 1000 || 0);
     last = ts;
 
-    cur.L += (tgt.L - cur.L) * 0.22;
-    cur.W += (tgt.W - cur.W) * 0.22;
-    cur.H += (tgt.H - cur.H) * 0.22;
-    capS += (capSTgt - capS) * 0.22;
+    var k = 1 - Math.pow(1 - 0.22, dt * 60);
+    cur.L += (tgt.L - cur.L) * k;
+    cur.W += (tgt.W - cur.W) * k;
+    cur.H += (tgt.H - cur.H) * k;
+    capS += (capSTgt - capS) * k;
     var morphing =
       Math.abs(tgt.L - cur.L) +
         Math.abs(tgt.W - cur.W) +
@@ -946,7 +977,10 @@
     requestAnimationFrame(frame);
   };
 
-  var ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000, volume: 300000 };
+  var ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000 };
+  // ACH per air-quality choice — KEEP IN SYNC with airQualityOptions and
+  // AIR_QUALITY_ACH in src/components/smaqmd-aer-wizard.astro.
+  var AIR_QUALITY_ACH = { good: 2, unhealthy: 5, smoke: 7.5 };
   var ROOM_MIN = 1;
   var roomOversize = function () {
     var over = function (name) {
@@ -958,8 +992,6 @@
         return over('length') || over('width') || over('height');
       case 'area':
         return over('area') || over('height');
-      case 'volume':
-        return over('volume');
       default:
         return false;
     }
@@ -970,8 +1002,6 @@
         return num('length') * num('width') * num('height');
       case 'area':
         return num('area') * num('height');
-      case 'volume':
-        return num('volume');
       default:
         return NaN;
     }
@@ -984,10 +1014,6 @@
       }
       case 'area':
         return pos('area');
-      case 'volume': {
-        var v = pos('volume');
-        return v > 0 ? v / 8 : NaN;
-      }
       default:
         return NaN;
     }
@@ -999,12 +1025,6 @@
       var Ha = pos('height') || 8;
       var sideA = isFinite(area) ? Math.sqrt(area) : 0.5;
       return { L: sideA || 0.5, W: sideA || 0.5, H: Ha };
-    }
-    if (method === 'volume') {
-      var vol = pos('volume');
-      var Hv = 8;
-      var sideV = isFinite(vol) ? Math.sqrt(vol / Hv) : 0.5;
-      return { L: sideV || 0.5, W: sideV || 0.5, H: Hv };
     }
     return { L: pos('length') || 0.5, W: pos('width') || 0.5, H: pos('height') || 0.5 };
   };
@@ -1021,7 +1041,7 @@
 
   var syncSceneLive = function () {
     var live =
-      hasScene && !(isResponsive && mqMobile.matches && root.getAttribute('data-section') !== '3');
+      hasScene && !(isResponsive && mqMobile.matches && !root.hasAttribute('data-section'));
     if (live === sceneLive) return;
     sceneLive = live;
     if (!live) return;
@@ -1106,7 +1126,8 @@
     requestAnimationFrame(function () {
       var target = b.scrollHeight;
       var dur = 200;
-      b.style.transition = 'block-size ' + dur + 'ms ease-out, opacity ' + dur + 'ms ease-out';
+      var ease = 'cubic-bezier(0.32, 0.72, 0, 1)';
+      b.style.transition = 'block-size ' + dur + 'ms ' + ease + ', opacity ' + dur + 'ms ' + ease;
       b.style.blockSize = target + 'px';
       b.style.opacity = '1';
       var done = false;
@@ -1307,37 +1328,6 @@
   var targetWarn = root.querySelector('[data-target-warn]');
   var targetInvalid = root.querySelector('[data-target-invalid]');
   var roomWarn = root.querySelector('[data-room-warn]');
-  var targetSliderEl = root.querySelector('[data-field="targetSlider"]');
-  var SLIDER_MIN = 1;
-  var SLIDER_MAX = 8;
-  var SLIDER_STEP = 0.5;
-  var TARGET_LANDMARK_TEXT = {
-    2: 'CARB minimum',
-    5: 'what box ratings assume',
-    6: 'wildfire smoke level',
-  };
-  var targetValueText = function (v) {
-    var meaning = TARGET_LANDMARK_TEXT[v];
-    return v + ' air changes per hour' + (meaning ? ' — ' + meaning : '');
-  };
-  var setTargetValueText = function (v) {
-    if (!targetSliderEl) return;
-    targetSliderEl.setAttribute('aria-valuetext', targetValueText(v));
-  };
-  var syncTargetSlider = function (entered) {
-    if (!targetSliderEl) return;
-    if (!isFinite(entered)) return;
-    var clamped = Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, entered));
-    var next = Math.round(clamped / SLIDER_STEP) * SLIDER_STEP;
-    if (parseFloat(targetSliderEl.value) !== next) {
-      targetSliderEl.value = String(next);
-    }
-    targetSliderEl.style.setProperty(
-      '--_fill-percent',
-      ((next - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100 + '%'
-    );
-    setTargetValueText(next);
-  };
   var achWrap = block.querySelector('[data-metric="ach"]');
   var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
@@ -1390,7 +1380,6 @@
     show(targetInvalid, targetIsInvalid);
     show(roomWarn, roomOversize());
     show(targetWarn, isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
-    syncTargetSlider(enteredTarget);
 
     var flow = combinedFlow();
     var vol = roomVolume();
@@ -1478,7 +1467,7 @@
         }
         if (fixGapLine) {
           fixGapLine.textContent =
-            "That's +" + fmt(target - ach, 2) + ' air changes per hour on top of the ' +
+            "That’s +" + fmt(target - ach, 2) + ' air changes per hour on top of the ' +
             fmt(ach, 1) + ' your cleaners already deliver.';
         }
         show(fixGapLine, isGap);
@@ -1633,9 +1622,6 @@
     if (method === 'area') {
       var fa = field('area');
       if (fa && !raw('area')) setFieldValue(fa, String(Math.round(tL * tW)));
-    } else if (method === 'volume') {
-      var fv = field('volume');
-      if (fv && !raw('volume')) setFieldValue(fv, String(Math.round(tL * tW * tH)));
     }
   };
 
@@ -1652,10 +1638,19 @@
         prefillMode(getFieldValue(group) || 'dimensions');
       }
     }
-    if (el.getAttribute && el.getAttribute('data-field') === 'targetSlider') {
+    // An air-quality choice writes its ACH into the target field (hidden unless
+    // "custom") — everything downstream reads the field, as before.
+    if (el.type === 'radio' && el.name === 'airQuality') {
+      var customWrap = root.querySelector('[data-target-custom]');
+      if (customWrap) customWrap.hidden = el.value !== 'custom';
+      var presetWrap = root.querySelector('[data-target-preset]');
+      if (presetWrap) presetWrap.hidden = el.value === 'custom';
       var ft = field('target');
-      if (ft) setFieldValue(ft, el.value);
-      setTargetValueText(parseFloat(el.value));
+      if (ft && AIR_QUALITY_ACH.hasOwnProperty(el.value)) {
+        setFieldValue(ft, String(AIR_QUALITY_ACH[el.value]));
+        var readout = root.querySelector('[data-r="presetach"]');
+        if (readout) readout.textContent = String(AIR_QUALITY_ACH[el.value]);
+      }
     }
     morphScene();
     recompute();
@@ -1684,6 +1679,21 @@
             : 'You have added the maximum number of air cleaners.'
         );
       }
+      return;
+    }
+    // CADR ⇄ ACH swap: write the hidden unit store, re-render, then move focus
+    // to the field that just appeared (the clicked button is now hidden).
+    var swap = t.closest('[data-unit-swap]');
+    if (swap) {
+      e.preventDefault();
+      var sb = swap.closest('[data-cleaner-block]');
+      var sid = sb ? sb.getAttribute('data-cleaner-block') : null;
+      var to = swap.getAttribute('data-unit-swap');
+      if (sid != null) setFieldValue(field('unit', sid), to);
+      morphScene();
+      recompute();
+      var nextField = sb ? sb.querySelector('[data-field="' + to + '"][data-cleaner]') : null;
+      if (nextField) nextField.focus();
       return;
     }
     var rm = t.closest('[data-remove-cleaner]');
@@ -1732,8 +1742,8 @@
   var plan = FULL_PLAN;
   var TITLES = [
     'What size is your room?',
-    "What is your air cleaner's rating?",
-    "What's your air-change target?",
+    "What is your air cleaner’s rating?",
+    'What air quality conditions will you use the air cleaner in?',
     'Your result',
   ];
   var wizardEl = root.querySelector('[data-wizard]');
@@ -1854,6 +1864,17 @@
       if (introEl) toIntro();
       else goStep(0);
     }
+  });
+  root.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey) return;
+    var origin = e.target;
+    if (!origin || origin.tagName !== 'INPUT' || origin.type !== 'text') return;
+    var fwd = root.querySelector(
+      '[data-nav="next"]:not([hidden]) button, [data-nav="result"]:not([hidden]) button'
+    );
+    if (!fwd) return;
+    e.preventDefault();
+    fwd.click();
   });
 
   root.addEventListener('input', function () {

@@ -4,6 +4,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#fcfcfc" />
     <title>Air Cleaner Calculator — Sac Metro Air District</title>
     <meta
       name="description"
@@ -202,6 +204,11 @@
             <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
           </g>
+          <g
+            class="smaqmd-cityview__details"
+            data-furniture-back
+            style="visibility: hidden"
+          ></g>
           <g
             class="smaqmd-cityview__unitg"
             data-unitg="2"
@@ -638,16 +645,6 @@
                             >Length × width × height</span
                           >
                         </label>
-                        <label class="smaqmd-radio__item">
-                          <input
-                            type="radio"
-                            name="roomMethod"
-                            value="volume"
-                          />
-                          <span class="smaqmd-radio__label smaqmd-type-body-lg"
-                            >Room volume directly</span
-                          >
-                        </label>
                       </div>
                     </fieldset>
 
@@ -736,26 +733,6 @@
                           </div>
                         </div>
                       </div>
-                      <div data-room="volume" hidden>
-                        <div class="smaqmd-field">
-                          <label
-                            class="smaqmd-field__label smaqmd-type-label-lg"
-                            for="smaqmd-f-volume"
-                            >Room volume (ft³)</label
-                          >
-                          <div class="smaqmd-field__control">
-                            <input
-                              class="smaqmd-field__input"
-                              id="smaqmd-f-volume"
-                              data-field="volume"
-                              data-numeric
-                              type="text"
-                              inputmode="decimal"
-                              autocomplete="off"
-                            />
-                          </div>
-                        </div>
-                      </div>
                     </div>
 
                     <div data-room-warn hidden data-alert>
@@ -834,27 +811,19 @@
                     data-step="1"
                     hidden
                   >
-                                        <details class="smaqmd-collapsible">
-                      <summary
-                        class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
-                      >
-                        <span class="smaqmd-collapsible__title"
-                          >Where to find an air cleaner's rating</span
-                        >
-                      </summary>
-                      <div class="smaqmd-collapsible__body">
+                    <div>
                         <div class="smaqmd-stack" data-gap="sm">
                           <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
                               Look for the CADR (Clean Air Delivery Rate) on the air
-                              cleaner's box, manual, or manufacturer's website.
+                              cleaner’s box, manual, or manufacturer’s website.
                             </li>
                             <li>
                               You may see three CADR numbers for smoke, dust, and pollen.
                               Enter the lowest number.
                             </li>
                             <li>
-                              If you don't see CADR, look for an airflow rating in CFM and
+                              If you don’t see CADR, look for an airflow rating in CFM and
                               enter that number.
                             </li>
                             <li>
@@ -895,7 +864,7 @@
                                 </li>
                                 <li>Check the manual, in the specifications section.</li>
                                 <li>
-                                  Search the model number on the manufacturer's website and
+                                  Search the model number on the manufacturer’s website and
                                   open its specifications page.
                                 </li>
                                 <li>
@@ -908,7 +877,6 @@
                           </details>
                         </div>
                       </div>
-                    </details>
 
                     <fieldset class="smaqmd-radio" data-field="hasCleaner">
                       <legend class="smaqmd-radio__legend smaqmd-type-label-lg">
@@ -923,7 +891,7 @@
                             checked
                           />
                           <span class="smaqmd-radio__label smaqmd-type-body-lg"
-                            >Yes, I'll enter it</span
+                            >Yes, I’ll enter it</span
                           >
                         </label>
                         <label class="smaqmd-radio__item">
@@ -969,7 +937,7 @@
                           </button>
                         </span>
                         <p class="smaqmd-type-meta" data-cap-note hidden>
-                          You've added the maximum of 4 air cleaners.
+                          You’ve added the maximum of 4 air cleaners.
                         </p>
                       </div>
                     </div>
@@ -982,69 +950,71 @@
                     data-step="2"
                     hidden
                   >
-                    <div class="smaqmd-aerb__target-scale">
-                      <label
-                        class="smaqmd-field__label smaqmd-type-label-lg"
-                        for="smaqmd-f-target-slider"
-                        >Target air changes per hour</label
-                      >
-                      <input
-                        class="smaqmd-range"
-                        id="smaqmd-f-target-slider"
-                        data-field="targetSlider"
-                        type="range"
-                        min="1"
-                        max="8"
-                        step="0.5"
-                        value="2"
-                        aria-valuetext="2 air changes per hour — CARB minimum"
-                        style="--_fill-percent: 14.2857%"
-                      />
-                      <div
-                        class="smaqmd-type-meta smaqmd-aerb__target-marks"
-                        aria-hidden="true"
-                      >
-                        <span
-                          class="smaqmd-aerb__target-tick"
-                          data-row="1"
-                          style="--_at: 14.2857"
-                        ></span>
-                        <span
-                          class="smaqmd-aerb__target-mark"
-                          data-row="1"
-                          style="--_at: 14.2857"
-                          >2 · CARB min</span
-                        >
-                        <span
-                          class="smaqmd-aerb__target-tick"
-                          data-row="2"
-                          style="--_at: 57.1429"
-                        ></span>
-                        <span
-                          class="smaqmd-aerb__target-mark"
-                          data-row="2"
-                          style="--_at: 57.1429"
-                          >5 · box ratings</span
-                        >
-                        <span
-                          class="smaqmd-aerb__target-tick"
-                          data-row="1"
-                          style="--_at: 71.4286"
-                        ></span>
-                        <span
-                          class="smaqmd-aerb__target-mark"
-                          data-row="1"
-                          style="--_at: 71.4286"
-                          >6 · wildfire</span
-                        >
+                    <fieldset class="smaqmd-radio" data-field="airQuality">
+                      <legend class="smaqmd-visually-hidden">
+                        What air quality conditions will you use the air cleaner in?
+                      </legend>
+                      <div class="smaqmd-radio__items">
+                        <label class="smaqmd-radio__item">
+                          <input
+                            type="radio"
+                            name="airQuality"
+                            value="good"
+                            checked
+                          />
+                          <span class="smaqmd-radio__label smaqmd-type-body-lg"
+                            >Good or moderate (AQI 0–100)</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input
+                            type="radio"
+                            name="airQuality"
+                            value="unhealthy"
+                          />
+                          <span class="smaqmd-radio__label smaqmd-type-body-lg"
+                            >Unhealthy (AQI 101–200)</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input
+                            type="radio"
+                            name="airQuality"
+                            value="smoke"
+                          />
+                          <span class="smaqmd-radio__label smaqmd-type-body-lg"
+                            >Very unhealthy or wildfire smoke (AQI 201+)</span
+                          >
+                        </label>
+                        <label class="smaqmd-radio__item">
+                          <input
+                            type="radio"
+                            name="airQuality"
+                            value="custom"
+                          />
+                          <span class="smaqmd-radio__label smaqmd-type-body-lg"
+                            >Enter my own target</span
+                          >
+                        </label>
                       </div>
+                    </fieldset>
+                    <div class="smaqmd-stack" data-gap="2xs" data-target-preset>
+                      <p class="smaqmd-type-body-lg smaqmd-aerb__target-readout">
+                        Target: <strong data-r="presetach">2</strong> air changes
+                        per hour
+                      </p>
+                      <p class="smaqmd-type-body-md smaqmd-aerb__target-hint">
+                        Cooking or another big source of indoor pollution? CARB
+                        recommends 3 air changes per hour — choose “Enter my own
+                        target.”
+                      </p>
                     </div>
 
-                    <div class="smaqmd-field">
+                    <div class="smaqmd-field" data-target-custom hidden>
                       <label
                         class="smaqmd-field__label smaqmd-type-label-lg"
                         for="smaqmd-f-target"
-                        >Or type an exact target</label
+                        >Air changes per hour</label
                       >
                       <div class="smaqmd-field__control">
                         <input
@@ -1064,9 +1034,9 @@
                         id="smaqmd-h-target"
                       >
                         One air change means the cleaner has filtered a full
-                        room's worth of air. CARB recommends at least 2 per
-                        hour; most air-cleaner box ratings assume about 5;
-                        during wildfire smoke aim for 4–6.
+                        room’s worth of air. CARB recommends at least 2 per
+                        hour, and 3 for rooms with cooking or another large
+                        indoor pollution source.
                       </p>
                     </div>
 
@@ -1138,7 +1108,7 @@
                           >
                           <div class="smaqmd-alert__message">
                             A target of 0 means no air cleaning at all. Enter
-                            how many times per hour you want the room's air
+                            how many times per hour you want the room’s air
                             replaced — at least <strong>1</strong>, ideally
                             <strong>2</strong> or more.
                           </div>
@@ -1306,7 +1276,7 @@
                               >
                               <div class="smaqmd-alert__message">
                                 Most air cleaners top out around
-                                <strong>700 CFM</strong>, so a single unit can't
+                                <strong>700 CFM</strong>, so a single unit can’t
                                 reach this rating. Combine two or more — their
                                 CADR ratings add together.
                               </div>
@@ -1348,7 +1318,7 @@
                                   </p>
                                   <p class="smaqmd-type-body-md">
                                     Look on the product box, product
-                                    specifications, user manual, or manufacturer's
+                                    specifications, user manual, or manufacturer’s
                                     website. You may see several CADR numbers. Use
                                     the lowest CADR listed.
                                   </p>
@@ -1383,8 +1353,8 @@
                           <p class="smaqmd-type-body-md">
                             Box says something different? Air cleaner packaging
                             lists a room size based on about 5 air changes per
-                            hour, so it won't match the coverage shown here
-                            unless that's your target too.
+                            hour, so it won’t match the coverage shown here
+                            unless that’s your target too.
                           </p>
                         </div>
                       </div>
@@ -1426,7 +1396,7 @@
                         class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
-                          >Where to find an air cleaner's rating</span
+                          >Where to find an air cleaner’s rating</span
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
@@ -1434,14 +1404,14 @@
                           <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
                               Look for the CADR (Clean Air Delivery Rate) on the air
-                              cleaner's box, manual, or manufacturer's website.
+                              cleaner’s box, manual, or manufacturer’s website.
                             </li>
                             <li>
                               You may see three CADR numbers for smoke, dust, and pollen.
                               Enter the lowest number.
                             </li>
                             <li>
-                              If you don't see CADR, look for an airflow rating in CFM and
+                              If you don’t see CADR, look for an airflow rating in CFM and
                               enter that number.
                             </li>
                             <li>
@@ -1482,7 +1452,7 @@
                                 </li>
                                 <li>Check the manual, in the specifications section.</li>
                                 <li>
-                                  Search the model number on the manufacturer's website and
+                                  Search the model number on the manufacturer’s website and
                                   open its specifications page.
                                 </li>
                                 <li>
@@ -1535,14 +1505,12 @@
                           <li>
                             <strong>Replace the filter regularly.</strong> Follow
                             the instructions for your air cleaner. A dirty filter
-                            won't clean the air as well.
+                            won’t clean the air as well.
                           </li>
                         </ul>
                       </div>
                     </details>
 
-                    <!-- Air cleaner certification — twin of the block in
-                         smaqmd-aer-wizard.astro. KEEP IN SYNC. -->
                     <div class="smaqmd-aerb__cert smaqmd-stack" data-gap="2xs">
                       <h3 class="smaqmd-type-title">Air cleaner certification</h3>
                       <p class="smaqmd-type-body-md">
@@ -1552,7 +1520,7 @@
                         <a
                           href="https://ww2.arb.ca.gov/list-carb-certified-air-cleaning-devices"
                           rel="noopener"
-                          >See CARB's list of certified air cleaning devices</a
+                          >See CARB’s list of certified air cleaning devices</a
                         >.
                       </p>
                     </div>
@@ -1669,9 +1637,9 @@
             </span>
           </div>
 
-          <fieldset class="smaqmd-radio" data-field="unit" data-cleaner>
+          <fieldset class="smaqmd-radio" data-field="unit" data-cleaner hidden>
             <legend class="smaqmd-radio__legend smaqmd-type-label-lg">
-              What does the box or manual list?
+              Rating type
             </legend>
             <div class="smaqmd-radio__items">
               <label class="smaqmd-radio__item">
@@ -1689,12 +1657,12 @@
             </div>
           </fieldset>
 
-          <div data-unit-mode="airflow">
+          <div class="smaqmd-stack" data-gap="sm" data-unit-mode="airflow">
             <div class="smaqmd-field">
               <label
                 class="smaqmd-field__label smaqmd-type-label-lg"
                 for="smaqmd-c-airflow"
-                >Air flow rate or CADR in CFM (ft³/min)</label
+                >CADR or airflow (CFM)</label
               >
               <div class="smaqmd-field__control">
                 <input
@@ -1713,11 +1681,14 @@
                 class="smaqmd-field__help smaqmd-type-body-sm"
                 id="smaqmd-c-airflow-help"
               >
-                CADR means Clean Air Delivery Rate, in CFM — cubic feet of air
-                per minute (ft³/min). You may see three CADR numbers for smoke,
-                dust, and pollen. Enter the lowest number.
+                If you see three CADR numbers, enter the lowest.
               </p>
             </div>
+            <span data-unit-swap="ach">
+              <button type="button" class="smaqmd-btn smaqmd-btn--ghost smaqmd-btn--lg">
+                Enter Air Changes per Hour instead
+              </button>
+            </span>
           </div>
 
           <div class="smaqmd-stack" data-gap="md" data-unit-mode="ach" hidden>
@@ -1745,7 +1716,7 @@
             </p>
             <fieldset class="smaqmd-radio" data-field="refMethod" data-cleaner>
               <legend class="smaqmd-visually-hidden">
-                Choose how to enter that room's size
+                Choose how to enter that room’s size
               </legend>
               <div class="smaqmd-radio__items">
                 <label class="smaqmd-radio__item">
@@ -1849,6 +1820,11 @@
                 </div>
               </div>
             </div>
+            <span data-unit-swap="airflow">
+              <button type="button" class="smaqmd-btn smaqmd-btn--ghost smaqmd-btn--lg">
+                Enter CADR instead
+              </button>
+            </span>
           </div>
         </div>
       </template>

@@ -57,15 +57,13 @@ const FURN_IDS = [1, 2, 3, 4, 5, 6, 7];         // floor-furniture pool, ordered
 const roomMethods = [
   { label: 'Floor area + ceiling height', value: 'area' },
   { label: 'Length × width × height', value: 'dimensions' },
-  { label: 'Room volume directly', value: 'volume' },
 ];
 const unitOptions = [
   { label: 'Air flow rate / CADR in CFM (ft³/min)', value: 'airflow' },
   { label: 'Air changes per hour (ACH)', value: 'ach' },
 ];
 // How the manufacturer's REFERENCE room is entered (ACH mode only). Same two
-// shapes as the room step, minus "volume directly" — a spec sheet never quotes a
-// reference volume. Area leads and is the default, matching the room step: spec
+// shapes as the room step (room volume was dropped per SMAQMD review, Nov 2026). Area leads and is the default, matching the room step: spec
 // sheets most often quote the test room as a coverage area ("up to 500 sq ft"),
 // so the first option is the shape the user is most likely copying.
 const refMethods = [
@@ -75,7 +73,7 @@ const refMethods = [
 // Step-2 fork: a shopper with no cleaner takes the "No" path straight to the
 // minimum-CADR-to-buy result; a checker takes "Yes" and enters their cleaner(s).
 const cleanerChoice = [
-  { label: "Yes, I'll enter it", value: 'yes' },
+  { label: "Yes, I’ll enter it", value: 'yes' },
   { label: 'No, show me what to buy', value: 'no' },
 ];
 // Which rating the "shop for" stat states. CADR is the default because it is the
@@ -87,24 +85,24 @@ const ratingToggle = [
   { label: 'CADR', value: 'cadr' },
   { label: 'ACH', value: 'ach' },
 ];
-// The target quick-set scale. 1–8 ACH in half steps covers every target this
-// tool can sensibly recommend: below 1 is not a goal at all (the field's own
-// error says so), above 8 is past any published guidance. The field stays the
-// single source of truth — the slider only writes into it, and recompute()
-// drives the thumb back from whatever the field ends up holding, so a typed 3
-// parks the thumb at 3 rather than the slider claiming a number of its own.
-const TARGET_MIN = 1;
-const TARGET_MAX = 8;
-// The three numbers this tool actually cites (CARB's floor, what box ratings
-// assume, the wildfire-smoke band's top), labelled on the track below the
-// slider. `at` is the ACH value; the CSS turns it into a track percentage.
-// These labels are decoration for sighted scanning ONLY (aria-hidden): the
-// slider's own label and the target field's help text already carry all three
-// numbers to a screen reader, and a second static copy would just be noise.
-const targetLandmarks = [
-  { at: 2, label: '2 · CARB min' },
-  { at: 5, label: '5 · box ratings' },
-  { at: 6, label: '6 · wildfire' },
+// The target step asks about AIR QUALITY, not air changes (SMAQMD communications
+// review, Sep 2026): people recognise an AQI band, not an ACH number. Each choice
+// writes its ACH into the target field, which stays the engine's single source of
+// truth. Values: 2 = CARB's minimum; 5 = industry box ratings and CDPH's figure
+// for disease-spread prevention; 7.5 = AHAM's wildfire-smoke figure (the earlier
+// 6 had no source). "custom" reveals the target field for anyone with their own
+// number (e.g. CARB's 3 for rooms with cooking or another big indoor source).
+// KEEP IN SYNC with AIR_QUALITY_ACH in public/aer-tool/app.js.
+const airQualityOptions = [
+// Labels name the CONDITION only — the thing a reader recognises. The ACH each
+// one implies is shown once, below the group, for the selected choice
+// ([data-target-preset]); folding it into every label made each option a
+// two-line run-on with no hierarchy between "what it is" and "what it sets".
+// KEEP IN SYNC with the radio labels in public/aer-tool/index.html.
+  { label: 'Good or moderate (AQI 0–100)', value: 'good' },
+  { label: 'Unhealthy (AQI 101–200)', value: 'unhealthy' },
+  { label: 'Very unhealthy or wildfire smoke (AQI 201+)', value: 'smoke' },
+  { label: 'Enter my own target', value: 'custom' },
 ];
 
 // THREE VARIANTS, two independent decisions. Same markup, same steps, same calc
@@ -303,7 +301,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            viewer than they do, so furniture must be free to occlude them. (The
            back zone they occupy is reserved against furniture in layoutDetails,
            so in practice they are never buried — this order only settles which
-           one wins where the two do meet on screen.) Groups i>1 start hidden. -->
+           one wins where the two do meet on screen.) Groups i>1 start hidden.
+           EXCEPT furniture wholly BEHIND a back unit (e.g. the tall bookshelf on
+           the x=0 wall, nudged to the far side of the reserved zone): drawScene
+           re-parents those pieces into [data-furniture-back] below, which paints
+           first, so the unit covers them instead of being notched by them. Same
+           __details class, so it fades and hides with the main group. -->
+      <g class="smaqmd-cityview__details" data-furniture-back style="visibility:hidden"></g>
       {BACK_UNIT_IDS.map((i) => (
         <g class="smaqmd-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
@@ -545,9 +549,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <div data-room="dimensions area">
                 <esa-text-field size={ctl} data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
               </div>
-              <div data-room="volume" hidden>
-                <esa-text-field size={ctl} data-field="volume" type="text" inputmode="decimal" label="Room volume (ft³)"></esa-text-field>
-              </div>
             </div>
             <!-- Soft cap. A room past these bounds is almost always a typo (1200
                  for 120), so this WARNS rather than blocks: the arithmetic is
@@ -576,8 +577,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  for it, and OUTSIDE [data-cleaner-entry] so it stays available to
                  the shopper who answered "No" as well. Closed by default: it is
                  help, not instruction. The SAME component is mounted again on the
-                 result step. -->
-            <SmaqmdAerFindRatings />
+                 result step. UPDATE (SMAQMD review): shown inline here — on this
+                 step it IS the instruction; the result step keeps the disclosure. -->
+            <SmaqmdAerFindRatings inline />
             <esa-radio-group size={ctl}
               data-field="hasCleaner"
               label="Do you have an air cleaner to check?"
@@ -594,82 +596,51 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                     Add air cleaner
                   </EsaButton>
                 </span>
-                <p class="typography-meta" data-cap-note hidden>You've added the maximum of {MAX_CLEANERS} air cleaners.</p>
+                <p class="typography-meta" data-cap-note hidden>You’ve added the maximum of {MAX_CLEANERS} air cleaners.</p>
               </div>
             </div>
           </section>
 
           <!-- Step 2 — target -->
           <section class="stack" data-gap="md" data-step="2" hidden>
-            <!-- Quick-set scale ABOVE the field it fills: the shortcut is the
-                 offer, the field is the answer. size={ctl} like every other
-                 control in the step — the old three-button preset row had to drop
-                 a rung because its labels overran the column, which a slider
-                 cannot do, and a thumb is a drag target that wants to be BIGGER
-                 on touch, not smaller (SC 2.5.8: lg is 24px outright; md clears
-                 the bar on the spacing exception, nothing else is within 24px).
-                 show-value is off — the field below IS the readout, and two live
-                 numbers a row apart would just disagree while you drag.
-                 bcn-lego-checked: esa-range-slider IS the slider and is used
-                 unmodified — but it has no marks/ticks prop, so the labelled
-                 landmark row is composed AROUND it here rather than by editing
-                 the hub lego; checked Beacon (no marked-slider component);
-                 .smaqmd-aerb__target-scale is the reusable home for that. -->
-            <div class="smaqmd-aerb__target-scale">
-              <!-- KNOWN HUB GAP (esa-range-slider): the lego exposes no marks/
-                   ticks API, and no hook onto its inner <input> — that input
-                   lives in shadow DOM, so aria-valuetext cannot be set on it
-                   from here. The screen-reader experience of THIS slider is
-                   therefore the bare number ("3.5"), while the hand-ported twin
-                   in public/aer-tool announces "3.5 air changes per hour" and
-                   names the landmark when it lands on one. Not an oversight:
-                   closing it means a marks + valuetext API on the hub lego
-                   (/request-lego), not reaching into its shadow root. -->
-              <esa-range-slider
-                data-field="targetSlider"
-                size={ctl}
-                label="Target air changes per hour"
-                min={TARGET_MIN}
-                max={TARGET_MAX}
-                step="0.5"
-                value="2"
-                show-value="false"
-              ></esa-range-slider>
-              <!-- Landmarks, staggered onto two rows. "5 · box ratings" and
-                   "6 · wildfire" are only 1 ACH apart — 14% of the track, ~60px
-                   even on a wide desktop column — so a single row would overlap
-                   them at EVERY width, not just narrow ones. Alternating rows
-                   (2 and 6 up, 5 down) leaves the two on each row 57% of the
-                   track apart, which clears at 320px without a media query.
-                   Each label is paired with a notch drawn at the SAME percent:
-                   the notch is what makes the stagger read as designed rather
-                   than accidental — it draws the eye from the track down to
-                   whichever row the label sits on. -->
-              <div class="typography-meta smaqmd-aerb__target-marks" aria-hidden="true" style={`--_thumb: ${hasIntro ? '24px' : '20px'}`}>
-                {targetLandmarks.map((m, i) => {
-                  const at = ((m.at - TARGET_MIN) / (TARGET_MAX - TARGET_MIN)) * 100;
-                  const row = i % 2 === 1 ? '2' : '1';
-                  return (
-                    <Fragment>
-                      <span class="smaqmd-aerb__target-tick" data-row={row} style={`--_at: ${at}`}></span>
-                      <span
-                        class="smaqmd-aerb__target-mark"
-                        data-row={row}
-                        style={`--_at: ${at}`}
-                      >{m.label}</span>
-                    </Fragment>
-                  );
-                })}
-              </div>
+            <!-- The question is the step title ("What air quality conditions…"),
+                 so the group takes it as its accessible name rather than
+                 repeating it as a visible legend. -->
+            <esa-radio-group size={ctl}
+              data-field="airQuality"
+              aria-label="What air quality conditions will you use the air cleaner in?"
+              value="good"
+              options={JSON.stringify(airQualityOptions)}
+            ></esa-radio-group>
+            <!-- The CONSEQUENCE of the choice, then the escape hatch. The readout
+                 states the target the selected preset sets (written by onEdit from
+                 AIR_QUALITY_ACH) — the number lives here, once, instead of in every
+                 label. The hint is plain secondary copy, regular weight, so it reads
+                 as an aside under the answer rather than a second question. Both
+                 hide for "custom": the field below takes over, and its help text
+                 already carries the CARB cooking figure. -->
+            <div class="stack" data-gap="2xs" data-target-preset>
+              <p class="typography-body-lg smaqmd-aerb__target-readout">
+                Target: <strong data-r="presetach">2</strong> air changes per hour
+              </p>
+              <p class="typography-body-md smaqmd-aerb__target-hint">
+                Cooking or another big source of indoor pollution? CARB recommends
+                3 air changes per hour — choose “Enter my own target.”
+              </p>
             </div>
-            <esa-text-field size={ctl}
-              data-field="target"
-              type="text"
-              inputmode="decimal"
-              label="Or type an exact target"
-              value="2"
-              help-text="One air change means the cleaner has filtered a full room's worth of air. CARB recommends at least 2 per hour; most air-cleaner box ratings assume about 5; during wildfire smoke aim for 4–6."
-            ></esa-text-field>
+            <!-- Revealed only for "Enter my own target". The presets write into
+                 this same field while it is hidden, so the engine never needs to
+                 know which way the number arrived. -->
+            <div data-target-custom hidden>
+              <esa-text-field size={ctl}
+                data-field="target"
+                type="text"
+                inputmode="decimal"
+                label="Air changes per hour"
+                value="2"
+                help-text="One air change means the cleaner has filtered a full room’s worth of air. CARB recommends at least 2 per hour, and 3 for rooms with cooking or another large indoor pollution source."
+              ></esa-text-field>
+            </div>
             <!-- Shown by recompute() only when the entered target drops below the
                  CARB-recommended 2, so a low target is an explicit choice. -->
             <div data-target-warn hidden data-alert>
@@ -683,7 +654,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <div data-target-invalid hidden data-alert="assertive">
               <EsaAlertBox variant="danger" title="Enter a target above 0">
                 A target of 0 means no air cleaning at all. Enter how many times per
-                hour you want the room's air replaced — at least <strong>1</strong>,
+                hour you want the room’s air replaced — at least <strong>1</strong>,
                 ideally <strong>2</strong> or more.
               </EsaAlertBox>
             </div>
@@ -796,7 +767,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <div data-cadr-high hidden data-alert>
               <EsaAlertBox variant="warning" title="More than one air cleaner needed">
                 Most air cleaners top out around <strong>700 CFM</strong>, so a
-                single unit can't reach this rating. Combine two or more — their
+                single unit can’t reach this rating. Combine two or more — their
                 CADR ratings add together.
               </EsaAlertBox>
             </div>
@@ -837,7 +808,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                     <p class="typography-title">Where do I find the CADR?</p>
                     <p class="typography-body-md">
                       Look on the product box, product specifications, user manual, or
-                      manufacturer's website. You may see several CADR numbers. Use the
+                      manufacturer’s website. You may see several CADR numbers. Use the
                       lowest CADR listed.
                     </p>
                   </div>
@@ -862,7 +833,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                    ceiling works out to ≈ 4.8 air changes per hour — hence "about 5".
                    Our number is sized to the user's OWN target, so at 2 or 6 the two
                    legitimately differ. Static: it is true at every target. -->
-              <p class="typography-body-md">Box says something different? Air cleaner packaging lists a room size based on about 5 air changes per hour, so it won't match the coverage shown here unless that's your target too.</p>
+              <p class="typography-body-md">Box says something different? Air cleaner packaging lists a room size based on about 5 air changes per hour, so it won’t match the coverage shown here unless that’s your target too.</p>
             </div>
           </div>
 
@@ -899,7 +870,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <li><strong>Give it space.</strong> Keep at least one foot of open space around the air cleaner so air can flow freely.</li>
             <li><strong>Keep it out of corners.</strong> Place it along a wall where air can move around it.</li>
             <li>Using more than one? Place them on opposite sides of the room.</li>
-            <li><strong>Replace the filter regularly.</strong> Follow the instructions for your air cleaner. A dirty filter won't clean the air as well.</li>
+            <li><strong>Replace the filter regularly.</strong> Follow the instructions for your air cleaner. A dirty filter won’t clean the air as well.</li>
           </ul>
         </EsaCollapsible>
 
@@ -922,7 +893,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             Air Resources Board. <a
               href="https://ww2.arb.ca.gov/list-carb-certified-air-cleaning-devices"
               rel="noopener"
-            >See CARB's list of certified air cleaning devices</a>.
+            >See CARB’s list of certified air cleaning devices</a>.
           </p>
         </div>
           </section>
@@ -965,23 +936,32 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Remove this air cleaner" size={hasIntro ? 'md' : 'sm'} />
         </span>
       </div>
-      <esa-radio-group size={ctl}
-        data-field="unit"
-        data-cleaner
-        label="What does the box or manual list?"
-        value="airflow"
-        options={JSON.stringify(unitOptions)}
-      ></esa-radio-group>
+      <!-- The unit choice is STATE, not a visible question (SMAQMD review: CADR
+           is the common path, ACH the exception). The radio group stays as the
+           engine's store — raw('unit') reads it — but the reader only ever sees
+           the CADR field and an "Enter Air Changes per Hour instead" swap. -->
+      <div hidden>
+        <esa-radio-group size={ctl}
+          data-field="unit"
+          data-cleaner
+          label="Rating type"
+          value="airflow"
+          options={JSON.stringify(unitOptions)}
+        ></esa-radio-group>
+      </div>
 
-      <div data-unit-mode="airflow">
+      <div class="stack" data-gap="sm" data-unit-mode="airflow">
         <esa-text-field size={ctl}
           data-field="airflow"
           data-cleaner
           type="text"
           inputmode="decimal"
-          label="Air flow rate or CADR in CFM (ft³/min)"
-          help-text="CADR means Clean Air Delivery Rate, in CFM — cubic feet of air per minute (ft³/min). You may see three CADR numbers for smoke, dust, and pollen. Enter the lowest number."
+          label="CADR or airflow (CFM)"
+          help-text="If you see three CADR numbers, enter the lowest."
         ></esa-text-field>
+        <span data-unit-swap="ach">
+          <EsaButton size={ctl} variant="ghost" type="button">Enter Air Changes per Hour instead</EsaButton>
+        </span>
       </div>
 
       <div class="stack" data-gap="md" data-unit-mode="ach" hidden>
@@ -1006,7 +986,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         <esa-radio-group size={ctl}
           data-field="refMethod"
           data-cleaner
-          aria-label="Choose how to enter that room's size"
+          aria-label="Choose how to enter that room’s size"
           value="area"
           options={JSON.stringify(refMethods)}
         ></esa-radio-group>
@@ -1024,6 +1004,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             <esa-text-field size={ctl} data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
           </div>
         </div>
+        <span data-unit-swap="airflow">
+          <EsaButton size={ctl} variant="ghost" type="button">Enter CADR instead</EsaButton>
+        </span>
       </div>
     </div>
   </template>
@@ -1031,6 +1014,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
 <style>
   .smaqmd-aerb [hidden] { display: none !important; }
+  /* Polish: headings balance their line breaks, and every number that updates
+     live (the hero stats; the scene's dimension + capacity labels, below) uses
+     tabular figures so digits hold their width as values change instead of
+     jiggling. KEEP IN SYNC with public/aer-tool/styles.css. */
+  .smaqmd-aerb :is(h2, h3) { text-wrap: balance; }
+  .smaqmd-aerb p { text-wrap: pretty; }
+  /* Light-only tool: pin the scheme so native controls (radios, inputs,
+     scrollbars) stay light even inside a host page that declares
+     `color-scheme: light dark`. */
+  .smaqmd-aerb { color-scheme: light; }
+  .smaqmd-aerb :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
   .smaqmd-aerb__dims { --grid-min: 6.5rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
   /* Prompt labelling the reference-room fields (ACH mode). A question the user
@@ -1040,68 +1034,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--color-content-default-secondary);
     font-weight: var(--typography-font-weight-semibold);
   }
-  /* smaqmd-aerb__target-scale — the esa-range-slider plus a row of labelled
-     landmarks under its track. bcn-lego-checked: esa-range-slider IS the control
-     and is used unmodified; it exposes no marks/ticks API, so the labels are
-     composed AROUND it here instead of being added to the hub lego. Checked
-     Beacon (no marked-slider component). Positioning only — no track, thumb or
-     focus chrome is redrawn, all of that stays the lego's. */
-  .smaqmd-aerb__target-scale {
-    position: relative;
-    /* Inline-size containment makes 1cqw mean "1% of this block's width", which
-       is what lets each mark clamp itself against the container edge below. */
-    container-type: inline-size;
-  }
-  .smaqmd-aerb__target-marks {
-    position: relative;
-    /* A notch band, then two staggered rows of one line each — reserved up front
-       so the absolutely positioned marks can never overlap the target field
-       beneath them. 0.7em (notch + clearance) + 1.6em + 1.6em = 3.9em. */
-    block-size: 3.9em;
-    margin-block-start: var(--spacing-100, 0.25rem);
-    color: var(--color-content-default-secondary);
-  }
-  .smaqmd-aerb__target-mark {
-    position: absolute;
-    inset-block-start: 0.7em;
-    inset-inline-start: 0;
-    inline-size: max-content;
-    white-space: nowrap;
-    /* Centre the label on where the THUMB actually sits at this value, not on
-       the naive track percentage: a native thumb's centre travels from thumb/2
-       to width - thumb/2, so the raw percent drifts up to half a thumb (~9px at
-       the 2 mark) from what the eye aligns to. --_thumb is the lego's thumb
-       size for the mounted control size, set inline on the marks row. Then
-       clamp: the 0 floor stops the box at the container's leading edge and the
-       100cqw - 100% ceiling at the trailing one, so an outermost label is
-       nudged inward rather than spilling out of the card. */
-    translate: clamp(0px, calc(var(--_thumb) / 2 + var(--_at) * (100cqw - var(--_thumb)) / 100 - 50%), calc(100cqw - 100%));
-  }
-  .smaqmd-aerb__target-mark[data-row='2'] { inset-block-start: 2.3em; }
-  /* The notch that ties a label to its place on the track. It starts at the top
-     of this row — spacing-100 under the lego's box, i.e. clear of the thumb's
-     swept band — and runs down to just above its own label: 0.5em for row 1,
-     1.9em for row 2. That difference is the whole point of the tick: the long
-     run down to the lower row reads as a deliberate connector, where a bare
-     two-row stagger reads as a layout accident. Decoration only — the parent
-     row is aria-hidden and the numbers are all in the field's help text. */
-  .smaqmd-aerb__target-tick {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    /* Drawn as a BORDER rather than a 2px background: a background-color is
-       overridden in forced-colors mode (the notch would vanish), while a border
-       is re-coloured to CanvasText and survives — no media query needed. */
-    inline-size: 0;
-    block-size: 0.5em;
-    border-inline-start: 2px solid var(--color-border-default);
-    pointer-events: none;
-    /* Same thumb-travel math as the label, WITHOUT the clamp: a label may be
-       nudged inward to stay in the card, but the notch is the position —
-       moving it would point at the wrong value. */
-    translate: calc(var(--_thumb) / 2 + var(--_at) * (100cqw - var(--_thumb)) / 100 - 50%);
-  }
-  .smaqmd-aerb__target-tick[data-row='2'] { block-size: 1.9em; }
+
+  /* Step 2: the selected preset's target, then a quiet hint. Readout number is
+     tabular (it changes on every choice); the hint is regular-weight secondary —
+     an aside, not a label. KEEP IN SYNC with public/aer-tool/styles.css. */
+  .smaqmd-aerb__target-readout { font-variant-numeric: tabular-nums; }
+  .smaqmd-aerb__target-hint { color: var(--color-content-default-secondary); }
 
   .smaqmd-aerb__context {
     color: var(--color-content-default-secondary);
@@ -1479,6 +1417,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     font-size: 13px;
     font-weight: var(--typography-font-weight-medium, 500);
     font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+    font-variant-numeric: tabular-nums;
   }
 
   /* Drag grips re-enable hit-testing inside the pointer-events:none stage: each
@@ -1503,9 +1442,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   }
   /* Hover: `+` (adjacent sibling) scopes the highlight to the hovered edge's own
      handle — `~` would darken every following handle, i.e. all of them. */
-  .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
-  .smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev {
-    stroke: var(--color-text, #1a1a1a); stroke-width: 2.5;
+  /* Gated to real hover devices: on touch, :hover sticks after a drag ends and
+     would leave the grip looking pressed. KEEP IN SYNC with the twin. */
+  @media (hover: hover) and (pointer: fine) {
+    .smaqmd-cityview__handle:hover .smaqmd-cityview__chev,
+    .smaqmd-cityview__hit:hover + .smaqmd-cityview__handle .smaqmd-cityview__chev {
+      stroke: var(--color-text, #1a1a1a); stroke-width: 2.5;
+    }
   }
   /* Active: press-down feedback (like a button :active) while the grip is held.
      Pointer capture keeps :active on the pressed hit/handle through the drag. */
@@ -1543,9 +1486,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     color: var(--color-content-default-secondary, #646464);
     cursor: pointer;
   }
-  .smaqmd-cityview__pause:hover {
-    background: var(--color-background-elevation-sunken, #f0f0f0);
-    color: var(--color-content-default, #121212);
+  /* Hover gated to real hover devices (a tap would leave it stuck); same gate
+     as the twin's hover rules. */
+  @media (hover: hover) and (pointer: fine) {
+    .smaqmd-cityview__pause:hover {
+      background: var(--color-background-elevation-sunken, #f0f0f0);
+      color: var(--color-content-default, #121212);
+    }
   }
   .smaqmd-cityview__pause:focus-visible {
     outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #0073b2);
@@ -1622,9 +1569,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-wizard :global(.esa-button--variant-ghost .esa-button__native) {
     background: var(--color-background-elevation-raised, #fcfcfc);
   }
-  .smaqmd-wizard :global(.esa-button--variant-ghost .esa-button__native:hover:not(:disabled)),
   .smaqmd-wizard :global(.esa-button--variant-ghost.esa-button--active .esa-button__native) {
     background: var(--color-background-elevation-sunken, #f0f0f0);
+  }
+  /* Hover only where hover exists. On touch this also outranks the lego's own
+     (ungated) ghost hover with the raised rest above, so a tap doesn't leave
+     the button stuck gray. */
+  @media (hover: hover) and (pointer: fine) {
+    .smaqmd-wizard :global(.esa-button--variant-ghost .esa-button__native:hover:not(:disabled)) {
+      background: var(--color-background-elevation-sunken, #f0f0f0);
+    }
   }
 
   /* smaqmd-wizard — the step shell. bcn-lego-checked: no esa- lego is a gated linear
@@ -1644,7 +1598,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        is the whole active/idle distinction, so it has to be the loud one. */
     background: transparent;
     box-shadow: inset 0 0 0 1px var(--smaqmd-color-border-secondary-brand);
-    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
   /* Completed steps: filled brand; current step: brand ring + brand text. */
   .smaqmd-wizard__dot[data-done] {
@@ -1726,16 +1680,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   /* Step-change motion: the incoming step slides in from the direction of travel
      — from the right when moving forward (Next), from the left when moving back —
      so the animation reads as advancing/retreating through the flow, not just a
-     generic content fade. Runs on the ecology house ease-in-out curve
-     (--easing-in-out, easeInOutCubic — the token's documented use is "on-screen
-     elements moving to a new position"). An animation (not a transition) is used
+     generic content fade. Runs on a strong ease-out (fast start, long settle), not
+     the house --easing-in-out: the step is ENTERING, and ease-in-out's slow first
+     frames read as lag right after the Next press. The hub has no ease-out token,
+     so the curve is literal here and in public/aer-tool/styles.css (KEEP IN SYNC).
+     An animation (not a transition) is used
      because steps swap via the hidden attribute (display:none), which can't be
      transitioned; goStep() sets the direction class and re-triggers it. The card's
      own overflow:hidden clips the off-screen start so no scrollbar flashes. */
   .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
   .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back {
-    animation: var(--duration-base, 200ms)
-      var(--easing-in-out, cubic-bezier(0.645, 0.045, 0.355, 1)) both;
+    animation: 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
   }
   .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd  { animation-name: smaqmd-wizard-step-in-fwd; }
   .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation-name: smaqmd-wizard-step-in-back; }
@@ -1743,13 +1698,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     from { opacity: 0; transform: translateX(1.5rem); }
     to   { opacity: 1; transform: none; }
   }
+  @keyframes smaqmd-wizard-step-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
   @keyframes smaqmd-wizard-step-in-back {
     from { opacity: 0; transform: translateX(-1.5rem); }
     to   { opacity: 1; transform: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-fwd,
-    .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation: none; }
+    .smaqmd-wizard__body [data-step].smaqmd-wizard__step--enter-back { animation-name: smaqmd-wizard-step-fade; }
+    /* Reduced, not removed: movement goes, fades and colour changes stay so a
+       step change or a verdict still visibly registers. The ring/room/details/
+       dot transitions are opacity, fill and colour only, so they keep running;
+       the grip chevron drops its press-scale. KEEP IN SYNC with the twin. */
+    .smaqmd-cityview__chev { transition-property: stroke; }
     /* The usage-tips collapsible's caret rotation — esa-collapsible ships the
        transition ungated (hub gap); this spoke gates it so the shipped tool
        honors the preference either way. */
@@ -1829,14 +1793,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        loop is paused to match — the script's `sceneLive`, gated on this same
        68rem query. */
     .smaqmd-aerb[data-variant='responsive'] .smaqmd-cityview { display: none; }
-    /* …except on the RESULT step, where the drawing IS part of the answer: the
-       capacity ghost against the room is the picture of the verdict the numbers
-       state. renderStep stamps data-section on the root (toIntro clears it) and
-       sceneLive follows the same condition, so the rAF loop runs only while the
-       band is on screen. The un-scoped narrow rules above (relative, 30dvh band,
+    /* …except on the wizard STEPS (SMAQMD review: keep the room visible on small
+       screens), where it shows as a 30dvh band above the card. renderStep stamps
+       data-section on the root (toIntro clears it, so the intro stays compact)
+       and sceneLive follows the same condition, so the rAF loop runs only while
+       the band is on screen. The un-scoped narrow rules above (relative, 30dvh band,
        tightened safe area, caption hidden) already define how it presents here —
        this only lifts the hide. */
-    .smaqmd-aerb[data-variant='responsive'][data-section='3'] .smaqmd-cityview { display: block; }
+    .smaqmd-aerb[data-variant='responsive'][data-section] .smaqmd-cityview { display: block; }
     /* Mirror: one frame height for every slide, as a MIN so tall steps can grow. */
     .smaqmd-aerb[data-variant='responsive'] .smaqmd-wizard {
       block-size: auto;
@@ -2123,8 +2087,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const capStroke = capStrokeEl ? parseFloat(getComputedStyle(capStrokeEl).strokeWidth) || 0 : 0;
     // hasScene answers "is the scene in the document"; sceneLive answers "is it
     // WORTH DRAWING right now". They differ for exactly one case: the responsive
-    // variant ships the scene at every width but CSS-hides it under 68rem — except
-    // on the result step, where the narrow layout shows it as a band above the
+    // variant ships the scene at every width but CSS-hides it under 68rem on the
+    // intro — on the wizard steps the narrow layout shows it as a band above the
     // card. While it is hidden the container measures 0x0, so an unguarded loop
     // would ease a pulse nobody sees and syncViewport would fit to a zero-sized
     // box, poisoning `safe` for when the scene comes back. Every other variant has
@@ -2208,6 +2172,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // set points only when shown.
     const detailsG = svg.querySelector<SVGGElement>('[data-room-details]');
     const furnG = svg.querySelector<SVGGElement>('[data-furniture]');
+    const furnBackG = svg.querySelector<SVGGElement>('[data-furniture-back]');
+    let furnLayerSig = '';
     const setDetail = (sel: string, on: boolean, pts?: Pt[]) => {
       const el = svg.querySelector<SVGElement>(sel);
       if (!el) return;
@@ -2654,6 +2620,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // all three dressing groups go hidden together.
       if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
       if (furnG) furnG.style.visibility = det.degenerate ? 'hidden' : '';
+      if (furnBackG) furnBackG.style.visibility = det.degenerate ? 'hidden' : '';
       if (det.degenerate) setDetail('[data-rug]', false);
       if (!det.degenerate) {
         const hw = WIN_W / 2;
@@ -2680,6 +2647,27 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // Furniture — each piece the same 3-face mini-box as a cleaner unit, but
         // standing on the floor (z from 0 to its height). The pool is already in
         // back-to-front order, so drawing it in index order is correct depth.
+        // Paint order vs the BACK cleaners: a piece wholly behind one (viewer
+        // looks from +x,+y, so smaller x or y is farther) moves to the back
+        // layer, which paints before them. Re-parent only when the assignment
+        // changes — drawScene runs every animation frame.
+        const layer = det.furn.map((f) => {
+          if (!f) return 'f';
+          return cleaners.slice(0, n).some((c) => {
+            if (c.side !== 'back') return false;
+            const fBehind = f.x1 <= c.x0 + 1e-6 || f.y1 <= c.y0 + 1e-6;
+            const fFront = c.x1 <= f.x0 + 1e-6 || c.y1 <= f.y0 + 1e-6;
+            return fBehind && !fFront;
+          }) ? 'b' : 'f';
+        });
+        const sig = layer.join('');
+        if (furnBackG && furnG && sig !== furnLayerSig) {
+          furnLayerSig = sig;
+          for (let k = 0; k < FURN_DEFS.length; k++) {
+            const gl = svg.querySelector<SVGGElement>(`[data-furn="${k + 1}"]`);
+            if (gl) (layer[k] === 'b' ? furnBackG : furnG).appendChild(gl);
+          }
+        }
         for (let k = 0; k < FURN_DEFS.length; k++) {
           const u = det.furn[k];
           const g = svg.querySelector<SVGGElement>(`[data-furn="${k + 1}"]`);
@@ -2955,10 +2943,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
       // Ease the room toward the entered dimensions, and the capacity ghost's
       // footprint scale toward its target, so the ghost grows/shrinks in step.
-      cur.L += (tgt.L - cur.L) * 0.22;
-      cur.W += (tgt.W - cur.W) * 0.22;
-      cur.H += (tgt.H - cur.H) * 0.22;
-      capS += (capSTgt - capS) * 0.22;
+      // The 0.22 step is calibrated per 60 Hz frame; scaling it by dt keeps the
+      // morph the same speed on 120 Hz displays (otherwise twice as fast) and on
+      // throttled ones. Still a monotone exponential approach — no overshoot.
+      const k = 1 - Math.pow(1 - 0.22, dt * 60);
+      cur.L += (tgt.L - cur.L) * k;
+      cur.W += (tgt.W - cur.W) * k;
+      cur.H += (tgt.H - cur.H) * k;
+      capS += (capSTgt - capS) * k;
       const morphing =
         Math.abs(tgt.L - cur.L) + Math.abs(tgt.W - cur.W) + Math.abs(tgt.H - cur.H) +
         Math.abs(capSTgt - capS) >= 0.01;
@@ -2982,8 +2974,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // ---- room size across the three entry modes ----
     // roomVolume(): the true volume for the ACH math, per the chosen method.
     // sceneBox(): a drawable L×W×H box for the isometric scene, derived from
-    // whatever the mode gives — area/volume modes have no real footprint, so we
-    // draw a square room of the equivalent size (√area, or √(vol/8)) with a
+    // whatever the mode gives — area mode has no real footprint, so we
+    // draw a square room of the equivalent size (√area) with a
     // standard ceiling. 0.5 fallbacks keep the scene alive while fields are blank.
     // Soft upper bounds on room size. These are NOT a validity gate — the ACH
     // arithmetic is correct at any size, so an over-size room still computes and
@@ -2992,7 +2984,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // to the same numbers, so pulling an edge and typing a value can never
     // disagree about where the room stops (they used to: drag clamped at 100 ft
     // while typing had no bound at all).
-    const ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000, volume: 300000 };
+    const ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000 };
+    // ACH per air-quality choice — KEEP IN SYNC with airQualityOptions (frontmatter)
+    // and AIR_QUALITY_ACH in public/aer-tool/app.js.
+    const AIR_QUALITY_ACH: Record<string, number> = { good: 2, unhealthy: 5, smoke: 7.5 };
     const ROOM_MIN = 1;
     // Is any entered field, in the CURRENT entry mode, past its bound?
     const roomOversize = (): boolean => {
@@ -3003,7 +2998,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       switch (raw('roomMethod')) {
         case 'dimensions': return over('length') || over('width') || over('height');
         case 'area':       return over('area') || over('height');
-        case 'volume':     return over('volume');
         default:           return false;
       }
     };
@@ -3011,19 +3005,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       switch (raw('roomMethod')) {
         case 'dimensions': return num('length') * num('width') * num('height');
         case 'area':       return num('area') * num('height');
-        case 'volume':     return num('volume');
         default:           return NaN;
       }
     };
     // roomArea(): the room's FLOOR AREA in ft² — the relatable unit for the result
     // (people picture square feet, not cubic feet). Exact from L×W or an entered
-    // area; in volume-only mode there's no footprint, so approximate at a standard
-    // 8 ft ceiling (the same assumption the coverage figure uses).
+    // area.
     const roomArea = (): number => {
       switch (raw('roomMethod')) {
         case 'dimensions': { const a = pos('length') * pos('width'); return a > 0 ? a : NaN; }
         case 'area':       return pos('area');
-        case 'volume':     { const v = pos('volume'); return v > 0 ? v / 8 : NaN; }
         default:           return NaN;
       }
     };
@@ -3033,12 +3024,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         const area = pos('area');
         const H = pos('height') || 8;
         const side = Number.isFinite(area) ? Math.sqrt(area) : 0.5;
-        return { L: side || 0.5, W: side || 0.5, H };
-      }
-      if (method === 'volume') {
-        const vol = pos('volume');
-        const H = 8;
-        const side = Number.isFinite(vol) ? Math.sqrt(vol / H) : 0.5;
         return { L: side || 0.5, W: side || 0.5, H };
       }
       return { L: pos('length') || 0.5, W: pos('width') || 0.5, H: pos('height') || 0.5 };
@@ -3075,7 +3060,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // has by definition just changed) and restart the pulse via morphScene, which
     // ends in startLoop().
     const syncSceneLive = () => {
-      const live = hasScene && !(isResponsive && mqMobile.matches && root.dataset.section !== '3');
+      const live = hasScene && !(isResponsive && mqMobile.matches && root.dataset.section == null);
       if (live === sceneLive) return;
       sceneLive = live;
       if (!live) return;
@@ -3134,7 +3119,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       requestAnimationFrame(() => {
         const target = b.scrollHeight;
         const dur = 200;
-        b.style.transition = `block-size ${dur}ms ease-out, opacity ${dur}ms ease-out`;
+        const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'; // same enter curve as the step slide
+        b.style.transition = `block-size ${dur}ms ${ease}, opacity ${dur}ms ${ease}`;
         b.style.blockSize = `${target}px`;
         b.style.opacity = '1';
         let done = false;
@@ -3351,28 +3337,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const targetWarn = root.querySelector<HTMLElement>('[data-target-warn]');
     const targetInvalid = root.querySelector<HTMLElement>('[data-target-invalid]');
     const roomWarn = root.querySelector<HTMLElement>('[data-room-warn]');
-    // The quick-set slider above the target field. It FOLLOWS the field — every
-    // path that can alter the target (a drag, typing, the initial paint) ends in
-    // recompute(), so the sync lives there and nowhere else.
-    const targetSliderEl = root.querySelector<HTMLElement & { value?: number }>('[data-field="targetSlider"]');
-    const SLIDER_MIN = 1, SLIDER_MAX = 8, SLIDER_STEP = 0.5;
-    const syncTargetSlider = (entered: number) => {
-      if (!targetSliderEl) return;
-      // A blank or junk field leaves the thumb exactly where it is: there is no
-      // "no value" position on a slider, and snapping it to the minimum would
-      // announce a target the user never asked for.
-      if (!Number.isFinite(entered)) return;
-      // Clamp to the track, then round to the step. The native input snaps the
-      // THUMB to the step anyway, but the lego paints its fill from the raw
-      // property — rounding here keeps the fill and the thumb from disagreeing
-      // by half a step on a typed 3.3. The field keeps the exact 3.3.
-      const clamped = Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, entered));
-      const next = Math.round(clamped / SLIDER_STEP) * SLIDER_STEP;
-      // Assigning the property re-renders WITHOUT firing change (the lego only
-      // dispatches from its own @input handler), so this can never loop back into
-      // onEdit — the guard is the lego's contract, not a flag.
-      if (targetSliderEl.value !== next) targetSliderEl.value = next;
-    };
     const achWrap = block.querySelector<HTMLElement>('[data-metric="ach"]');
     const achEvidence = block.querySelector<HTMLElement>('[data-ach-evidence]');
     const fixWrap = block.querySelector<HTMLElement>('[data-metric="fix"]');
@@ -3431,7 +3395,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       show(targetInvalid, targetIsInvalid);
       show(roomWarn, roomOversize());
       show(targetWarn, Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
-      syncTargetSlider(enteredTarget);
 
       const flow = combinedFlow();
       const vol = roomVolume();
@@ -3570,7 +3533,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             ? 'Your next cleaner qualifies if its listing claims any ONE of these:'
             : 'A listing qualifies if it claims any ONE of these:';
           if (fixGapLine) fixGapLine.textContent =
-            `That's +${fmt(target - ach, 2)} air changes per hour on top of the ` +
+            `That’s +${fmt(target - ach, 2)} air changes per hour on top of the ` +
             `${fmt(ach, 1)} your cleaners already deliver.`;
           show(fixGapLine, isGap);
           // The equivalence rows: a listing pair (A ACH, S ft²) implies a CADR of
@@ -3743,21 +3706,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (dot !== -1) out = out.slice(0, dot + 1) + out.slice(dot + 1).replace(/\./g, '');
       return out;
     };
-    // Switching room-entry mode: prefill the newly shown (empty) area/volume field
-    // from the current drawn box so the scene never jumps. round(L·W) for area,
-    // round(L·W·H) for volume; only when the target field is blank.
+    // Switching room-entry mode: prefill the newly shown (empty) area field
+    // from the current drawn box so the scene never jumps: round(L·W), only
+    // when the field is blank.
     const prefillMode = (method: string) => {
       // Derive from tgt (the last drawn box) — NOT sceneBox(), which would read
       // the new mode's still-blank fields and derive from the 0.5 ft fallbacks.
       // labelK un-clamps the drawn box back to the entered feet, so switching
-      // modes on an over-SCENE_MAX room prefills the TRUE area/volume.
+      // modes on an over-SCENE_MAX room prefills the TRUE area.
       const tL = tgt.L * labelK.L, tW = tgt.W * labelK.W, tH = tgt.H * labelK.H;
       if (method === 'area') {
         const f = field('area');
         if (f && !raw('area')) f.value = String(Math.round(tL * tW));
-      } else if (method === 'volume') {
-        const f = field('volume');
-        if (f && !raw('volume')) f.value = String(Math.round(tL * tW * tH));
       }
     };
 
@@ -3771,17 +3731,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (el && el.tagName === 'ESA-RADIO-GROUP' && el.dataset?.field === 'roomMethod') {
         prefillMode(el.value ?? 'dimensions');
       }
-      // The slider writes its number into the target field and stops being
-      // consulted — everything downstream reads the field. No synthetic input
-      // event: this IS the pipeline, and the recompute() below re-derives the
-      // thumb from the field it just wrote. The branch catches both events the
-      // lego produces per drag tick (its own composed `change`, and the inner
-      // native `input` retargeted to the host); writing the same string twice is
-      // a no-op, so neither needs to be filtered out.
-      if (el && el.dataset?.field === 'targetSlider') {
+      // An air-quality choice writes its ACH into the target field (hidden unless
+      // "custom") — everything downstream reads the field, as before.
+      if (el && el.dataset?.field === 'airQuality') {
+        const choice = (el as unknown as { value?: string }).value ?? '';
+        const custom = root.querySelector<HTMLElement>('[data-target-custom]');
+        if (custom) custom.hidden = choice !== 'custom';
+        const preset = root.querySelector<HTMLElement>('[data-target-preset]');
+        if (preset) preset.hidden = choice === 'custom';
         const f = field('target');
-        const v = (el as unknown as { value?: number }).value;
-        if (f && v != null) f.value = String(v);
+        if (f && choice in AIR_QUALITY_ACH) {
+          f.value = String(AIR_QUALITY_ACH[choice]);
+          const readout = root.querySelector<HTMLElement>('[data-r="presetach"]');
+          if (readout) readout.textContent = String(AIR_QUALITY_ACH[choice]);
+        }
       }
       morphScene();
       recompute();
@@ -3819,6 +3782,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               || 'You have added the maximum number of air cleaners.',
           );
         }
+        return;
+      }
+      // CADR ⇄ ACH swap: write the hidden unit store, re-render, then move focus
+      // to the field that just appeared (the clicked button is now hidden).
+      const swap = t.closest<HTMLElement>('[data-unit-swap]');
+      if (swap) {
+        e.preventDefault();
+        const b = swap.closest<HTMLElement>('[data-cleaner-block]');
+        const id = b?.dataset.cleanerBlock;
+        const to = swap.dataset.unitSwap!;
+        const store = id != null ? field('unit', id) : null;
+        if (store) store.value = to;
+        morphScene();
+        recompute();
+        b?.querySelector<HTMLElement>(`[data-field="${to}"][data-cleaner]`)?.focus();
         return;
       }
       const rm = t.closest('[data-remove-cleaner]');
@@ -3889,7 +3867,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const SHOP_PLAN = [0, 2];
     const RESULT_SECTION = 3;
     let plan: number[] = FULL_PLAN;
-    const TITLES = ['What size is your room?', "What is your air cleaner's rating?", "What's your air-change target?", 'Your result'];
+    const TITLES = ['What size is your room?', "What is your air cleaner’s rating?", 'What air quality conditions will you use the air cleaner in?', 'Your result'];
     const wizardEl = root.querySelector<HTMLElement>('[data-wizard]');
     const introEl = root.querySelector<HTMLElement>('[data-intro]');
     const introTitle = root.querySelector<HTMLElement>('[data-intro-title]');
@@ -4017,6 +3995,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       else if (t.closest('[data-nav="result"]'))  { e.preventDefault(); goStep(plan.length); }
       else if (t.closest('[data-nav="back"]'))    { e.preventDefault(); backOrIntro(); }
       else if (t.closest('[data-nav="restart"]')) { e.preventDefault(); if (introEl) toIntro(); else goStep(0); }
+    });
+    // Enter in a text field advances, like submitting a form step: it presses the
+    // forward button currently shown (Next, or See my result) through the same
+    // click path, so the step's own validation still runs. The fields aren't in a
+    // <form> (each step is a slice of one live calculator), so Enter did nothing.
+    // Skipped mid-IME-composition and on the result step (no forward button).
+    // KEEP IN SYNC with public/aer-tool/app.js.
+    root.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey) return;
+      const origin = e.composedPath()[0] as HTMLElement | undefined;
+      if (!(origin instanceof HTMLInputElement) || origin.type !== 'text') return;
+      const fwd = root.querySelector<HTMLButtonElement>(
+        '[data-nav="next"]:not([hidden]) button, [data-nav="result"]:not([hidden]) button');
+      if (!fwd) return;
+      e.preventDefault();
+      fwd.click();
     });
     // Clear the room-required hint the moment a valid room is entered.
     root.addEventListener('input', () => {

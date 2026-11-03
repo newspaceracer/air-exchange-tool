@@ -24,24 +24,33 @@ import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
 // The label photo lives in public/ (shared with the vanilla twin), so Astro will
 // NOT rewrite its path for the production `base` — withBase() does it.
 import { withBase } from '../lib/base';
+
+// `inline`: render the body directly, no outer disclosure. The cleaners step uses
+// it (SMAQMD review: this is instruction there, not optional help); the result
+// step keeps the default disclosure. Only "Need help finding it?" collapses in
+// both. The wrapper is chosen dynamically so the body is written once.
+interface Props { inline?: boolean }
+const { inline = false } = Astro.props;
+const Wrapper = inline ? 'div' : EsaCollapsible;
+const wrapperProps = inline ? {} : { title: 'Where to find an air cleaner’s rating' };
 ---
 
-<EsaCollapsible title="Where to find an air cleaner's rating">
+<Wrapper {...wrapperProps}>
   <div class="stack" data-gap="sm">
     <!-- Own list class, NOT the wizard's .smaqmd-aerb__tips: that rule is scoped to
          smaqmd-aer-wizard.astro and would not reach a separate component's markup
          anyway — reaching for it would only look like reuse. -->
     <ul class="typography-body-md smaqmd-aer-find__list">
       <li>
-        Look for the CADR (Clean Air Delivery Rate) on the air cleaner's box,
-        manual, or manufacturer's website.
+        Look for the CADR (Clean Air Delivery Rate) on the air cleaner’s box,
+        manual, or manufacturer’s website.
       </li>
       <li>
         You may see three CADR numbers for smoke, dust, and pollen. Enter the
         lowest number.
       </li>
       <li>
-        If you don't see CADR, look for an airflow rating in CFM and enter that
+        If you don’t see CADR, look for an airflow rating in CFM and enter that
         number.
       </li>
       <li>
@@ -51,9 +60,9 @@ import { withBase } from '../lib/base';
     </ul>
 
     <!-- The label photo — ONE example, per the client's review: three taught the
-         same concept three times and made a simple lookup look complicated. The
-         other two files (aham-label-100sqft.jpg, aham-label-246sqft.jpg) are still
-         in public/aer-tool/ if they are ever wanted back.
+         same concept three times and made a simple lookup look complicated. (The other two
+         example photos were deleted in Nov 2026; recover them from git history
+         if they are ever wanted back.)
          `alt` carries the same instruction the caption does — which three numbers
          are the CADR ratings and which one to enter — because it IS the
          instruction for anyone who cannot see the photo.
@@ -94,7 +103,7 @@ import { withBase } from '../lib/base';
         <li>Check the specifications panel on the side or the back of the box.</li>
         <li>Check the manual, in the specifications section.</li>
         <li>
-          Search the model number on the manufacturer's website and open its
+          Search the model number on the manufacturer’s website and open its
           specifications page.
         </li>
         <li>
@@ -104,7 +113,7 @@ import { withBase } from '../lib/base';
       </ul>
     </EsaCollapsible>
   </div>
-</EsaCollapsible>
+</Wrapper>
 
 <style>
   /* Quiet supporting copy — the same rung the wizard's result text sits at, so a

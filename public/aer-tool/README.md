@@ -5,11 +5,11 @@ A self-contained web page that helps someone answer one of two questions:
 - **"Is the air cleaner I own powerful enough for this room?"**
 - **"I don't have one — what should I buy?"**
 
-The user provides a room size, describes their air cleaner (or confirms they have none), and sets a target. The tool returns the air changes per hour the setup delivers, the minimum combined CADR needed to hit the target, and an isometric diagram of the room, the cleaner, and the air moving between them.
+The user provides a room size, describes their air cleaner (or confirms they have none), and picks the air quality they expect — good/moderate (AQI 0–100, 2 ACH), unhealthy (AQI 101–200, 5 ACH), very unhealthy or wildfire smoke (AQI 201+, 7.5 ACH per AHAM) — or enters their own target. The tool returns the air changes per hour the setup delivers, the minimum combined CADR needed to hit the target, and an isometric diagram of the room, the cleaner, and the air moving between them.
 
 ## What you get
 
-**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. Total weight is about 500 KB, of which roughly half is the three AHAM label photographs and 29 KB the font.
+**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. The page loads about 310 KB (the label photo only when its help section scrolls into view), 29 KB of it the font.
 
 Everything is namespaced: every CSS class and `id` is prefixed `smaqmd-`, and the JavaScript defines no globals. Nothing in the folder can collide with names on an existing site.
 
@@ -27,9 +27,7 @@ aer-tool/
   styles.css                       all styling, including the flattened design tokens
   app.js                           the calculator, the wizard flow and the diagram
   smaqmd-logo.png                  the district logo in the header (~14 KB, links to airquality.org)
-  aham-label.jpg                   AHAM Verifide label photo in the "where to find ratings" help (~73 KB)
-  aham-label-100sqft.jpg           second example label, a smaller unit's box (~86 KB)
-  aham-label-246sqft.jpg           third example label, with the 4.8 ACH fine print (~80 KB)
+  aham-label.jpg                   AHAM Verifide label photo in the "where to find an air cleaner's rating" help (~73 KB)
   fonts/SourceSans3-Variable.woff2 the district's typeface (~29 KB)
   fonts/OFL.txt                    that font's licence
   README.md                        this file
@@ -56,12 +54,15 @@ Copy the `aer-tool/` folder onto the server. Then, in the page that will host th
 1. **Add the stylesheet** to the page `<head>`:
 
    ```html
+   <link rel="preload" href="/tools/aer-tool/fonts/SourceSans3-Variable.woff2" as="font" type="font/woff2" crossorigin />
    <link rel="stylesheet" href="/tools/aer-tool/styles.css" />
    ```
 
+   The `preload` line is optional. It fetches the font in parallel with the stylesheet instead of after it, so the text doesn't visibly swap fonts on first load.
+
 2. **Paste the embeddable region.** In `index.html`, the block to copy is marked by comments: `<!-- ===== THE EMBEDDABLE REGION — copy from here to </main> ===== -->` and `<!-- ===== end of the embeddable region ===== -->`. Copy everything between them: the `<main class="smaqmd-aerb">` element, including the `<template data-cleaner-template>` before its closing tag.
 
-   The visible page `<h1>` is inside that region, in the `.smaqmd-aerb__header` div at the top of `.smaqmd-aerw__col`, on one row with the district logo (which links to airquality.org). Replace the `<h1>` text with your own title, or delete the whole `.smaqmd-aerb__header` div if the host page already supplies an `<h1>` and its own branding. If you keep the header but the host page already shows the district logo, delete just the `.smaqmd-logo-link` anchor — the divider beside the title disappears with it automatically. The logo's `src` is relative (`smaqmd-logo.png`), and so are the three AHAM label photos inside the "Where to find an air cleaner's ratings" sections (`aham-label*.jpg`) — an embedding page served from a different directory must either keep those images next to itself or point each `src` at wherever `aer-tool/` lives (e.g. `/tools/aer-tool/smaqmd-logo.png`). (The script relocates the header div above the diagram below 68rem; deleting it is safe—the relocation is a no-op when it is absent.)
+   The visible page `<h1>` is inside that region, in the `.smaqmd-aerb__header` div at the top of `.smaqmd-aerw__col`, on one row with the district logo (which links to airquality.org). Replace the `<h1>` text with your own title, or delete the whole `.smaqmd-aerb__header` div if the host page already supplies an `<h1>` and its own branding. If you keep the header but the host page already shows the district logo, delete just the `.smaqmd-logo-link` anchor — the divider beside the title disappears with it automatically. The logo's `src` is relative (`smaqmd-logo.png`), and so is the AHAM label photo inside the two "Where to find an air cleaner's rating" sections (`aham-label.jpg`) — an embedding page served from a different directory must either keep those images next to itself or point each `src` at wherever `aer-tool/` lives (e.g. `/tools/aer-tool/smaqmd-logo.png`). (The script relocates the header div above the diagram below 68rem; deleting it is safe—the relocation is a no-op when it is absent.)
 
 3. **Add the script** at the end of `<body>`:
 
@@ -102,7 +103,7 @@ Built to **WCAG 2.2 Level AA**.
 
 **Keyboard navigation:** Everything is operable without a mouse, in reading order, with a visible 2px brand focus ring (drawn with `outline` to stay visible in Windows Contrast Themes). No overlays or focus traps. Moving between steps sends focus to the new heading so screen-reader users hear where they landed.
 
-**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. The two DISPLAY toggles on the result screen — the ft²/ft³ units switch and the CADR/ACH rating switch — are 36px: they only restate a number already on screen, and at 36px they clear SC 2.5.8's 24px floor with room to spare. The target step's quick-set slider is a native `<input type="range">` with a 24px thumb — SC 2.5.8's floor exactly, and nothing else sits within 24px of it — and it is fully keyboard-operable (Arrow/Home/End/PageUp/PageDown) with the ring drawn on the thumb; the target number field below it is the equivalent path either way. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
+**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. The two DISPLAY toggles on the result screen — the ft²/ft³ units switch and the CADR/ACH rating switch — are 36px: they only restate a number already on screen, and at 36px they clear SC 2.5.8's 24px floor with room to spare. The target step is a native radio group of air-quality choices; "Enter my own target" reveals a labelled number field. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
 
 **Live regions and status:** One polite and one assertive live region, mounted at load, are the only live regions on the page (WCAG 4.1.3). Result summaries are announced politely after 600ms to prevent diagram dragging from creating chatter.
 

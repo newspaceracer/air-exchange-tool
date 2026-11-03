@@ -11,10 +11,12 @@
 //    in the hub has no pin in the theme.
 //
 // 2. TWIN DRIFT. public/aer-tool is a hand-maintained port of the wizard. Two
-//    invariants are checkable mechanically: the find-ratings <details> block
-//    appears twice and must stay byte-identical, and every .smaqmd-type-* rung
-//    the twin fixes must equal the theme's pin for the same rung, so the
-//    prototype and the shipped artifact render the same scale.
+//    invariants are checkable mechanically: the find-ratings body appears twice
+//    (inline on the cleaners step, in a disclosure on the result step) and must
+//    stay byte-identical; every .smaqmd-type-* rung the twin fixes must equal
+//    the theme's pin for the same rung; every radio group's options, labels and
+//    default must match; the engine constants (AIR_QUALITY_ACH, TITLES, …) must
+//    match; and the deliverable's HTML/CSS must carry no code comments.
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,11 +103,23 @@ const detailsBlocks = () => {
   }
   return out;
 };
-const details = detailsBlocks().filter((b) => b.includes('aer-find__list'));
-if (details.length !== 2) {
-  failures.push(`expected exactly 2 find-ratings <details> blocks in public/aer-tool/index.html, found ${details.length}`);
-} else if (details[0] !== details[1]) {
-  failures.push('the two find-ratings <details> blocks in public/aer-tool/index.html have drifted apart — re-sync them (they are deliberate literal duplicates)');
+const details = detailsBlocks().filter((b) => b.includes('aer-find__figure'));
+// Since the SMAQMD review (Nov 2026) the cleaners step shows the find-ratings
+// BODY inline, and only the result step keeps it inside a disclosure. So: exactly
+// one find-ratings <details>, and its body (the stack inside
+// .smaqmd-collapsible__body) must appear verbatim exactly twice in the file —
+// once in that disclosure, once inline on the cleaners step.
+if (details.length !== 1) {
+  failures.push(`expected exactly 1 find-ratings <details> block (result step) in public/aer-tool/index.html, found ${details.length}`);
+} else {
+  const block = details[0];
+  const bodyStart = block.indexOf('<div class="smaqmd-stack" data-gap="sm">');
+  const bodyEnd = block.lastIndexOf('</div>', block.lastIndexOf('</details>'));
+  const body = bodyStart === -1 ? '' : block.slice(bodyStart, bodyEnd);
+  const copies = body ? twinHtml.split(body).length - 1 : 0;
+  if (copies !== 2) {
+    failures.push(`the inline (cleaners step) and disclosure (result step) find-ratings copies in public/aer-tool/index.html have drifted apart — expected the body twice, found ${copies}; re-sync them (deliberate literal duplicates)`);
+  }
 }
 
 // ---- 2b. twin type rungs match the theme's pins ----
@@ -118,8 +132,108 @@ for (const [, rung, size] of twinRungs) {
   }
 }
 
+// ---- 2c. every radio group's options + default match between the builds ----
+// The wizard renders its choices from frontmatter arrays (options={JSON.stringify
+// (name)}); the twin hand-writes the same choices as radio inputs. A relabelled,
+// reordered, added or dropped option in one build — or a different default — is
+// exactly the drift the "KEEP IN SYNC" comments could not stop.
+// bcn-lego-checked: no UI here — the "<input" below is a regex READING the
+// twin's markup to compare it, not markup this script builds; no lego applies.
+const wizard = read('src/components/smaqmd-aer-wizard.astro');
+const squash = (s) => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+const arrays = new Map();
+for (const [, name, body] of wizard.matchAll(/const (\w+) = \[([\s\S]*?)\];/g)) {
+  const items = [...body.matchAll(/\{\s*label:\s*(['"])(.*?)\1,\s*value:\s*'([^']+)'/g)]
+    .map(([, , label, value]) => ({ label, value }));
+  if (items.length) arrays.set(name, items);
+}
+const INPUT_TAG = '<' + 'input';
+let groupsChecked = 0;
+for (const m of wizard.matchAll(/options=\{JSON\.stringify\((\w+)\)\}/g)) {
+  const tagStart = wizard.lastIndexOf('<esa-', m.index);
+  const tag = wizard.slice(tagStart, wizard.indexOf('>', m.index));
+  const fieldName = tag.match(/data-field="(\w+)"/)?.[1];
+  const opts = arrays.get(m[1]);
+  if (!fieldName || !opts) {
+    failures.push(`radio group using ${m[1]} in the wizard has no data-field or no parsable options array`);
+    continue;
+  }
+  const twinOpts = [...twinHtml.matchAll(new RegExp(`${INPUT_TAG}[^>]*name="${fieldName}"[^>]*>([\\s\\S]*?)</label>`, 'g'))]
+    .map(([whole, rest]) => {
+      const open = whole.slice(0, whole.indexOf('>') + 1);
+      return {
+        value: open.match(/value="([^"]+)"/)?.[1],
+        label: squash(rest),
+        checked: /\schecked[\s/>]/.test(open),
+      };
+    });
+  const want = opts.map((o) => `${o.value}=${o.label}`).join(' | ');
+  const got = twinOpts.map((o) => `${o.value}=${o.label}`).join(' | ');
+  if (want !== got) {
+    failures.push(`radio group "${fieldName}" differs between builds:\n      wizard (${m[1]}): ${want}\n      twin:            ${got}`);
+  }
+  const wizDefault = tag.match(/\svalue="([^"]+)"/)?.[1];
+  const twinDefault = twinOpts.find((o) => o.checked)?.value;
+  if (wizDefault && wizDefault !== twinDefault) {
+    failures.push(`radio group "${fieldName}" default differs: wizard value="${wizDefault}", twin checks "${twinDefault ?? 'nothing'}"`);
+  }
+  groupsChecked++;
+}
+
+// ---- 2d. the engine constants + step titles match between the builds ----
+const twinJs = read('public/aer-tool/app.js');
+const literal = (src, name) => {
+  const m = src.match(new RegExp(`(?:const|var|let) ${name}(?::[^=]+)?\\s*=\\s*([\\[{][\\s\\S]*?[\\]}]);`));
+  return m ? m[1].replace(/\s+/g, '').replace(/"/g, "'").replace(/,([\]}])/g, '$1') : null;
+};
+for (const name of ['AIR_QUALITY_ACH', 'TITLES', 'ROOM_MAX', 'CLEANER_FIELDS']) {
+  const a = literal(wizard, name);
+  const b = literal(twinJs, name);
+  if (a !== b) failures.push(`${name} differs between builds:\n      wizard: ${a}\n      twin:   ${b}`);
+}
+
+// ---- 2d'. no dead helpers in the twin engine ----
+// A helper the twin DEFINES but never CALLS means a port landed half-way: the
+// function was copied from the wizard, the call site wasn't. Shipped once (Nov
+// 2026): capLabelAt() — the pause-button keep-out for the scene's capacity caption —
+// existed in app.js while drawScene still used the old fixed offset, so on phones
+// the caption ran under the pause button. Every `var name = function` must be
+// referenced at least once beyond its own definition.
+for (const [, name] of twinJs.matchAll(/\bvar (\w+) = function\b/g)) {
+  const uses = twinJs.match(new RegExp(`\\b${name}\\b`, 'g'))?.length ?? 0;
+  if (uses < 2) failures.push(`public/aer-tool/app.js defines ${name}() but never calls it — a half-ported wizard change? Mirror the wizard's call site`);
+}
+
+// ---- 2e. the deliverable carries no code comments ----
+// The client embeds public/aer-tool verbatim, so it stands alone: no explanatory
+// comments and no spoke workflow tokens in its markup or styles. The ONLY
+// sanctioned comments are the two "=====" embed-region markers the README cites.
+// (app.js predates this guard and still carries comments — not yet enforced.)
+const strayHtml = [...twinHtml.matchAll(/<!--([\s\S]*?)-->/g)].filter(([, c]) => !c.includes('====='));
+if (strayHtml.length) {
+  failures.push(`public/aer-tool/index.html has ${strayHtml.length} code comment(s) besides the embed markers — the deliverable ships comment-free; keep notes in the wizard source`);
+}
+const strayCss = twinCss.match(/\/\*[\s\S]*?\*\//g) ?? [];
+if (strayCss.length) {
+  failures.push(`public/aer-tool/styles.css has ${strayCss.length} code comment(s) — the deliverable ships comment-free`);
+}
+
+// ---- 3. known-broken lego prop combinations ----
+// esa-button variant="ghost" + appearance="soft": soft's hover sets white text +
+// an accent border, then ghost's hover resets the background to light gray —
+// the label vanishes (white on #f0f0f0) on every hover. Shipped once (Nov 2026,
+// the CADR/ACH swap buttons). Ghost already IS the quiet button; drop soft.
+for (const f of readdirSync(resolve(root, 'src/components'))) {
+  const src = read(`src/components/${f}`);
+  for (const m of src.matchAll(/<EsaButton\b[^>]*>/g)) {
+    if (/variant="ghost"/.test(m[0]) && /appearance="soft"/.test(m[0])) {
+      failures.push(`${f}: EsaButton variant="ghost" appearance="soft" — the label turns white on gray on hover; use plain variant="ghost"`);
+    }
+  }
+}
+
 if (failures.length) {
   console.error('check-consistency FAILED:\n' + failures.map((f) => `  ✗ ${f}`).join('\n'));
   process.exit(1);
 }
-console.log(`check-consistency ok — ${new Set(fluidTokens).size} type tokens pinned, twin blocks identical, ${twinRungs.length} twin rungs matched`);
+console.log(`check-consistency ok — ${new Set(fluidTokens).size} type tokens pinned, twin blocks identical, ${twinRungs.length} twin rungs matched, ${groupsChecked} radio groups matched, engine constants matched, deliverable comment-free`);
