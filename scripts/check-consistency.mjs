@@ -68,10 +68,40 @@ for (const f of readdirSync(resolve(root, compDir))) {
 }
 
 // ---- 2a. the twin's two find-ratings blocks are byte-identical ----
+// NESTING-AWARE on purpose: find-ratings now contains a second disclosure
+// ("Need help finding it?"), so a non-greedy /<details>...<\/details>/ would stop
+// at the INNER closing tag and compare two truncated blocks — which would pass
+// while the real tails drifted. Scan to the matching close with a depth counter.
+// Keyed off .smaqmd-aer-find__list, not the old __lede paragraph: the client's
+// Sep 2026 copy drops the lede and opens straight into the list.
 const twinHtml = read('public/aer-tool/index.html');
-const details = [...twinHtml.matchAll(/<details class="smaqmd-collapsible">[\s\S]*?<\/details>/g)]
-  .map((m) => m[0])
-  .filter((b) => b.includes('aer-find__lede'));
+// Only TOP-LEVEL blocks: a start index that falls inside the block we just
+// captured is the nested "Need help finding it?" disclosure, which carries the
+// same marker class and would otherwise be counted as a third and fourth copy.
+const detailsBlocks = () => {
+  const out = [];
+  const open = /<details class="smaqmd-collapsible">/g;
+  let m;
+  let consumedTo = -1;
+  while ((m = open.exec(twinHtml))) {
+    const start = m.index;
+    if (start < consumedTo) continue;
+    let depth = 0;
+    let i = start;
+    while (i < twinHtml.length) {
+      const o = twinHtml.indexOf('<details', i);
+      const c = twinHtml.indexOf('</details>', i);
+      if (c === -1) break;
+      if (o !== -1 && o < c) { depth++; i = o + 8; }
+      else {
+        depth--; i = c + 10;
+        if (depth === 0) { out.push(twinHtml.slice(start, i)); consumedTo = i; break; }
+      }
+    }
+  }
+  return out;
+};
+const details = detailsBlocks().filter((b) => b.includes('aer-find__list'));
 if (details.length !== 2) {
   failures.push(`expected exactly 2 find-ratings <details> blocks in public/aer-tool/index.html, found ${details.length}`);
 } else if (details[0] !== details[1]) {

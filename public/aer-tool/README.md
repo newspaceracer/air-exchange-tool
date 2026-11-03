@@ -1,4 +1,4 @@
-# Air Exchange Rate Tool — standalone build
+# Air Cleaner Calculator — standalone build
 
 A self-contained web page that helps someone answer one of two questions:
 
@@ -44,7 +44,7 @@ Choose one of three options based on your needs:
 Copy `aer-tool/` anywhere on the site and link to it:
 
 ```html
-<a href="/tools/aer-tool/">Air Exchange Rate Tool</a>
+<a href="/tools/aer-tool/">Air Cleaner Calculator</a>
 ```
 
 Nothing to configure. Every path inside the folder is relative, so it works at any depth. This is the simplest option.
@@ -84,7 +84,7 @@ The safest option for dropping the tool into an existing page, since host and to
 ```html
 <iframe
   src="/tools/aer-tool/"
-  title="Air Exchange Rate Tool"
+  title="Air Cleaner Calculator"
   style="width: 100%; height: 100vh; border: 0;"
   loading="lazy"
 ></iframe>

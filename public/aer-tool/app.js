@@ -1456,6 +1456,10 @@
     // they price the gap instead.
     var renderFix = function (isGap) {
       var cadrGoal = isGap ? needCadr - flow : needCadr;
+      // The shop card's "choose an air cleaner with a CADR of N CFM or higher"
+      // sentence. Always the full requirement in CFM, never the gap and never the
+      // ACH framing: a CADR is only ever printed in CFM.
+      setReadout('needcadr', fmt(needCadr, 0) + ' CFM');
       if (asAch) {
         // FAIL+ACH: a fractional "+0.7 ACH" hero matches nothing printed on a
         // box, so the stat hides, the equivalence list leads, and the gap
@@ -1552,10 +1556,12 @@
       // carries the multi-unit case), but past 700 no single add-on exists —
       // and the "swap in stronger cleaners" line would otherwise be a dead end.
       show(cadrHighEl, !pass && needCadr - flow > 700);
-      var subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
-      var subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
+      // CLIENT COPY (SMAQMD communications review, Sep 2026): "the right size" /
+      // "too small". One subject for both verdicts — their phrasing puts the
+      // negation in the predicate, not the verb. KEEP IN SYNC with the wizard.
+      var subj = blocks.length > 1 ? 'Your air cleaners are' : 'Your air cleaner is';
       setAnswer(
-        pass ? subj + ' powerful enough for this room' : subjNeg + ' powerful enough for this room',
+        pass ? subj + ' the right size for this room' : subj + ' too small for this room',
         pass ? 'pass' : 'fail'
       );
       setVerdictCard(pass ? 'pass' : 'fail');
@@ -1573,7 +1579,7 @@
       renderFix();
       showFix(true);
       show(cadrHighEl, needCadr > 700);
-      setAnswer('Shop for this rating', 'shop');
+      setAnswer('Air cleaner calculation', 'shop');
       setVerdictCard('shop');
       setPrompt(false);
       if (shopPreview) {
@@ -1726,7 +1732,7 @@
   var plan = FULL_PLAN;
   var TITLES = [
     'What size is your room?',
-    'What air cleaners do you have?',
+    "What is your air cleaner's rating?",
     "What's your air-change target?",
     'Your result',
   ];

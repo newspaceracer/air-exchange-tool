@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Air Exchange Rate Tool — Sac Metro Air District</title>
+    <title>Air Cleaner Calculator — Sac Metro Air District</title>
     <meta
       name="description"
-      content="Estimate how many times an hour an air cleaner can replace the air in your room, and find the minimum CADR to look for."
+      content="Find the right air cleaner for your room or see what room size your current air cleaner can handle."
     />
     <link
       rel="icon"
@@ -521,7 +521,7 @@
               />
             </a>
             <h1 class="smaqmd-type-heading-lg smaqmd-aerb__page-title">
-              Air Exchange Rate Tool
+              Air Cleaner Calculator
             </h1>
           </div>
         </div>
@@ -543,9 +543,8 @@
                     How to get cleaner air in your room
                   </h2>
                   <p class="smaqmd-type-body-md smaqmd-wizard__intro-lede">
-                    Use the air exchange rate tool to estimate how many times an
-                    hour an air cleaner can replace your room's air. This can
-                    help you improve the air quality in your room.
+                    Find the right air cleaner for your room or see what room
+                    size your current air cleaner can handle.
                   </p>
                   <div
                     class="smaqmd-wizard__intro-actions smaqmd-stack"
@@ -556,7 +555,7 @@
                         type="button"
                         class="smaqmd-btn smaqmd-btn--primary smaqmd-btn--lg"
                       >
-                        Check my air cleaner
+                        Find the right room size
                       </button>
                     </span>
                     <span data-nav="shop">
@@ -564,7 +563,7 @@
                         type="button"
                         class="smaqmd-btn smaqmd-btn--outline smaqmd-btn--lg"
                       >
-                        Help me pick an air cleaner
+                        Help me find an air cleaner
                       </button>
                     </span>
                   </div>
@@ -835,85 +834,78 @@
                     data-step="1"
                     hidden
                   >
-                    <details class="smaqmd-collapsible">
+                                        <details class="smaqmd-collapsible">
                       <summary
                         class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
-                          >Where to find an air cleaner's ratings</span
+                          >Where to find an air cleaner's rating</span
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
                         <div class="smaqmd-stack" data-gap="sm">
-                          <p class="smaqmd-type-body-md smaqmd-aer-find__lede">
-                            Look for the CADR (Clean Air Delivery Rate) or air
-                            flow rating, in CFM (ft³/min):
-                          </p>
                           <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
-                              On the front of the box — the AHAM Verifide label
-                              lists three CADR numbers (tobacco smoke, dust,
-                              pollen). Use the lowest, usually Tobacco Smoke.
+                              Look for the CADR (Clean Air Delivery Rate) on the air
+                              cleaner's box, manual, or manufacturer's website.
                             </li>
                             <li>
-                              On a specifications panel on the side or the back
-                              of the box.
+                              You may see three CADR numbers for smoke, dust, and pollen.
+                              Enter the lowest number.
                             </li>
                             <li>
-                              In the manual, in the specifications section.
+                              If you don't see CADR, look for an airflow rating in CFM and
+                              enter that number.
                             </li>
                             <li>
-                              On the manufacturer's website — search the model
-                              number and open its specifications page.
-                            </li>
-                            <li>
-                              If it only lists air changes per hour (ACH), also
-                              note the room size that rating was measured in —
-                              the tool asks for both.
+                              If your air cleaner only lists Air Changes per Hour (ACH),
+                              select "Enter Air Changes per Hour instead."
                             </li>
                           </ul>
                           <figure class="smaqmd-aer-find__figure">
                             <img
                               src="aham-label.jpg"
-                              alt="AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR numbers — Tobacco Smoke 189, Dust 196, Pollen 191. The lowest, 189, is the one to use."
+                              alt="An AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR ratings: 189, 196, and 191. The lowest, 189, is the one to enter."
                               width="1200"
                               height="645"
                               loading="lazy"
                             />
                             <figcaption class="smaqmd-type-body-md">
-                              The AHAM Verifide label on the front of the box —
-                              the three circled CADR numbers are what this tool
-                              asks for; use the lowest (here, Tobacco Smoke).
+                              This label lists three CADR ratings: 189, 196, and 191. Enter
+                              the lowest number: 189.
                             </figcaption>
                           </figure>
-                          <div class="smaqmd-aer-find__examples">
-                            <figure class="smaqmd-aer-find__figure">
-                              <img
-                                src="aham-label-100sqft.jpg"
-                                alt="A second AHAM Verifide label, on a smaller air cleaner's box: suggested closed room size 100 square feet, then three CADR numbers — Tobacco Smoke 62, Dust 68, Pollen 65. The lowest is Tobacco Smoke, 62."
-                                width="769"
-                                height="784"
-                                loading="lazy"
-                              />
-                              <figcaption class="smaqmd-type-body-md">
-                                A smaller unit's label — same three numbers; the
-                                lowest here is Tobacco Smoke, 62.
-                              </figcaption>
-                            </figure>
-                            <figure class="smaqmd-aer-find__figure">
-                              <img
-                                src="aham-label-246sqft.jpg"
-                                alt="A third AHAM Verifide label: suggested closed room size 246 square feet, then three CADR numbers — Tobacco Smoke 159, Dust 167, Pollen 170. The lowest is Tobacco Smoke, 159. The fine print notes the suggested room size is based on 4.8 air changes per hour."
-                                width="800"
-                                height="789"
-                                loading="lazy"
-                              />
-                              <figcaption class="smaqmd-type-body-md">
-                                Another box — its fine print confirms the printed
-                                room size assumes 4.8 air changes per hour.
-                              </figcaption>
-                            </figure>
-                          </div>
+                          <details class="smaqmd-collapsible">
+                            <summary
+                              class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
+                            >
+                              <span class="smaqmd-collapsible__title"
+                                >Need help finding it?</span
+                              >
+                            </summary>
+                            <div class="smaqmd-collapsible__body">
+                              <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
+                                <li>
+                                  Check the front of the box — the AHAM Verifide label is
+                                  usually there.
+                                </li>
+                                <li>
+                                  Check the specifications panel on the side or the back of
+                                  the box.
+                                </li>
+                                <li>Check the manual, in the specifications section.</li>
+                                <li>
+                                  Search the model number on the manufacturer's website and
+                                  open its specifications page.
+                                </li>
+                                <li>
+                                  If it only lists air changes per hour (ACH), also note the
+                                  room size that rating was measured in — the tool asks for
+                                  both.
+                                </li>
+                              </ul>
+                            </div>
+                          </details>
                         </div>
                       </div>
                     </details>
@@ -1175,12 +1167,13 @@
                             <p
                               class="smaqmd-type-heading-md smaqmd-aerb__action"
                             >
-                              Add <strong data-r="moreunits">—</strong> more
-                              <span data-r="unitnoun">air cleaners</span> like
-                              yours
+                              You would need
+                              <strong data-r="moreunits">—</strong> additional
+                              <span data-r="unitnoun">air cleaners</span> with
+                              the same rating
                             </p>
                             <p class="smaqmd-type-body-md">
-                              Or swap in stronger cleaners.
+                              Or swap in stronger air cleaners.
                             </p>
                           </div>
                         </div>
@@ -1323,14 +1316,46 @@
 
                         <div data-verdict-card="shop" hidden>
                           <p class="smaqmd-type-body-md smaqmd-aerb__footnote">
-                            CADR (Clean Air Delivery Rate) is the airflow rating
-                            printed on the air cleaner's box, measured in CFM —
-                            cubic feet of air moved per minute (ft³/min). Boxes
-                            usually list three CADR numbers — tobacco smoke,
-                            dust, and pollen. Compare against the Tobacco Smoke
-                            number (usually the lowest): match or beat it to
-                            reach your target.
+                            For the room and air quality conditions you selected,
+                            choose an air cleaner with a CADR of
+                            <strong data-r="needcadr">—</strong> or higher.
                           </p>
+                          <details class="smaqmd-collapsible">
+                            <summary
+                              class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
+                            >
+                              <span class="smaqmd-collapsible__title"
+                                >Learn more</span
+                              >
+                            </summary>
+                            <div class="smaqmd-collapsible__body">
+                              <div class="smaqmd-stack" data-gap="sm">
+                                <div class="smaqmd-stack" data-gap="2xs">
+                                  <p class="smaqmd-type-title">
+                                    What does CADR mean?
+                                  </p>
+                                  <p class="smaqmd-type-body-md">
+                                    CADR stands for Clean Air Delivery Rate. It
+                                    tells you how much filtered air an air cleaner
+                                    can provide. A higher number means the air
+                                    cleaner can clean a larger space or provide
+                                    more air cleaning.
+                                  </p>
+                                </div>
+                                <div class="smaqmd-stack" data-gap="2xs">
+                                  <p class="smaqmd-type-title">
+                                    Where do I find the CADR?
+                                  </p>
+                                  <p class="smaqmd-type-body-md">
+                                    Look on the product box, product
+                                    specifications, user manual, or manufacturer's
+                                    website. You may see several CADR numbers. Use
+                                    the lowest CADR listed.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </details>
                         </div>
 
                         <p
@@ -1396,85 +1421,78 @@
                       </div>
                     </div>
 
-                    <details class="smaqmd-collapsible">
+                                        <details class="smaqmd-collapsible">
                       <summary
                         class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
-                          >Where to find an air cleaner's ratings</span
+                          >Where to find an air cleaner's rating</span
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
                         <div class="smaqmd-stack" data-gap="sm">
-                          <p class="smaqmd-type-body-md smaqmd-aer-find__lede">
-                            Look for the CADR (Clean Air Delivery Rate) or air
-                            flow rating, in CFM (ft³/min):
-                          </p>
                           <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
                             <li>
-                              On the front of the box — the AHAM Verifide label
-                              lists three CADR numbers (tobacco smoke, dust,
-                              pollen). Use the lowest, usually Tobacco Smoke.
+                              Look for the CADR (Clean Air Delivery Rate) on the air
+                              cleaner's box, manual, or manufacturer's website.
                             </li>
                             <li>
-                              On a specifications panel on the side or the back
-                              of the box.
+                              You may see three CADR numbers for smoke, dust, and pollen.
+                              Enter the lowest number.
                             </li>
                             <li>
-                              In the manual, in the specifications section.
+                              If you don't see CADR, look for an airflow rating in CFM and
+                              enter that number.
                             </li>
                             <li>
-                              On the manufacturer's website — search the model
-                              number and open its specifications page.
-                            </li>
-                            <li>
-                              If it only lists air changes per hour (ACH), also
-                              note the room size that rating was measured in —
-                              the tool asks for both.
+                              If your air cleaner only lists Air Changes per Hour (ACH),
+                              select "Enter Air Changes per Hour instead."
                             </li>
                           </ul>
                           <figure class="smaqmd-aer-find__figure">
                             <img
                               src="aham-label.jpg"
-                              alt="AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR numbers — Tobacco Smoke 189, Dust 196, Pollen 191. The lowest, 189, is the one to use."
+                              alt="An AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR ratings: 189, 196, and 191. The lowest, 189, is the one to enter."
                               width="1200"
                               height="645"
                               loading="lazy"
                             />
                             <figcaption class="smaqmd-type-body-md">
-                              The AHAM Verifide label on the front of the box —
-                              the three circled CADR numbers are what this tool
-                              asks for; use the lowest (here, Tobacco Smoke).
+                              This label lists three CADR ratings: 189, 196, and 191. Enter
+                              the lowest number: 189.
                             </figcaption>
                           </figure>
-                          <div class="smaqmd-aer-find__examples">
-                            <figure class="smaqmd-aer-find__figure">
-                              <img
-                                src="aham-label-100sqft.jpg"
-                                alt="A second AHAM Verifide label, on a smaller air cleaner's box: suggested closed room size 100 square feet, then three CADR numbers — Tobacco Smoke 62, Dust 68, Pollen 65. The lowest is Tobacco Smoke, 62."
-                                width="769"
-                                height="784"
-                                loading="lazy"
-                              />
-                              <figcaption class="smaqmd-type-body-md">
-                                A smaller unit's label — same three numbers; the
-                                lowest here is Tobacco Smoke, 62.
-                              </figcaption>
-                            </figure>
-                            <figure class="smaqmd-aer-find__figure">
-                              <img
-                                src="aham-label-246sqft.jpg"
-                                alt="A third AHAM Verifide label: suggested closed room size 246 square feet, then three CADR numbers — Tobacco Smoke 159, Dust 167, Pollen 170. The lowest is Tobacco Smoke, 159. The fine print notes the suggested room size is based on 4.8 air changes per hour."
-                                width="800"
-                                height="789"
-                                loading="lazy"
-                              />
-                              <figcaption class="smaqmd-type-body-md">
-                                Another box — its fine print confirms the printed
-                                room size assumes 4.8 air changes per hour.
-                              </figcaption>
-                            </figure>
-                          </div>
+                          <details class="smaqmd-collapsible">
+                            <summary
+                              class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
+                            >
+                              <span class="smaqmd-collapsible__title"
+                                >Need help finding it?</span
+                              >
+                            </summary>
+                            <div class="smaqmd-collapsible__body">
+                              <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
+                                <li>
+                                  Check the front of the box — the AHAM Verifide label is
+                                  usually there.
+                                </li>
+                                <li>
+                                  Check the specifications panel on the side or the back of
+                                  the box.
+                                </li>
+                                <li>Check the manual, in the specifications section.</li>
+                                <li>
+                                  Search the model number on the manufacturer's website and
+                                  open its specifications page.
+                                </li>
+                                <li>
+                                  If it only lists air changes per hour (ACH), also note the
+                                  room size that rating was measured in — the tool asks for
+                                  both.
+                                </li>
+                              </ul>
+                            </div>
+                          </details>
                         </div>
                       </div>
                     </details>
@@ -1484,39 +1502,60 @@
                         class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
                       >
                         <span class="smaqmd-collapsible__title"
-                          >Getting the most from your air cleaner</span
+                          >Get the most from your air cleaner</span
                         >
                       </summary>
                       <div class="smaqmd-collapsible__body">
                         <ul class="smaqmd-type-body-md smaqmd-aerb__tips">
                           <li>
-                            Remove all plastic wrapping from the filter before
-                            installing it.
-                          </li>
-                          <li>Keep windows and doors closed while it runs.</li>
-                          <li>
-                            Use it in the room where you spend the most time,
-                            usually a bedroom.
+                            <strong>Remove the plastic.</strong> Take all plastic
+                            wrapping off the filter before using your air cleaner.
                           </li>
                           <li>
-                            Leave at least a foot of clearance around the air
-                            intake and outlet.
+                            Close windows and doors while the air cleaner is
+                            running.
                           </li>
                           <li>
-                            Keep it out of corners — sitting mid-wall, it can
-                            pull air from more of the room.
+                            Put it where you spend the most time, such as your
+                            bedroom.
                           </li>
                           <li>
-                            If you use more than one cleaner, place them on
-                            directly opposite sides of the room.
+                            <strong>Give it space.</strong> Keep at least one foot
+                            of open space around the air cleaner so air can flow
+                            freely.
                           </li>
                           <li>
-                            Replace the filter on the schedule in your unit's
-                            manual — a clogged filter cleans less air.
+                            <strong>Keep it out of corners.</strong> Place it along
+                            a wall where air can move around it.
+                          </li>
+                          <li>
+                            Using more than one? Place them on opposite sides of
+                            the room.
+                          </li>
+                          <li>
+                            <strong>Replace the filter regularly.</strong> Follow
+                            the instructions for your air cleaner. A dirty filter
+                            won't clean the air as well.
                           </li>
                         </ul>
                       </div>
                     </details>
+
+                    <!-- Air cleaner certification — twin of the block in
+                         smaqmd-aer-wizard.astro. KEEP IN SYNC. -->
+                    <div class="smaqmd-aerb__cert smaqmd-stack" data-gap="2xs">
+                      <h3 class="smaqmd-type-title">Air cleaner certification</h3>
+                      <p class="smaqmd-type-body-md">
+                        Since 2010, all portable indoor air cleaning devices sold
+                        to people or businesses in California are required to be
+                        certified by the California Air Resources Board.
+                        <a
+                          href="https://ww2.arb.ca.gov/list-carb-certified-air-cleaning-devices"
+                          rel="noopener"
+                          >See CARB's list of certified air cleaning devices</a
+                        >.
+                      </p>
+                    </div>
                   </section>
                 </div>
 
@@ -1675,8 +1714,8 @@
                 id="smaqmd-c-airflow-help"
               >
                 CADR means Clean Air Delivery Rate, in CFM — cubic feet of air
-                per minute (ft³/min). Use the lowest of the three CADR numbers
-                (usually Tobacco Smoke).
+                per minute (ft³/min). You may see three CADR numbers for smoke,
+                dust, and pollen. Enter the lowest number.
               </p>
             </div>
           </div>

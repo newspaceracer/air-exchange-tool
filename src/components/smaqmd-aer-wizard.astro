@@ -471,26 +471,30 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             residents checking their air during smoke season; warmth here would read
             as levity. Plain and useful IS the agency's voice.
 
-            BUTTONS: each names an INTENT in the user's words, not a step in ours,
-            and both start with a verb. The checking path leads because it is the
-            larger audience during smoke season; the shopping path is the outline
-            appearance because it is the less common one, not the lesser one. */}
+            BUTTONS: labels are the CLIENT'S (SMAQMD communications review,
+            Sep 2026) and are applied verbatim. The checking path leads because it
+            is the larger audience during smoke season; the shopping path is the
+            outline appearance because it is the less common one, not the lesser
+            one. Note for whoever revisits this: "Find the right room size" names
+            an OUTPUT rather than the reader's intent (the path answers "is the
+            cleaner I own enough for this room?"), and it no longer parallels the
+            second button. That objection was raised and the client kept their
+            wording — do not quietly revert it. */}
         {hasIntro && (
           <div class="smaqmd-wizard__intro" data-intro>
             <h2 class="typography-heading-lg smaqmd-wizard__intro-title" data-intro-title tabindex="-1">
               How to get cleaner air in your room
             </h2>
             <p class="typography-body-md smaqmd-wizard__intro-lede">
-              Use the air exchange rate tool to estimate how many times an hour an
-              air cleaner can replace your room's air. This can help you improve
-              the air quality in your room.
+              Find the right air cleaner for your room or see what room size your
+              current air cleaner can handle.
             </p>
             <div class="smaqmd-wizard__intro-actions stack" data-gap="sm">
               <span data-nav="check">
-                <EsaButton size={ctl} type="button">Check my air cleaner</EsaButton>
+                <EsaButton size={ctl} type="button">Find the right room size</EsaButton>
               </span>
               <span data-nav="shop">
-                <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Help me pick an air cleaner</EsaButton>
+                <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Help me find an air cleaner</EsaButton>
               </span>
             </div>
           </div>
@@ -712,12 +716,18 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  of the point. -->
             <div data-verdict-card="fail" hidden>
               <div class="stack" data-gap="xs">
+                {/* CLIENT COPY (SMAQMD communications review, Sep 2026): "You would
+                    need X additional air cleaner(s) with the same rating." The
+                    singular/plural of the noun is still switched at runtime
+                    ([data-r="unitnoun"]) rather than printed as "(s)" — their text
+                    used the parenthetical because it was writing about both cases
+                    at once, which a live result never has to do. */}
                 <p class="typography-heading-md smaqmd-aerb__action">
-                  Add <strong data-r="moreunits">—</strong> more
-                  <span data-r="unitnoun">air cleaners</span> like yours
+                  You would need <strong data-r="moreunits">—</strong> additional
+                  <span data-r="unitnoun">air cleaners</span> with the same rating
                 </p>
                 <p class="typography-body-md">
-                  Or swap in stronger cleaners.
+                  Or swap in stronger air cleaners.
                 </p>
               </div>
             </div>
@@ -794,19 +804,45 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  explainer supports it from below — same order as the fail screen, and
                  no alert chrome for what is plain supporting copy. -->
             <div data-verdict-card="shop" hidden>
-              <!-- The place the unit is spelled out IN WORDS. CFM leads everywhere
-                   (it's what the box says) with ft³/min as the parenthetical
-                   secondary on labels and values; this sentence is where a reader
-                   who has never met either abbreviation learns them. It also names
-                   WHICH of the three CADR numbers on a box to compare against —
-                   a real box lists tobacco smoke / dust / pollen, not one "CADR". -->
+              <!-- CLIENT COPY (SMAQMD communications review, Sep 2026). The one
+                   plain instruction sentence leads; everything that used to be
+                   taught here — what CADR stands for, where to find it — is
+                   demoted into "Learn more" below, because their note was that
+                   this screen should be about what to LOOK FOR when buying, not
+                   about the vocabulary. The number itself is the hero stat above;
+                   this sentence tells the reader what to do with it.
+                   [data-r="needcadr"] is written by renderFix() alongside the
+                   stat, so the sentence always quotes the same figure. -->
               <p class="typography-body-md smaqmd-aerb__footnote">
-                CADR (Clean Air Delivery Rate) is the airflow rating printed on the air
-                cleaner's box, measured in CFM — cubic feet of air moved per minute
-                (ft³/min). Boxes usually list three CADR numbers — tobacco smoke, dust,
-                and pollen. Compare against the Tobacco Smoke number (usually the
-                lowest): match or beat it to reach your target.
+                For the room and air quality conditions you selected, choose an air
+                cleaner with a CADR of <strong data-r="needcadr">—</strong> or higher.
               </p>
+              {/* NOTE: the readout is written in CFM even when the stat above is
+                  showing the ACH framing — CADR is only ever quoted in CFM, so the
+                  sentence stays true under either rating toggle. */}
+              <!-- Their "Learn more" section, verbatim: two questions, answered
+                   in plain language, closed by default. -->
+              <EsaCollapsible title="Learn more">
+                <div class="stack" data-gap="sm">
+                  <div class="stack" data-gap="2xs">
+                    <p class="typography-title">What does CADR mean?</p>
+                    <p class="typography-body-md">
+                      CADR stands for Clean Air Delivery Rate. It tells you how much
+                      filtered air an air cleaner can provide. A higher number means
+                      the air cleaner can clean a larger space or provide more air
+                      cleaning.
+                    </p>
+                  </div>
+                  <div class="stack" data-gap="2xs">
+                    <p class="typography-title">Where do I find the CADR?</p>
+                    <p class="typography-body-md">
+                      Look on the product box, product specifications, user manual, or
+                      manufacturer's website. You may see several CADR numbers. Use the
+                      lowest CADR listed.
+                    </p>
+                  </div>
+                </div>
+              </EsaCollapsible>
             </div>
             <!-- Evidence, below the action: the delivered rate vs the target. Fail
                  only — on a pass the ACH hero above carries the same numbers. -->
@@ -852,17 +888,43 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         <!-- Usage tips — closed by default so the verdict above stays the point;
              OUTSIDE [data-result] so the engine-shared subtree stays byte-for-byte
              the classic view's. -->
-        <EsaCollapsible title="Getting the most from your air cleaner">
+        <EsaCollapsible title="Get the most from your air cleaner">
+          {/* CLIENT COPY, verbatim (SMAQMD communications review, Sep 2026). Each
+              item now opens with a short bolded instruction and explains itself
+              after — their pattern, not ours. KEEP IN SYNC with the twin. */}
           <ul class="typography-body-md smaqmd-aerb__tips">
-            <li>Remove all plastic wrapping from the filter before installing it.</li>
-            <li>Keep windows and doors closed while it runs.</li>
-            <li>Use it in the room where you spend the most time, usually a bedroom.</li>
-            <li>Leave at least a foot of clearance around the air intake and outlet.</li>
-            <li>Keep it out of corners — sitting mid-wall, it can pull air from more of the room.</li>
-            <li>If you use more than one cleaner, place them on directly opposite sides of the room.</li>
-            <li>Replace the filter on the schedule in your unit's manual — a clogged filter cleans less air.</li>
+            <li><strong>Remove the plastic.</strong> Take all plastic wrapping off the filter before using your air cleaner.</li>
+            <li>Close windows and doors while the air cleaner is running.</li>
+            <li>Put it where you spend the most time, such as your bedroom.</li>
+            <li><strong>Give it space.</strong> Keep at least one foot of open space around the air cleaner so air can flow freely.</li>
+            <li><strong>Keep it out of corners.</strong> Place it along a wall where air can move around it.</li>
+            <li>Using more than one? Place them on opposite sides of the room.</li>
+            <li><strong>Replace the filter regularly.</strong> Follow the instructions for your air cleaner. A dirty filter won't clean the air as well.</li>
           </ul>
         </EsaCollapsible>
+
+        <!-- Air cleaner certification — NEW, added at the client's request. Not a
+             disclosure: it is a statement of California law that applies to every
+             reader regardless of which path they took, and it carries the agency's
+             authority, so it sits open at the foot of the result. OUTSIDE
+             [data-result] like the two blocks above it, so the engine-shared
+             subtree stays byte-for-byte the classic view's.
+             bcn-lego-checked: no esa- lego is a plain titled prose note — esa-card
+             would frame a legal statement as an interactive surface and
+             esa-alert-box would raise it to a warning it isn't; checked Beacon (no
+             equivalent prose-note component). .smaqmd-aerb__cert is the reusable
+             home for it. -->
+        <div class="smaqmd-aerb__cert stack" data-gap="2xs">
+          <h3 class="typography-title">Air cleaner certification</h3>
+          <p class="typography-body-md">
+            Since 2010, all portable indoor air cleaning devices sold to people or
+            businesses in California are required to be certified by the California
+            Air Resources Board. <a
+              href="https://ww2.arb.ca.gov/list-carb-certified-air-cleaning-devices"
+              rel="noopener"
+            >See CARB's list of certified air cleaning devices</a>.
+          </p>
+        </div>
           </section>
         </div>
 
@@ -918,7 +980,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           type="text"
           inputmode="decimal"
           label="Air flow rate or CADR in CFM (ft³/min)"
-          help-text="CADR means Clean Air Delivery Rate, in CFM — cubic feet of air per minute (ft³/min). Use the lowest of the three CADR numbers (usually Tobacco Smoke)."
+          help-text="CADR means Clean Air Delivery Rate, in CFM — cubic feet of air per minute (ft³/min). You may see three CADR numbers for smoke, dust, and pollen. Enter the lowest number."
         ></esa-text-field>
       </div>
 
@@ -1164,7 +1226,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     padding-inline-start: var(--spacing-500, 1.5rem);
     color: var(--color-content-default-secondary, #646464);
   }
-  /* Disclosure titles ("Where to find…", "Getting the most…") are SECTION names,
+  /* Disclosure titles ("Where to find…", "Get the most…") are SECTION names,
      not row labels: lift the lego's label-sm-strong summary to the title-sm-strong
      rung (the scale's section-inside-a-page heading) by re-pointing the composite's
      input token on the summary — the lego is used unmodified. Reaches both
@@ -1173,6 +1235,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-aerb :global(.esa-collapsible__summary) {
     --typography-label-sm-strong-font-size: var(--typography-title-sm-strong-font-size);
   }
+  /* KNOWN, TEMPORARY: "Need help finding it?" is nested inside find-ratings, so
+     the rule above lifts it to the SAME rung as its parent summary. Left alone on
+     purpose — the client also wants the find-ratings content inline rather than in
+     a disclosure, and once that lands this becomes a top-level disclosure where the
+     lift is correct. Stepping it down now would only have to be reverted. */
+  /* Air-cleaner certification note at the foot of the result: plain prose at the
+     same quiet rung as the rest of the supporting text, separated from the
+     disclosures above it by a hairline rather than a card. */
+  .smaqmd-aerb__cert {
+    padding-block-start: var(--spacing-400, 1rem);
+    border-block-start: 1px solid var(--color-border-default-subtle, #e0e0e0);
+  }
+  .smaqmd-aerb__cert p { color: var(--color-content-default-secondary, #646464); }
   .smaqmd-aerb__tips li + li { margin-block-start: var(--spacing-200, 0.5rem); }
   /* ACH-mode equivalence list under the "shop for" stat — same quiet secondary
      treatment as the tips list, tighter rows (it's a scannable lookup table,
@@ -3477,6 +3552,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // when they price the gap instead.
       const renderFix = (isGap = false) => {
         const cadrGoal = isGap ? needCadr - flow : needCadr;
+        // The shop card's "choose an air cleaner with a CADR of N CFM or higher"
+        // sentence. Always the full requirement in CFM, never the gap and never
+        // the ACH framing: it is advice for buying ONE cleaner off a shelf, and a
+        // CADR is only ever printed in CFM.
+        setReadout('needcadr', `${fmt(needCadr, 0)} CFM`);
         if (asAch) {
           // FAIL+ACH: a fractional "+0.7 ACH" hero matches nothing printed on a
           // box, so the stat hides, the equivalence list leads, and the gap
@@ -3566,11 +3646,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // exists — the "swap in stronger cleaners" line would otherwise be a
         // dead end nothing on the screen warns about.
         show(cadrHighEl, !pass && needCadr - flow > 700);
-        // "Powerful enough", not "big enough" — adequacy here is airflow (CADR), not
-        // physical size; the size metaphor feeds the very misconception the tool corrects.
-        const subj = blocks.length > 1 ? 'Your cleaners are' : 'Your cleaner is';
-        const subjNeg = blocks.length > 1 ? "Your cleaners aren't" : "Your cleaner isn't";
-        setAnswer(pass ? `${subj} powerful enough for this room` : `${subjNeg} powerful enough for this room`, pass ? 'pass' : 'fail');
+        // CLIENT COPY (SMAQMD communications review, Sep 2026): "the right size" /
+        // "too small". We previously said "powerful enough" on the grounds that
+        // adequacy here is airflow, not physical size, and that the size metaphor
+        // feeds the misconception the tool exists to correct. That objection was
+        // raised and the client kept their wording — do not quietly revert it.
+        // One subject for both verdicts — their phrasing puts the negation in the
+        // predicate ("too small"), not the verb, so pass and fail share a stem.
+        const subj = blocks.length > 1 ? 'Your air cleaners are' : 'Your air cleaner is';
+        setAnswer(pass ? `${subj} the right size for this room` : `${subj} too small for this room`, pass ? 'pass' : 'fail');
         setVerdictCard(pass ? 'pass' : 'fail');
         setPrompt(false);
         stateNow = pass ? 'pass' : 'fail';
@@ -3593,7 +3677,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // physically move, which does not change because the stat above is
         // currently phrased as air changes.
         show(cadrHighEl, needCadr > 700);
-        setAnswer('Shop for this rating', 'shop');
+        setAnswer('Air cleaner calculation', 'shop');
         setVerdictCard('shop');
         setPrompt(false);
         if (shopPreview) {
@@ -3805,7 +3889,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     const SHOP_PLAN = [0, 2];
     const RESULT_SECTION = 3;
     let plan: number[] = FULL_PLAN;
-    const TITLES = ['What size is your room?', 'What air cleaners do you have?', "What's your air-change target?", 'Your result'];
+    const TITLES = ['What size is your room?', "What is your air cleaner's rating?", "What's your air-change target?", 'Your result'];
     const wizardEl = root.querySelector<HTMLElement>('[data-wizard]');
     const introEl = root.querySelector<HTMLElement>('[data-intro]');
     const introTitle = root.querySelector<HTMLElement>('[data-intro-title]');

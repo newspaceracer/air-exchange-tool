@@ -25,7 +25,7 @@ import '@esa/tokens/a11y.css';
     - opening slide      -> smaqmd-aer-wizard (replaces esa-page-header)
     - wizard steps       -> smaqmd-aer-wizard variant="mobile" (no scene, lg controls)
 -->
-<BaseLayout title="Air Exchange Rate Tool (Mobile) — SMAQMD">
+<BaseLayout title="Air Cleaner Calculator (Mobile) — SMAQMD">
   <main>
     <!-- THE PAGE h1. The wizard's headings all start at h2 (it is a section, and
          the same component also ships inside the standalone build, where a host
@@ -36,7 +36,7 @@ import '@esa/tokens/a11y.css';
          first in reading order, ahead of the back link.
          .visually-hidden is the hub utility from @esa/tokens/a11y.css — the clip
          pattern is NOT hand-rolled here. -->
-    <h1 class="visually-hidden">Air Exchange Rate Tool</h1>
+    <h1 class="visually-hidden">Air Cleaner Calculator</h1>
     <SmaqmdAerWizard variant="mobile">
       <!-- No esa-page-header here: its title and lede would restate the opening
            slide immediately above the same fold. The slide owns the question; the h1 above owns the

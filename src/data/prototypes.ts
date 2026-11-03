@@ -25,7 +25,7 @@ export interface Prototype {
 export const prototypes: Prototype[] = [
   {
     slug: 'air-exchange-rate',
-    title: 'Portable Air Cleaner Air Exchange Rate Tool',
+    title: 'Air Cleaner Calculator',
     description:
       'Public calculator — check a cleaner against a room, find the CADR to shop for, or the largest room a cleaner covers, all in air changes per hour vs the CARB target.',
     route: '/prototypes/air-exchange-rate',
@@ -34,7 +34,7 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'air-exchange-rate-b',
-    title: 'Air Exchange Rate Tool — Option B (visual)',
+    title: 'Air Cleaner Calculator — Option B (visual)',
     description:
       'A visual rethink: the isometric city scene fills the whole page and the form floats over it — the room resizes as you type, so you see the volume the air-changes math runs on.',
     route: '/prototypes/air-exchange-rate-b',
@@ -43,7 +43,7 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'air-exchange-rate-mobile',
-    title: 'Air Exchange Rate Tool — Mobile',
+    title: 'Air Cleaner Calculator — Mobile',
     description:
       "The wizard rebuilt for a phone: no isometric scene, lg touch targets, and an opening slide. Shares Option B's calc engine, so the two cannot drift apart.",
     route: '/prototypes/air-exchange-rate-mobile',
@@ -52,7 +52,7 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'air-exchange-rate-responsive',
-    title: 'Air Exchange Rate Tool — Responsive',
+    title: 'Air Cleaner Calculator — Responsive',
     description:
       'The wizard and the mobile view as one page: the opening slide at every size, the isometric scene only where there is width to read it. Same calc engine as both.',
     route: '/prototypes/air-exchange-rate-responsive',
