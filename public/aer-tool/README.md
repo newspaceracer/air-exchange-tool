@@ -107,11 +107,11 @@ Built to **WCAG 2.2 Level AA**.
 
 **Live regions and status:** One polite and one assertive live region, mounted at load, are the only live regions on the page (WCAG 4.1.3). Result summaries are announced politely after 600ms to prevent diagram dragging from creating chatter.
 
-**Diagram:** Carries `role="img"` and a sentence-long `aria-label`; every number it shows also appears as text in the result.
+**Diagram:** Carries `role="img"` and a short `aria-label` describing the furnished room, where each air cleaner stands, the waves and the coverage outline; every number it shows also appears as text in the result.
 
 **Color:** Every foreground/background pair meets AA, including the two pairs that required a darker palette step: orange warning text and dark text on solid orange fill. No state is conveyed by colour alone—each verdict carries an icon shape and a sentence.
 
-**Motion:** `prefers-reduced-motion: reduce` stops the step slide, flow animation, and transitions; all state changes still happen. The diagram's ring pulse — the one animation that would otherwise run indefinitely — has an explicit pause/play button in the scene's lower-right corner (WCAG 2.2.2); it starts paused for reduced-motion users, who can opt back in.
+**Motion:** `prefers-reduced-motion: reduce` stops the step slide, flow animation, and transitions; all state changes still happen. The diagram's air-cleaning waves — the one animation that would otherwise run indefinitely — has an explicit pause/play button in the scene's lower-right corner (WCAG 2.2.2); it starts paused for reduced-motion users, who can opt back in.
 
 **Zoom:** No `maximum-scale` or `user-scalable=no`. Reflows to 320px with no horizontal scrolling and survives 400% zoom.
 

@@ -26,449 +26,279 @@
         data-cityview
         data-state="idle"
       >
-        <svg
-          class="smaqmd-cityview__svg"
-          viewBox="0 0 480 380"
-          role="img"
-          aria-label="Isometric cutaway of your room: the floor and two back walls with windows, a door, and furniture, and each air cleaner as a small unit on the floor with rings pulsing outward to show it cleaning the surrounding air. A dashed outline shows the largest room the cleaners could cover."
-        >
+        <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img"
+             aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
           <defs>
-            <pattern
-              id="smaqmd-iso-dots"
-              patternUnits="userSpaceOnUse"
-              width="45.034"
-              height="26"
-            >
-              <circle
-                class="smaqmd-cityview__dot"
-                cx="0"
-                cy="0"
-                r="1.1"
-              ></circle>
-              <circle
-                class="smaqmd-cityview__dot"
-                cx="22.517"
-                cy="13"
-                r="1.1"
-              ></circle>
+            <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width="45.034" height="26">
+              <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle>
+              <circle class="smaqmd-cityview__dot" cx="22.517" cy="13" r="1.1"></circle>
             </pattern>
-            <clipPath id="smaqmd-floor-clip">
-              <polygon data-floor-clip></polygon>
+            <clipPath id="smaqmd-wave-clip">
+              <polygon data-wave-clip></polygon>
             </clipPath>
           </defs>
-          <rect
-            class="smaqmd-cityview__paper"
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-            fill="url(#smaqmd-iso-dots)"
-          ></rect>
+          <rect class="smaqmd-cityview__paper" x="0" y="0" width="100%" height="100%" fill="url(#smaqmd-iso-dots)"></rect>
           <polygon class="smaqmd-cityview__ground" data-ground></polygon>
-          <g class="smaqmd-cityview__capg" data-capg-back style="visibility: hidden">
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="floor"
-            ></polygon>
+          <polygon class="smaqmd-cityview__room-face" data-room="left"></polygon>
+          <polygon class="smaqmd-cityview__room-face" data-room="right"></polygon>
+          <polygon class="smaqmd-cityview__wall-top" data-wall-top="left"></polygon>
+          <polygon class="smaqmd-cityview__wall-top" data-wall-top="right"></polygon>
+          <polygon class="smaqmd-cityview__wall-cap" data-wall-cap="left"></polygon>
+          <polygon class="smaqmd-cityview__wall-cap" data-wall-cap="right"></polygon>
+          <g class="smaqmd-cityview__details" data-room-details style="visibility: hidden">
+            <g data-win="back" style="visibility: hidden">
+              <polygon class="smaqmd-cityview__win" data-win-pane></polygon>
+              <path class="smaqmd-cityview__mull" data-win-mull></path>
+            </g>
+            <g data-win="left" style="visibility: hidden">
+              <polygon class="smaqmd-cityview__win" data-win-pane></polygon>
+              <path class="smaqmd-cityview__mull" data-win-mull></path>
+            </g>
+            <g data-door style="visibility: hidden">
+              <polygon class="smaqmd-cityview__door" data-door-leaf></polygon>
+              <path class="smaqmd-cityview__door-line" data-door-panels></path>
+            </g>
           </g>
-          <polygon
-            class="smaqmd-cityview__room-face"
-            data-room="left"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__room-face"
-            data-room="right"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__wall-top"
-            data-wall-top="left"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__wall-top"
-            data-wall-top="right"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__wall-cap"
-            data-wall-cap="left"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__wall-cap"
-            data-wall-cap="right"
-          ></polygon>
-          <g
-            class="smaqmd-cityview__details"
-            data-room-details
-            style="visibility: hidden"
-          >
-            <polygon
-              class="smaqmd-cityview__win"
-              data-win-l="1"
-              style="visibility: hidden"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__win"
-              data-win-l="2"
-              style="visibility: hidden"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__win"
-              data-win-r="1"
-              style="visibility: hidden"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__win"
-              data-win-r="2"
-              style="visibility: hidden"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__door"
-              data-door
-              style="visibility: hidden"
-            ></polygon>
-          </g>
-          <polygon
-            class="smaqmd-cityview__room-face"
-            data-room="floor"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__floor-edge"
-            data-floor-edge="left"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__floor-edge"
-            data-floor-edge="right"
-          ></polygon>
-          <polygon
-            class="smaqmd-cityview__details smaqmd-cityview__rug"
-            data-rug
-            style="visibility: hidden"
-          ></polygon>
+          <polygon class="smaqmd-cityview__room-face" data-room="floor"></polygon>
+          <polygon class="smaqmd-cityview__floor-edge" data-floor-edge="left"></polygon>
+          <polygon class="smaqmd-cityview__floor-edge" data-floor-edge="right"></polygon>
+          <path class="smaqmd-cityview__details smaqmd-cityview__board" data-boards style="visibility: hidden"></path>
+          <polygon class="smaqmd-cityview__details smaqmd-cityview__rug" data-rug style="visibility: hidden"></polygon>
           <g class="smaqmd-cityview__capg" data-capg style="visibility: hidden">
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="floor"
-            ></polygon>
+            <polygon class="smaqmd-cityview__cap-face" data-cap="left"></polygon>
+            <polygon class="smaqmd-cityview__cap-face" data-cap="right"></polygon>
+            <polygon class="smaqmd-cityview__cap-face" data-cap="floor"></polygon>
           </g>
-          <g
-            class="smaqmd-cityview__rings"
-            data-rings="1"
-            clip-path="url(#smaqmd-floor-clip)"
-          >
+          <polygon class="smaqmd-cityview__clear" data-clear="1"></polygon>
+          <polygon class="smaqmd-cityview__clear" data-clear="2" style="visibility: hidden"></polygon>
+          <polygon class="smaqmd-cityview__clear" data-clear="3" style="visibility: hidden"></polygon>
+          <polygon class="smaqmd-cityview__clear" data-clear="4" style="visibility: hidden"></polygon>
+          <g data-furniture>
+            <g class="smaqmd-cityview__details" data-piece="bed" style="visibility: hidden">
+            <g data-box="headboard">
+              <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+              <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+              <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+            </g>
+            <g data-box="frame">
+              <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+              <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+              <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+            </g>
+            <g data-box="mattress">
+              <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+            </g>
+            <g data-box="pillow-l">
+              <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+            </g>
+            <g data-box="pillow-r">
+              <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+              <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+            </g>
+            <polygon class="smaqmd-cityview__blanket" data-blanket="top"></polygon>
+            <polygon class="smaqmd-cityview__blanket-side" data-blanket="front"></polygon>
+            <polygon class="smaqmd-cityview__blanket-side" data-blanket="side"></polygon>
+            <path class="smaqmd-cityview__fold" data-fold></path>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="dresser" style="visibility: hidden">
+              <g data-box="body">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <path class="smaqmd-cityview__seam" data-seam></path>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="plant" style="visibility: hidden">
+              <g data-box="pot">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <g data-box="crown">
+                <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="bookshelf" style="visibility: hidden">
+              <g data-box="body">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <path class="smaqmd-cityview__seam" data-seam></path>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="desk" style="visibility: hidden">
+              <g data-box="body">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="chair" style="visibility: hidden">
+              <g data-box="seat">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+              <g data-box="back">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="armchair" style="visibility: hidden">
+              <g data-box="back">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+              <g data-box="seat">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="wardrobe" style="visibility: hidden">
+              <g data-box="body">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <path class="smaqmd-cityview__seam" data-seam></path>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="sofa" style="visibility: hidden">
+              <g data-box="back">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+              <g data-box="seat">
+                <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="table" style="visibility: hidden">
+              <g data-box="body">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="ns-l" style="visibility: hidden">
+              <g data-box="ns">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <path class="smaqmd-cityview__seam" data-seam></path>
+              <g data-box="stem">
+                <polygon class="smaqmd-cityview__stem" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__stem" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__stem" data-face="right"></polygon>
+              </g>
+              <g data-box="shade">
+                <polygon class="smaqmd-cityview__shade" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__shade" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__shade" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__details" data-piece="ns-r" style="visibility: hidden">
+              <g data-box="ns">
+                <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+              </g>
+              <path class="smaqmd-cityview__seam" data-seam></path>
+              <g data-box="stem">
+                <polygon class="smaqmd-cityview__stem" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__stem" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__stem" data-face="right"></polygon>
+              </g>
+              <g data-box="shade">
+                <polygon class="smaqmd-cityview__shade" data-face="top"></polygon>
+                <polygon class="smaqmd-cityview__shade" data-face="left"></polygon>
+                <polygon class="smaqmd-cityview__shade" data-face="right"></polygon>
+              </g>
+            </g>
+            <g class="smaqmd-cityview__unitg" data-unitg="1">
+              <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">1</text></g>
+              <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+              <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+            </g>
+            <g class="smaqmd-cityview__unitg" data-unitg="4" style="visibility: hidden">
+              <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">4</text></g>
+              <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+              <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+            </g>
+            <g class="smaqmd-cityview__unitg" data-unitg="2" style="visibility: hidden">
+              <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">2</text></g>
+              <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+              <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+            </g>
+            <g class="smaqmd-cityview__unitg" data-unitg="3" style="visibility: hidden">
+              <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+              <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">3</text></g>
+              <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+              <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+            </g>
+          </g>
+          <g class="smaqmd-cityview__rings" data-rings="1" clip-path="url(#smaqmd-wave-clip)">
             <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+            <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
           </g>
-          <g
-            class="smaqmd-cityview__rings"
-            data-rings="2"
-            clip-path="url(#smaqmd-floor-clip)"
-            style="visibility: hidden"
-          >
+          <g class="smaqmd-cityview__rings" data-rings="2" clip-path="url(#smaqmd-wave-clip)" style="visibility: hidden">
             <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+            <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
           </g>
-          <g
-            class="smaqmd-cityview__rings"
-            data-rings="3"
-            clip-path="url(#smaqmd-floor-clip)"
-            style="visibility: hidden"
-          >
+          <g class="smaqmd-cityview__rings" data-rings="3" clip-path="url(#smaqmd-wave-clip)" style="visibility: hidden">
             <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+            <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
           </g>
-          <g
-            class="smaqmd-cityview__rings"
-            data-rings="4"
-            clip-path="url(#smaqmd-floor-clip)"
-            style="visibility: hidden"
-          >
+          <g class="smaqmd-cityview__rings" data-rings="4" clip-path="url(#smaqmd-wave-clip)" style="visibility: hidden">
             <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
             <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
-          </g>
-          <g
-            class="smaqmd-cityview__details"
-            data-furniture-back
-            style="visibility: hidden"
-          ></g>
-          <g
-            class="smaqmd-cityview__unitg"
-            data-unitg="2"
-            style="visibility: hidden"
-          >
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="top"
-            ></polygon>
-          </g>
-          <g
-            class="smaqmd-cityview__unitg"
-            data-unitg="4"
-            style="visibility: hidden"
-          >
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="top"
-            ></polygon>
-          </g>
-          <g
-            class="smaqmd-cityview__details"
-            data-furniture
-            style="visibility: hidden"
-          >
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="1"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="2"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="3"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="4"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="5"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="6"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-            <g
-              class="smaqmd-cityview__furn"
-              data-furn="7"
-              style="visibility: hidden"
-            >
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="top"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="left"
-              ></polygon>
-              <polygon
-                class="smaqmd-cityview__furn-face"
-                data-furn-face="right"
-              ></polygon>
-            </g>
-          </g>
-          <g class="smaqmd-cityview__unitg" data-unitg="1">
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="top"
-            ></polygon>
-          </g>
-          <g
-            class="smaqmd-cityview__unitg"
-            data-unitg="3"
-            style="visibility: hidden"
-          >
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="left"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="right"
-            ></polygon>
-            <polygon
-              class="smaqmd-cityview__unit-face"
-              data-unit="top"
-            ></polygon>
+            <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
           </g>
           <g data-capg-top style="visibility: hidden">
-            <polygon
-              class="smaqmd-cityview__cap-face"
-              data-cap="top"
-            ></polygon>
+            <polygon class="smaqmd-cityview__cap-face" data-cap="top"></polygon>
             <line class="smaqmd-cityview__cap-edge" data-cap-edge></line>
-            <text
-              class="smaqmd-cityview__dim smaqmd-cityview__cap-label"
-              data-label="capacity"
-              text-anchor="start"
-            >
-              —
-            </text>
+            <text class="smaqmd-cityview__dim smaqmd-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
           </g>
-          <text
-            class="smaqmd-cityview__dim"
-            data-label="length"
-            data-grip="length"
-            text-anchor="middle"
-          >
-            —
-          </text>
-          <text
-            class="smaqmd-cityview__dim"
-            data-label="width"
-            data-grip="width"
-            text-anchor="middle"
-          >
-            —
-          </text>
-          <text
-            class="smaqmd-cityview__dim"
-            data-label="height"
-            data-grip="height"
-            text-anchor="middle"
-          >
-            —
-          </text>
+          <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
+          <text class="smaqmd-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text>
+          <text class="smaqmd-cityview__dim" data-label="height" data-grip="height" text-anchor="middle">—</text>
           <g data-grips>
             <line class="smaqmd-cityview__hit" data-grip="length"></line>
-            <g class="smaqmd-cityview__handle" data-grip="length">
-              <path
-                class="smaqmd-cityview__chev"
-                d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"
-              ></path>
-            </g>
+            <g class="smaqmd-cityview__handle" data-grip="length"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
             <line class="smaqmd-cityview__hit" data-grip="width"></line>
-            <g class="smaqmd-cityview__handle" data-grip="width">
-              <path
-                class="smaqmd-cityview__chev"
-                d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"
-              ></path>
-            </g>
+            <g class="smaqmd-cityview__handle" data-grip="width"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
             <line class="smaqmd-cityview__hit" data-grip="height"></line>
-            <g class="smaqmd-cityview__handle" data-grip="height">
-              <path
-                class="smaqmd-cityview__chev"
-                d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"
-              ></path>
-            </g>
+            <g class="smaqmd-cityview__handle" data-grip="height"><path class="smaqmd-cityview__chev" d="M -7 -4.5 L -12 0 L -7 4.5 M 7 -4.5 L 12 0 L 7 4.5"></path></g>
           </g>
         </svg>
         <div class="smaqmd-cityview__safe" data-safe aria-hidden="true"></div>

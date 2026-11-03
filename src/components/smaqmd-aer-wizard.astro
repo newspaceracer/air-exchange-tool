@@ -13,12 +13,14 @@
 // (plus its hand-ported vanilla mirror in public/aer-tool/) owns the interior one.
 //
 // A visual rethink built on a ROOM INTERIOR: the scene is a cutaway of the room
-// itself — two back walls with windows and a door, an open floor you look down
-// into, and furniture that fills the floor as the room grows. Each air cleaner is
-// an appliance-sized unit standing on the floor near the front-right wall, sending
-// soft concentric rings rippling outward across the floor and fading — a cleaning
-// RADIUS pulsing once per air change, so you SEE the cadence the math describes
-// without a literal in/out flow diagram. The cutaway resizes with the length/width/height you enter. The
+// itself, dressed as a bedroom — two back walls with windows and a door, an open
+// floor you look down into, a bed with nightstands and a rug. Each air cleaner is
+// an appliance-sized unit standing on the floor where the usage tips put it (along
+// a wall, out of the corners, a foot of space around it, pairs on opposite sides),
+// sending rings outward at the height of its top vent like radio waves, out to the
+// floor area that unit keeps clean at the target, once per air change — so you SEE
+// the reach and the cadence the math describes without a literal in/out flow
+// diagram. The cutaway resizes with the length/width/height you enter. The
 // numbers (volume, air changes per hour, pass/fail vs target) come from the same
 // workbook math as Option A (ACH = flow × 60 ÷ room volume).
 //
@@ -45,15 +47,10 @@ import EsaIconButton from '@esa/ecology/esa-button.astro';
 import SmaqmdAerFindRatings from './smaqmd-aer-find-ratings.astro';
 
 const MAX_CLEANERS = 4;
-const CLEANER_IDS = [1, 2, 3, 4];
-// Cleaner units split by SIDE, because the two sides paint at different depths
-// (see the two unit blocks in the scene markup). The side assignment is FIXED by
-// index and mirrored in layoutCleaners(): odd ids stand in the strip along the
-// open front x=L edge, even ids against the back x=0 wall, directly across.
-const FRONT_UNIT_IDS = CLEANER_IDS.filter((i) => i % 2 === 1);  // 1, 3 — x=L side
-const BACK_UNIT_IDS = CLEANER_IDS.filter((i) => i % 2 === 0);   // 2, 4 — x=0 wall
-const WINDOW_SLOTS = [1, 2];                    // per-wall window pool: one row, at most 2 per wall
-const FURN_IDS = [1, 2, 3, 4, 5, 6, 7];         // floor-furniture pool, ordered BACK-TO-FRONT (see FURN_DEFS)
+// The client's Sep 2026 review asked for length × width × height ONLY. Keeping
+// floor area (as the default) is a deliberate deviation, agreed with the client
+// afterwards (Nov 2026) — not an oversight; don't "fix" it back. Only "Room
+// volume directly" was dropped.
 const roomMethods = [
   { label: 'Floor area + ceiling height', value: 'area' },
   { label: 'Length × width × height', value: 'dimensions' },
@@ -176,30 +173,33 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      everywhere but the result step, and pauses the loop from the script to
      match — see `sceneLive` / `syncSceneLive`. */}
   {showScene && (
-  <!-- The room cutaway. bcn-lego-checked: no esa- lego draws a to-scale isometric
-       room scene with animated flow (checked the catalog — esa-* has
-       cards/stats/inputs but no 3D/flow viz; Beacon has no equivalent), and no
-       esa- lego provides a full-viewport fixed illustration backdrop. This SVG
-       projection is the reusable home for "see the air exchange", so it lives in
-       its own smaqmd- block, driven from the shared calc script below. The
-       __cityview class names predate the interior rethink and are deliberately
-       kept: the hand-ported vanilla mirror in public/aer-tool/ shares them. -->
+  <!-- The room cutaway, dressed as a bedroom. bcn-lego-checked: no esa- lego
+       draws a to-scale isometric room scene with animated air-cleaning waves
+       (checked the catalog — esa-* has cards/stats/inputs but no 3D/flow viz;
+       Beacon has no equivalent), and no esa- lego provides a full-viewport fixed
+       illustration backdrop. This SVG projection is the reusable home for "see
+       the air exchange", so it lives in its own smaqmd- block, driven from the
+       shared calc script below. Every element inside the svg is a static,
+       pre-rendered pool written out LITERALLY (no .map): JS sets points, paths
+       and transforms each draw and toggles style.visibility (never display), and
+       nothing is created or removed at runtime. Literal markup is also what lets
+       scripts/check-consistency.mjs compare the svg's data-* hooks with the twin
+       in public/aer-tool/ token for token. The __cityview class names predate
+       the interior rethink and are deliberately kept: the twin shares them. -->
   <div class="smaqmd-aerb__stage smaqmd-cityview" data-cityview data-state="idle">
     <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img"
-         aria-label="Isometric cutaway of your room: the floor and two back walls with windows, a door, and furniture, and each air cleaner as a small unit on the floor with rings pulsing outward to show it cleaning the surrounding air. A dashed outline shows the largest room the cleaners could cover.">
+         aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
       <defs>
         <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
           <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle>
           <circle class="smaqmd-cityview__dot" cx={A} cy={B} r="1.1"></circle>
         </pattern>
-        <!-- The room's floor quad, as a clip. The cleaners stand close to the
-             walls, so a ring at full radius would otherwise spill off the floor
-             slab and float over the walls and the dot paper. Every rings group
-             clips to this, so a pulse reads as spreading across the FLOOR and
-             stopping at its edges. JS rewrites the polygon to the current floor
-             corners on every draw, so it tracks the eased room exactly. -->
-        <clipPath id="smaqmd-floor-clip">
-          <polygon data-floor-clip></polygon>
+        <!-- The room's footprint at the height of the cleaners' top vents, as a
+             clip. The waves ride at that height, so a wave at full reach stops
+             at the walls instead of spilling onto the dot paper. JS rewrites the
+             polygon every draw, so it tracks the eased room exactly. -->
+        <clipPath id="smaqmd-wave-clip">
+          <polygon data-wave-clip></polygon>
         </clipPath>
       </defs>
       <!-- Isometric dot paper — the lattice the whole drawing sits on. -->
@@ -208,19 +208,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <!-- Soft shadow pad the cutaway sits on — one step outside the room
            footprint, at the underside of the floor slab. -->
       <polygon class="smaqmd-cityview__ground" data-ground></polygon>
-
-      <!-- CAPACITY GHOST, the BEHIND-THE-WALLS twin. The ghost scales uniformly,
-           so its body (floor + two far faces) is either entirely inside the room
-           or extends entirely beyond it. Beyond, its bottom borders lie on the
-           far side of the back walls and must be OCCLUDED by them — so this twin
-           group sits before the walls, and drawScene writes the body into it (and
-           blanks the in-front twin at [data-capg]) whenever the ghost outgrows
-           the room. Same classes; visibility toggled in lockstep with capG. -->
-      <g class="smaqmd-cityview__capg" data-capg-back style="visibility:hidden">
-        <polygon class="smaqmd-cityview__cap-face" data-cap="left"></polygon>
-        <polygon class="smaqmd-cityview__cap-face" data-cap="right"></polygon>
-        <polygon class="smaqmd-cityview__cap-face" data-cap="floor"></polygon>
-      </g>
 
       <!-- THE TWO BACK WALLS, drawn first so everything inside the room paints
            over them. Each wall contributes three faces: the INTERIOR face you
@@ -235,19 +222,22 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <polygon class="smaqmd-cityview__wall-cap" data-wall-cap="right"></polygon>
 
       <!-- Openings in those walls — part of the same bcn-lego-checked cityview
-           block (windows on both walls, whose count scales with wall length, and
-           a door on the y=0 wall). Pre-rendered pools only; JS toggles
-           style.visibility (NOT display — the one show/hide idiom the whole
-           scene uses) and sets points every draw so the openings morph in
-           lockstep with the eased room. -->
+           block: a window over the bed on the back (y=0) wall, and a window plus
+           a panelled door on the left (x=0) wall. Each window carries a centre
+           cross of mullions; the door, two inset panels. -->
       <g class="smaqmd-cityview__details" data-room-details style="visibility:hidden">
-        {WINDOW_SLOTS.map((i) => (
-          <polygon class="smaqmd-cityview__win" data-win-l={i} style="visibility:hidden"></polygon>
-        ))}
-        {WINDOW_SLOTS.map((i) => (
-          <polygon class="smaqmd-cityview__win" data-win-r={i} style="visibility:hidden"></polygon>
-        ))}
-        <polygon class="smaqmd-cityview__door" data-door style="visibility:hidden"></polygon>
+        <g data-win="back" style="visibility:hidden">
+          <polygon class="smaqmd-cityview__win" data-win-pane></polygon>
+          <path class="smaqmd-cityview__mull" data-win-mull></path>
+        </g>
+        <g data-win="left" style="visibility:hidden">
+          <polygon class="smaqmd-cityview__win" data-win-pane></polygon>
+          <path class="smaqmd-cityview__mull" data-win-mull></path>
+        </g>
+        <g data-door style="visibility:hidden">
+          <polygon class="smaqmd-cityview__door" data-door-leaf></polygon>
+          <path class="smaqmd-cityview__door-line" data-door-panels></path>
+        </g>
       </g>
 
       <!-- The floor slab: the floor plane you look down into, plus the two front
@@ -256,96 +246,270 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       <polygon class="smaqmd-cityview__floor-edge" data-floor-edge="left"></polygon>
       <polygon class="smaqmd-cityview__floor-edge" data-floor-edge="right"></polygon>
 
-      <!-- Rug — a flat quad lying on the floor (z=0). Carries __details so it
-           fades with the rest of the room dressing when the ghost reads inside. -->
+      <!-- Floorboards (one path, rewritten per draw) and the rug at the foot of
+           the bed. Both carry __details so they fade with the rest of the room
+           dressing when the ghost reads inside the room. -->
+      <path class="smaqmd-cityview__details smaqmd-cityview__board" data-boards style="visibility:hidden"></path>
       <polygon class="smaqmd-cityview__details smaqmd-cityview__rug" data-rug style="visibility:hidden"></polygon>
 
-      <!-- Capacity ghost — a dashed outline of the largest room the cleaners can
-           cover at the target, drawn from the room's far corner so it can grow
-           toward the viewer past the cutaway. Static (scope-stamped) group; JS
-           sets its face points + label each draw and toggles visibility (NOT
-           display — the scene's one show/hide idiom). The data-cap-compare swap
-           on the container makes the bigger box the more transparent one. -->
+      <!-- Capacity ghost — a dashed box of the largest room the cleaners can
+           cover at the target, anchored at the room's FAR corner (0,0) and
+           growing toward the viewer. Its two far faces lie on the wall planes
+           and its floor on the floor, so one group placed here (over the rug,
+           under the clearance squares, furniture, waves and units) is depth-
+           correct whether the ghost is smaller or bigger than the room. JS sets
+           its points each draw; recompute() owns its visibility. -->
       <g class="smaqmd-cityview__capg" data-capg style="visibility:hidden">
         <polygon class="smaqmd-cityview__cap-face" data-cap="left"></polygon>
         <polygon class="smaqmd-cityview__cap-face" data-cap="right"></polygon>
         <polygon class="smaqmd-cityview__cap-face" data-cap="floor"></polygon>
       </g>
 
-      <!-- CLEANING PULSE — the one airflow cue in the scene. Each cleaner sends
-           soft concentric rings rippling OUTWARD across the floor and fading, a
-           calm "this unit is working on the air around it" radius rather than a
-           literal in/out flow diagram. Three rings per unit, evenly spaced
-           through one cycle so a new one leaves the unit as the outermost one
-           fades; one cycle = one air change for THAT cleaner (cadence from its
-           own ACH share). Both the polygon points and the fading stroke-opacity
-           are written by JS every frame.
-           PAINT ORDER: after the floor, rug and capacity ghost so the rings read
-           as lying ON the floor, and BEFORE the furniture and the unit boxes so
-           a bed or the cleaner itself occludes the part of a ring passing behind
-           it — which is what sells them as flat on the ground rather than
-           floating over the scene. Clipped to the floor quad (see the defs
-           note). Groups i>1 start hidden. -->
-      {CLEANER_IDS.map((i) => (
-        <g class="smaqmd-cityview__rings" data-rings={i} clip-path="url(#smaqmd-floor-clip)"
-           style={i > 1 ? 'visibility:hidden' : undefined}>
-          <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
-          <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
-          <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
-        </g>
-      ))}
+      <!-- The one-foot "give it space" clearance around each cleaner, a dotted
+           square on the floor. Squares 2–4 start hidden. -->
+      <polygon class="smaqmd-cityview__clear" data-clear="1"></polygon>
+      <polygon class="smaqmd-cityview__clear" data-clear="2" style="visibility:hidden"></polygon>
+      <polygon class="smaqmd-cityview__clear" data-clear="3" style="visibility:hidden"></polygon>
+      <polygon class="smaqmd-cityview__clear" data-clear="4" style="visibility:hidden"></polygon>
 
-      <!-- BACK air-cleaner units (ids 2 and 4) — the pair standing against the
-           x=0 wall, at the far side of the room from the viewer. They paint
-           BEFORE the furniture because everything on the floor stands nearer the
-           viewer than they do, so furniture must be free to occlude them. (The
-           back zone they occupy is reserved against furniture in layoutDetails,
-           so in practice they are never buried — this order only settles which
-           one wins where the two do meet on screen.) Groups i>1 start hidden.
-           EXCEPT furniture wholly BEHIND a back unit (e.g. the tall bookshelf on
-           the x=0 wall, nudged to the far side of the reserved zone): drawScene
-           re-parents those pieces into [data-furniture-back] below, which paints
-           first, so the unit covers them instead of being notched by them. Same
-           __details class, so it fades and hides with the main group. -->
-      <g class="smaqmd-cityview__details" data-furniture-back style="visibility:hidden"></g>
-      {BACK_UNIT_IDS.map((i) => (
-        <g class="smaqmd-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
+      <!-- The furniture: the bedroom set (bed, two nightstands) plus a pool of
+           pieces that appear one at a time as the floor area grows (dresser,
+           plant, bookshelf, desk + chair, armchair, wardrobe, sofa + coffee
+           table) — and the AIR-CLEANER UNITS, which share this container so
+           they sort in depth with the furniture: a bed or a wall piece nearer
+           the viewer paints over a unit. Pieces slide along their wall as the
+           room changes, so no fixed document order is depth-correct for every
+           placement — drawScene sorts the visible pieces and units back to
+           front and re-appends them, only when that order changes. Each piece
+           carries __details (so it fades with the dressing); the container
+           does not, so units never fade. Each box is three faces (top, front =
+           data-face "left", right); inside a piece the parts are in their own
+           painter order. A unit is three faces, then three face-local detail
+           groups (a matrix transform per face, set by JS): grille slats on the
+           front and side, vent lines on top, and the number tag that ties it to
+           the panel's "Air cleaner n" block. Units 2–4 start hidden. -->
+      <g data-furniture>
+        <g class="smaqmd-cityview__details" data-piece="bed" style="visibility:hidden">
+        <g data-box="headboard">
+          <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+          <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+          <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+        </g>
+        <g data-box="frame">
+          <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+          <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+          <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+        </g>
+        <g data-box="mattress">
+          <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+        </g>
+        <g data-box="pillow-l">
+          <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+        </g>
+        <g data-box="pillow-r">
+          <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+          <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+        </g>
+        <polygon class="smaqmd-cityview__blanket" data-blanket="top"></polygon>
+        <polygon class="smaqmd-cityview__blanket-side" data-blanket="front"></polygon>
+        <polygon class="smaqmd-cityview__blanket-side" data-blanket="side"></polygon>
+        <path class="smaqmd-cityview__fold" data-fold></path>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="dresser" style="visibility:hidden">
+          <g data-box="body">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <path class="smaqmd-cityview__seam" data-seam></path>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="plant" style="visibility:hidden">
+          <g data-box="pot">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <g data-box="crown">
+            <polygon class="smaqmd-cityview__sheet" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__sheet" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__sheet" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="bookshelf" style="visibility:hidden">
+          <g data-box="body">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <path class="smaqmd-cityview__seam" data-seam></path>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="desk" style="visibility:hidden">
+          <g data-box="body">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="chair" style="visibility:hidden">
+          <g data-box="seat">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+          <g data-box="back">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="armchair" style="visibility:hidden">
+          <g data-box="back">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+          <g data-box="seat">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="wardrobe" style="visibility:hidden">
+          <g data-box="body">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <path class="smaqmd-cityview__seam" data-seam></path>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="sofa" style="visibility:hidden">
+          <g data-box="back">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+          <g data-box="seat">
+            <polygon class="smaqmd-cityview__fabric" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__fabric" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="table" style="visibility:hidden">
+          <g data-box="body">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="ns-l" style="visibility:hidden">
+          <g data-box="ns">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <path class="smaqmd-cityview__seam" data-seam></path>
+          <g data-box="stem">
+            <polygon class="smaqmd-cityview__stem" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__stem" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__stem" data-face="right"></polygon>
+          </g>
+          <g data-box="shade">
+            <polygon class="smaqmd-cityview__shade" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__shade" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__shade" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__details" data-piece="ns-r" style="visibility:hidden">
+          <g data-box="ns">
+            <polygon class="smaqmd-cityview__wood" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__wood" data-face="right"></polygon>
+          </g>
+          <path class="smaqmd-cityview__seam" data-seam></path>
+          <g data-box="stem">
+            <polygon class="smaqmd-cityview__stem" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__stem" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__stem" data-face="right"></polygon>
+          </g>
+          <g data-box="shade">
+            <polygon class="smaqmd-cityview__shade" data-face="top"></polygon>
+            <polygon class="smaqmd-cityview__shade" data-face="left"></polygon>
+            <polygon class="smaqmd-cityview__shade" data-face="right"></polygon>
+          </g>
+        </g>
+        <g class="smaqmd-cityview__unitg" data-unitg="1">
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">1</text></g>
+          <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+          <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
         </g>
-      ))}
-
-      <!-- Furniture standing on the floor — the same bcn-lego-checked cityview
-           block. The pool is ordered BACK-TO-FRONT (by fx+fy in FURN_DEFS), so
-           document order IS painter order and no runtime depth sort is needed.
-           Each item is the same 3-face mini-box as a cleaner unit, and each
-           toggles with style.visibility (never display). The group carries
-           __details so furniture fades with the windows/door/rug. -->
-      <g class="smaqmd-cityview__details" data-furniture style="visibility:hidden">
-        {FURN_IDS.map((i) => (
-          <g class="smaqmd-cityview__furn" data-furn={i} style="visibility:hidden">
-            <polygon class="smaqmd-cityview__furn-face" data-furn-face="top"></polygon>
-            <polygon class="smaqmd-cityview__furn-face" data-furn-face="left"></polygon>
-            <polygon class="smaqmd-cityview__furn-face" data-furn-face="right"></polygon>
-          </g>
-        ))}
+        <g class="smaqmd-cityview__unitg" data-unitg="4" style="visibility:hidden">
+          <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">4</text></g>
+          <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+          <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+        </g>
+        <g class="smaqmd-cityview__unitg" data-unitg="2" style="visibility:hidden">
+          <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">2</text></g>
+          <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+          <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+        </g>
+        <g class="smaqmd-cityview__unitg" data-unitg="3" style="visibility:hidden">
+          <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
+          <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">3</text></g>
+          <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
+          <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
+        </g>
       </g>
 
-      <!-- FRONT air-cleaner units (ids 1 and 3) — the pair standing in the strip
-           along the near x=L edge the cutaway opens on, LAST so they paint in
-           front of the furniture and the rings: nothing in the room stands
-           between them and the viewer. Together with the back block above this
-           static split IS the depth sort for the units, and it is correct
-           because layoutCleaners() fixes each index to a side. Group 3 starts
-           hidden (1 is always drawn). -->
-      {FRONT_UNIT_IDS.map((i) => (
-        <g class="smaqmd-cityview__unitg" data-unitg={i} style={i > 1 ? 'visibility:hidden' : undefined}>
-          <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
-          <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
-          <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-        </g>
-      ))}
+      <!-- THE WAVES — the one airflow cue in the scene. Each cleaner sends four
+           rings outward from its top vent, like radio waves, out to the floor
+           area THAT unit keeps clean at the target, fading as they go; one
+           cycle = one air change for that cleaner (cadence from its own ACH
+           share). JS writes the points and the fading stroke-opacity every
+           frame. PAINT ORDER: one layer over the whole sorted furniture + units
+           container — the waves ride at vent height, above every piece — and
+           each starts one unit-width out (r0 = cw), clear of its unit's top
+           face. Clipped to the room at vent height (see the defs note).
+           Groups 2–4 start hidden. -->
+      <g class="smaqmd-cityview__rings" data-rings="1" clip-path="url(#smaqmd-wave-clip)">
+        <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
+      </g>
+      <g class="smaqmd-cityview__rings" data-rings="2" clip-path="url(#smaqmd-wave-clip)" style="visibility:hidden">
+        <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
+      </g>
+      <g class="smaqmd-cityview__rings" data-rings="3" clip-path="url(#smaqmd-wave-clip)" style="visibility:hidden">
+        <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
+      </g>
+      <g class="smaqmd-cityview__rings" data-rings="4" clip-path="url(#smaqmd-wave-clip)" style="visibility:hidden">
+        <polygon class="smaqmd-cityview__ring" data-ring="1"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="2"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="3"></polygon>
+        <polygon class="smaqmd-cityview__ring" data-ring="4"></polygon>
+      </g>
 
       <!-- The ghost's UPPER outline and its caption live OUTSIDE [data-capg],
            after the rings, furniture and units. The group's floor face must tuck
@@ -1226,8 +1390,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      fixed-inset full-viewport stage + invisible safe-area sentinel are likewise
      bespoke (no layouts.css primitive or esa- lego provides a fixed illustration
      backdrop). Token-driven fills: value-layered neutrals for the shadow, the
-     walls, the floor slab and the furniture, brand accent for the cleaner unit +
-     its cleaning-pulse rings, --color-border-default for edges. (The __cityview
+     walls, the floor slab and the bedroom set, brand accent for the cleaner
+     units + their waves, --color-border-default for edges. (The __cityview
      class names predate the interior rethink and stay put — public/aer-tool/
      mirrors them verbatim.) */
   .smaqmd-cityview {
@@ -1268,9 +1432,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     stroke-width: 2.5;
     stroke-linejoin: round;
   }
-  /* The pulse sits idle until there's a valid result, then fades in with the
+  /* The waves sit idle until there's a valid result, then fade in with the
      verdict. Shown/hidden per GROUP rather than per ring, so one state flip on
-     the container carries all three ripples of every cleaner. */
+     the container carries all four waves of every cleaner. */
   .smaqmd-cityview__rings {
     opacity: 0;
     transition: opacity 220ms ease;
@@ -1349,39 +1513,66 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
   .smaqmd-cityview__cap-label { fill: var(--color-background-brand, #159a86); }
 
-  /* Room dressing — quiet, token-driven fills and thin --color-border-default
-     strokes so the windows, door, rug and furniture read as what fills the room
-     without competing with the room itself or the flow. One row of windows per
-     wall, seen from inside; the count scales with wall length, and furniture
-     accumulates with floor area. bcn-lego-checked: these are faces of the same
-     bespoke SVG cutaway documented above — no esa-/Beacon lego draws them, and
-     they carry no interaction, so there is nothing to promote to a lego. No
-     pointer-events rules: the dressing inherits pointer-events:none from the
-     stage. */
+  /* Bedroom dressing — quiet, token-driven fills and thin --color-border-default
+     strokes so the windows, door, floorboards, rug and bedroom set read as what
+     fills the room without competing with the room itself or the waves.
+     bcn-lego-checked: these are faces of the same bespoke SVG cutaway documented
+     above — no esa-/Beacon lego draws them, and they carry no interaction, so
+     there is nothing to promote to a lego. No pointer-events rules: the dressing
+     inherits pointer-events:none from the stage. */
   .smaqmd-cityview__details { transition: opacity 200ms ease; }
   .smaqmd-cityview__win {
-    fill: color-mix(in srgb, var(--color-background-brand, #159a86) 11%, transparent);
+    fill: color-mix(in srgb, var(--color-background-brand, #0073b2) 11%, transparent);
     stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
-  .smaqmd-cityview__win[data-win-r] { fill: color-mix(in srgb, var(--color-background-brand, #159a86) 15%, transparent); }
+  .smaqmd-cityview__mull,
+  .smaqmd-cityview__door-line,
+  .smaqmd-cityview__seam { fill: none; stroke: var(--color-border-default, #cecece); stroke-width: 1; }
   .smaqmd-cityview__door {
     fill: color-mix(in srgb, var(--smaqmd-gray-6, #d9d9d9) 85%, transparent);
     stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round;
   }
+  .smaqmd-cityview__board { fill: none; stroke: color-mix(in srgb, var(--smaqmd-gray-7, #cecece) 60%, transparent); stroke-width: 1; }
   /* The rug is the one brand-tinted floor mark — barely there, so it reads as a
-     surface under the furniture rather than as data. */
+     surface under the bed rather than as data. */
   .smaqmd-cityview__rug {
-    fill: color-mix(in srgb, var(--color-background-brand, #159a86) 7%, transparent);
-    stroke: color-mix(in srgb, var(--color-background-brand, #159a86) 25%, transparent);
+    fill: color-mix(in srgb, var(--color-background-brand, #0073b2) 7%, transparent);
+    stroke: color-mix(in srgb, var(--color-background-brand, #0073b2) 25%, transparent);
     stroke-width: 1; stroke-linejoin: round;
   }
-  /* Furniture keeps the three-face value ramp the rooftop units used: lit top,
-     shaded left, shaded-darker right — the same light direction as the room. */
-  .smaqmd-cityview__furn-face { stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round; }
-  .smaqmd-cityview__furn-face[data-furn-face="top"]   { fill: color-mix(in srgb, var(--color-background-elevation-raised, #fcfcfc) 96%, transparent); }
-  .smaqmd-cityview__furn-face[data-furn-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
-  .smaqmd-cityview__furn-face[data-furn-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  /* Each box keeps the room's light direction: lit top, shaded front ("left"
+     face), shaded-darker right. Wood for the headboard, bed frame and
+     nightstands; sheet white for the mattress and pillows; the lamp stem in
+     the furniture neutrals, its shade white. */
+  .smaqmd-cityview__wood,
+  .smaqmd-cityview__stem,
+  .smaqmd-cityview__fabric,
+  .smaqmd-cityview__sheet,
+  .smaqmd-cityview__shade { stroke: var(--color-border-default, #cecece); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__wood[data-face="top"]   { fill: var(--smaqmd-gray-4, #e8e8e8); }
+  .smaqmd-cityview__wood[data-face="left"]  { fill: var(--smaqmd-gray-5, #e0e0e0); }
+  .smaqmd-cityview__wood[data-face="right"] { fill: var(--smaqmd-gray-6, #d9d9d9); }
+  /* Upholstery (chair, armchair, sofa) shares the lamp stem's lighter ramp. */
+  .smaqmd-cityview__stem[data-face="top"],
+  .smaqmd-cityview__fabric[data-face="top"]   { fill: color-mix(in srgb, var(--smaqmd-gray-1, #fcfcfc) 96%, transparent); }
+  .smaqmd-cityview__stem[data-face="left"],
+  .smaqmd-cityview__fabric[data-face="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 92%, transparent); }
+  .smaqmd-cityview__stem[data-face="right"],
+  .smaqmd-cityview__fabric[data-face="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-5, #e0e0e0) 92%, transparent); }
+  .smaqmd-cityview__sheet,
+  .smaqmd-cityview__shade { fill: var(--color-background-elevation-raised, #fcfcfc); }
+  .smaqmd-cityview__blanket { fill: var(--smaqmd-brand-4, #d5e8f1); stroke: var(--smaqmd-brand-6, #a8cade); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__blanket-side { fill: color-mix(in srgb, var(--smaqmd-brand-6, #a8cade) 70%, var(--smaqmd-brand-4, #d5e8f1)); stroke: var(--smaqmd-brand-6, #a8cade); stroke-width: 1; stroke-linejoin: round; }
+  .smaqmd-cityview__fold { fill: none; stroke: var(--smaqmd-brand-6, #a8cade); stroke-width: 1; }
   .smaqmd-cityview[data-cap-compare="smaller"] .smaqmd-cityview__details { opacity: 0.45; }
+
+  /* The one-foot clearance each cleaner keeps — a faint dotted square on the
+     floor ("give it space"). */
+  .smaqmd-cityview__clear {
+    fill: none;
+    stroke: var(--smaqmd-gray-9, #8d8d8d); stroke-width: 1; stroke-dasharray: 2 3;
+    opacity: 0.7;
+  }
 
   .smaqmd-cityview__unit-face {
     stroke: var(--color-background-brand-hover, #0f7e6e);
@@ -1411,6 +1602,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--color-background-utility-warning, #d9822b) 72%, #fff); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-background-utility-warning, #d9822b); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-orange-10, #c15d10); }
+  /* Unit detail, drawn in face-local units under a per-face matrix transform:
+     the stroke stays a 1px hairline at any zoom (non-scaling-stroke). The tag
+     is light on the brand front face and dark on the orange one, the same
+     on-colour pairs the theme sets for those fills. */
+  .smaqmd-cityview__grille,
+  .smaqmd-cityview__vent { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .smaqmd-cityview__grille { stroke: color-mix(in srgb, var(--color-content-on-brand, #fcfcfc) 50%, transparent); }
+  .smaqmd-cityview__vent   { stroke: color-mix(in srgb, var(--color-content-on-brand, #fcfcfc) 80%, transparent); }
+  .smaqmd-cityview__tag {
+    fill: var(--color-content-on-brand, #fcfcfc);
+    font-weight: var(--typography-font-weight-semibold, 600);
+    font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+  }
+  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__tag { fill: var(--color-content-on-utility-warning, #121212); }
 
   .smaqmd-cityview__dim {
     fill: var(--color-content-default-secondary, #555);
@@ -2027,7 +2232,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     let fitScale = 1;
     let viewW = 480, viewH = 380;
     let safe = { x: 52, y: 52, w: 376, h: 276 };   // SSR fallback matching the old frame
-    const MAX_SCALE = 12;  // px per projected ft — stops a small room ballooning on huge monitors; tune visually
+    // px per projected ft — stops a small room ballooning on huge monitors. 24, not
+    // the earlier 12: the bedroom's detail (pillows, lamps, seams, unit tags)
+    // needs the room larger on screen, and at 12 the 12×10 default was only
+    // ~230 px wide. The narrow band is height-limited, so this cap never bites there.
+    const MAX_SCALE = 24;
     // …and the mirror of MAX_SCALE at the other end: the DRAWN room stops growing
     // here. Past this the picture says nothing new — a big rectangle is a big
     // rectangle — while everything in it shrinks toward invisible. Measured
@@ -2046,23 +2255,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // trueDim / drawnDim per axis, so a clamped room's labels still read what the
     // user typed. All 1 whenever nothing is clamped, which is the normal case.
     const labelK = { L: 1, W: 1, H: 1 };
-    // Air-cleaner sizing bounds. The cleaners now stand INSIDE the room as
-    // appliance-sized boxes, so the world bounds are appliance-sized too: the
-    // footprint scales with the room only UP TO CW_MAX, past which the units stop
-    // growing so a big room's cleaners don't read as furniture-sized blocks.
+    // Air-cleaner sizing. The cleaners stand INSIDE the room as appliances, and an
+    // appliance does not grow with the room it is in, so the footprint is a FIXED
+    // CW_BASE (next to a 5 ft bed, a room-scaled unit read as furniture-sized).
     // Independently, UNIT_MIN_PX is a readability FLOOR on screen — a huge room
-    // fits by zooming the whole scene out, which can shrink the (now world-capped)
-    // cleaner below legibility, so the fit runs a second pass that widens the
-    // cleaner in world units to clear it.
-    const CW_MAX = 2.6;      // ft — cleaners stop growing with the room here
-    const CW_MIN = 1.4;      // ft — world floor
-    const UNIT_MIN_PX = 22;  // px — readability floor for the cleaner footprint on screen
-    // The floor strip along the near x=L wall belongs to the FRONT cleaners:
-    // furniture is clamped out of it, so a unit never lands inside a bed or a
-    // desk. Its counterpart at the far end of the room — the BACK units' zone —
-    // is not a constant, because those units move with the layout; it is the
-    // rectangle backZone() derives and layoutDetails() reserves.
-    const CLEANER_STRIP = 3.8;  // ft
+    // fits by zooming the whole scene out, which can shrink the cleaner below
+    // legibility, so the fit runs a second pass that widens the cleaner in world
+    // units to clear it — but never past CW_HARD_MAX.
+    const CW_BASE = 1.4;      // ft — the appliance footprint
+    const CW_HARD_MAX = 2.4;  // ft — the readability pass's ceiling
+    const UNIT_MIN_PX = 22;   // px — readability floor for the cleaner footprint on screen
     // The cutaway is a diorama with real thickness: the two back walls are WALL_T
     // thick (which is why you see a top cap and a cut edge on each), and the floor
     // is a slab FLOOR_D deep (which is why you see its two front edges).
@@ -2117,8 +2319,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     if (hasScene) new ResizeObserver(syncViewport).observe(sentinel);
     // Everything the ring pulse needs, in SCREEN space, refreshed by drawScene.
-    // A ring is a world-space circle of radius r on the floor around the unit's
-    // center; the projection is linear, so its image is exactly the ellipse
+    // A ring is a world-space circle of radius r around the unit's center, in
+    // the horizontal plane of its top vent; the projection is linear, so its
+    // image is exactly the ellipse
     //
     //   P(θ) = C + r·(cosθ · E + sinθ · F)
     //
@@ -2129,22 +2332,25 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // re-fit because drawScene rewrites them on the same frame it moves the room.
     // null = that cleaner isn't drawn right now.
     type RingDef = {
-      cx: number; cy: number;     // projected unit center on the floor
+      cx: number; cy: number;     // projected unit center at vent height
       ex: number; ey: number;     // screen image of +1 ft along world x
       fx: number; fy: number;     // screen image of +1 ft along world y
       r0: number; rMax: number;   // world-ft radii the pulse travels between
     };
     const ringDefs: (RingDef | null)[] = [];
-    // Ripples in flight per cleaner, evenly spread through the cycle, and the
+    // Waves in flight per cleaner, evenly spread through the cycle, and the
     // angular resolution of each. 28 segments reads as a smooth ellipse at every
-    // size this scene draws while keeping a frame's work to 3 × 28 points/cleaner.
-    const RING_COUNT = 3;
+    // size this scene draws while keeping a frame's work to 4 × 28 points/cleaner.
+    const RING_COUNT = 4;
     const RING_STEPS = 28;
     // How many cleaners the scene is currently drawing (mirrors the panel list,
     // capped at MAX_CLEANERS); set in recompute(), read by drawScene + the pulse.
     let sceneN = 1;
+    // The target ACH the waves' reach is measured against (each unit's wave
+    // reaches the floor area it keeps clean at THIS rate); set in recompute().
+    let sceneTarget = 2;
     const MAX_CLEANERS = 4;
-    // The 4 × 3 ring polygons are static markup, so they're looked up ONCE here
+    // The 4 × 4 ring polygons are static markup, so they're looked up ONCE here
     // rather than re-queried every frame. ringPolys[i][k] is cleaner i's ring k.
     const ringPolys: SVGElement[][] = [];
     for (let i = 0; hasScene && i < MAX_CLEANERS; i++) {
@@ -2154,12 +2360,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     }
 
     const ptsAttr = (pts: Pt[]) => pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    // Every scene element is static, so a selector's lookup is cached the first
+    // time it is asked for and the per-frame draw never re-queries the DOM.
+    const elCache = new Map<string, Element | null>();
+    const el1 = (sel: string) => {
+      if (!elCache.has(sel)) elCache.set(sel, svg.querySelector(sel));
+      return elCache.get(sel) ?? null;
+    };
     const setPoly = (sel: string, pts: Pt[]) => {
-      const el = svg.querySelector(sel);
+      const el = el1(sel);
       if (el) el.setAttribute('points', ptsAttr(pts));
     };
     const setLabel = (name: string, at: Pt, text: string) => {
-      const el = svg.querySelector(`[data-label="${name}"]`);
+      const el = el1(`[data-label="${name}"]`);
       if (!el) return;
       el.setAttribute('x', at[0].toFixed(1));
       el.setAttribute('y', at[1].toFixed(1));
@@ -2167,259 +2380,473 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     const mid = (p: Pt, q: Pt): Pt => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
 
-    // Room-dressing helpers: the two wrapper-group lookups + a per-poly toggle
-    // that mirrors the ghost/rings pattern — style.visibility (never display), and
-    // set points only when shown.
-    const detailsG = svg.querySelector<SVGGElement>('[data-room-details]');
-    const furnG = svg.querySelector<SVGGElement>('[data-furniture]');
-    const furnBackG = svg.querySelector<SVGGElement>('[data-furniture-back]');
-    let furnLayerSig = '';
-    const setDetail = (sel: string, on: boolean, pts?: Pt[]) => {
-      const el = svg.querySelector<SVGElement>(sel);
-      if (!el) return;
-      el.style.visibility = on ? '' : 'hidden';
-      if (on && pts) el.setAttribute('points', ptsAttr(pts));
+    // ---- scene element cache ----
+    // Every element in the scene is static markup (see the markup note), so
+    // each one is looked up ONCE here and the per-frame draw never queries the
+    // DOM for it. On the mobile variant (no scene) every lookup is null and
+    // every writer below null-checks. Show/hide is style.visibility only —
+    // never display: this scene toggles everything the same way, and a group
+    // that was ever display:none has bitten WebKit here before (it can come
+    // back unpainted).
+    type Proj = (x: number, y: number, z: number) => Pt;
+    type Vec3 = [number, number, number];
+    const q = (sel: string) => svg.querySelector<SVGElement>(sel);
+    const vis = (el: Element | null, on: boolean) => {
+      if (el) (el as SVGElement).style.visibility = on ? '' : 'hidden';
+    };
+    const setPts = (el: Element | null, pts: Pt[]) => {
+      if (el) el.setAttribute('points', ptsAttr(pts));
+    };
+    // A box's three visible faces, in [top, front, right] order — "front" is the
+    // y = y1 face, which the markup calls data-face/data-unit "left" because
+    // that is where it lands on screen.
+    const FACE_IDS = ['top', 'left', 'right'];
+    const boxEls = (scope: string) => FACE_IDS.map((f) => q(`${scope} [data-face="${f}"]`));
+    const detailsG = q('[data-room-details]');
+    const furnG = q('[data-furniture]');
+    const waveClip = q('[data-wave-clip]');
+    const winEls = (side: string) => ({
+      g: q(`[data-win="${side}"]`),
+      pane: q(`[data-win="${side}"] [data-win-pane]`),
+      mull: q(`[data-win="${side}"] [data-win-mull]`),
+    });
+    const winBack = winEls('back');
+    const winLeft = winEls('left');
+    const doorG = q('[data-door]');
+    const doorLeaf = q('[data-door-leaf]');
+    const doorPanels = q('[data-door-panels]');
+    const boardsEl = q('[data-boards]');
+    const rugEl = q('[data-rug]');
+    const bedEls = {
+      g: q('[data-piece="bed"]'),
+      head: boxEls('[data-box="headboard"]'),
+      frame: boxEls('[data-box="frame"]'),
+      mattress: boxEls('[data-box="mattress"]'),
+      pillowL: boxEls('[data-box="pillow-l"]'),
+      pillowR: boxEls('[data-box="pillow-r"]'),
+      blanketTop: q('[data-blanket="top"]'),
+      blanketFront: q('[data-blanket="front"]'),
+      blanketSide: q('[data-blanket="side"]'),
+      fold: q('[data-fold]'),
+    };
+    // The area-gated pool: each piece's group, its boxes by part, and its seam path.
+    const POOL_IDS = ['dresser', 'plant', 'bookshelf', 'desk', 'chair', 'armchair', 'wardrobe', 'sofa', 'table'] as const;
+    type PoolId = typeof POOL_IDS[number];
+    const poolEls = {} as Record<PoolId, { g: SVGElement | null; seam: SVGElement | null; box: (part: string) => (SVGElement | null)[] }>;
+    for (const id of POOL_IDS) {
+      const at = `[data-piece="${id}"]`;
+      // Parts come from the markup itself ([data-box] under the piece), so a
+      // part the layout names but the markup lacks is just an empty list.
+      const parts: Record<string, (SVGElement | null)[]> = {};
+      svg.querySelectorAll<SVGElement>(`${at} [data-box]`).forEach((b) => {
+        const part = b.dataset.box!;
+        parts[part] = boxEls(`${at} [data-box="${part}"]`);
+      });
+      poolEls[id] = { g: q(at), seam: q(`${at} [data-seam]`), box: (part) => parts[part] ?? [] };
+    }
+    const nsEls = ['l', 'r'].map((s) => {
+      const at = `[data-piece="ns-${s}"]`;
+      return {
+        g: q(at),
+        box: boxEls(`${at} [data-box="ns"]`),
+        seam: q(`${at} [data-seam]`),
+        stem: boxEls(`${at} [data-box="stem"]`),
+        shade: boxEls(`${at} [data-box="shade"]`),
+      };
+    });
+    const clearEls = [1, 2, 3, 4].map((i) => q(`[data-clear="${i}"]`));
+    const ringGroups = [1, 2, 3, 4].map((i) => q(`.smaqmd-cityview__rings[data-rings="${i}"]`));
+    const unitEls = [1, 2, 3, 4].map((i) => {
+      const at = `[data-unitg="${i}"]`;
+      return {
+        g: q(at),
+        faces: [q(`${at} [data-unit="top"]`), q(`${at} [data-unit="left"]`), q(`${at} [data-unit="right"]`)],
+        front: q(`${at} [data-unit-face="front"]`),
+        side: q(`${at} [data-unit-face="side"]`),
+        top: q(`${at} [data-unit-face="top"]`),
+        grilleF: q(`${at} [data-unit-face="front"] [data-grille]`),
+        grilleS: q(`${at} [data-unit-face="side"] [data-grille]`),
+        vent: q(`${at} [data-vent]`),
+        tag: q(`${at} [data-tag]`),
+      };
+    });
+
+    // ---- drawing helpers ----
+    const setBox = (
+      els: (Element | null)[] | null | undefined, w: Proj,
+      x0: number, y0: number, z0: number, x1: number, y1: number, z1: number,
+    ) => {
+      if (!els) return;
+      setPts(els[0], [w(x0, y0, z1), w(x1, y0, z1), w(x1, y1, z1), w(x0, y1, z1)]);
+      setPts(els[1], [w(x0, y1, z1), w(x1, y1, z1), w(x1, y1, z0), w(x0, y1, z0)]);
+      setPts(els[2], [w(x1, y0, z1), w(x1, y1, z1), w(x1, y1, z0), w(x1, y0, z0)]);
+    };
+    const xy = (p: Pt) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+    const segD = (a: Pt, b: Pt) => `M${xy(a)}L${xy(b)}`;
+    const quadD = (pts: Pt[]) => `M${pts.map(xy).join('L')}Z`;
+    // A unit's face-local frame for its detail group: the face's origin corner
+    // plus the screen images of two world directions, as an SVG matrix. One
+    // face unit is FACE_U ft (a tenth of a foot), so the slats, vents and tag
+    // are written in plain numbers and the tag's font-size never drops below
+    // 1 — a sub-1 font-size under a scaling transform renders unreliably.
+    const FACE_U = 0.1;
+    const faceMatrix = (w: Proj, o: Vec3, u: Vec3, v: Vec3) => {
+      const p = w(o[0], o[1], o[2]);
+      const pu = w(o[0] + u[0] * FACE_U, o[1] + u[1] * FACE_U, o[2] + u[2] * FACE_U);
+      const pv = w(o[0] + v[0] * FACE_U, o[1] + v[1] * FACE_U, o[2] + v[2] * FACE_U);
+      return `matrix(${(pu[0] - p[0]).toFixed(4)} ${(pu[1] - p[1]).toFixed(4)} ${(pv[0] - p[0]).toFixed(4)} ${(pv[1] - p[1]).toFixed(4)} ${p[0].toFixed(2)} ${p[1].toFixed(2)})`;
     };
 
-    // N air cleaners standing ON THE FLOOR, filling the room from BOTH ends so
-    // added units read as covering the room rather than crowding one wall. The
-    // side assignment is FIXED by index (and mirrored by FRONT/BACK_UNIT_IDS in
-    // the markup, which is what makes the units' static paint order correct):
-    //
-    //   1 → front (the strip along the open x=L edge)   2 → back (the x=0 wall)
-    //   3 → front, beside 1                             4 → back, across from 3
-    //
-    // A side carrying ONE unit centers it at W/2; a side carrying TWO straddles
-    // W/2 with a gap g between them, and both sides use the SAME two y-centers,
-    // so every back unit stands directly across the room from its front partner
-    // (1↔2, 3↔4). Within a pair the LOWER-y slot goes to the lower index (1 and
-    // 2), the higher-y slot to 3 and 4. Each unit's cleaning pulse is derived from
-    // its footprint alone (center + half-width), so the box below is all the ring
-    // animation needs from this layout.
-    type Cleaner = {
-      x0: number; y0: number; x1: number; y1: number; h: number;
-      side: 'front' | 'back';
+    // ---- the bedroom ----
+    // Every size in the dressing, in feet (pool thresholds in ft² of floor).
+    // Real furniture does not grow with the room, so none of these scale.
+    // KEEP AS ONE LITERAL: the build's check-consistency compares it with the
+    // twin's (public/aer-tool/app.js) token for token, so the two builds cannot
+    // draw different rooms. Pool pieces: w is the x size, d the y size.
+    const BEDROOM = {
+      bedW: 5.0, bedD: 6.7, bedMinW: 3, bedMinD: 4.5, headT: 0.3, headH: 3.4, frameH: 1.0, mattH: 0.7,
+      pillowD: 1.0, pillowH: 0.3, blanketFrom: 0.33, ns: 1.4, nsH: 1.8, lampStem: 0.3, lampStemH: 0.7,
+      shade: 0.8, shadeH: 0.6, doorW: 2.8, doorFrom: 3.6, doorTo: 0.8, winBackInset: 0.8, winSideW: 3.4,
+      winSill: 3.8, winH: 3.4, clr: 1, board: 1,
+      dresser: { w: 3.6, d: 1.6, h: 2.7, area: 140 },
+      plant: { pot: 1.2, potH: 1.0, crown: 1.4, crownH: 1.6, area: 200 },
+      bookshelf: { w: 1.1, d: 3.2, h: 5.6, area: 220 },
+      desk: { w: 3.2, d: 1.6, h: 2.5, area: 280 },
+      chair: { w: 1.4, d: 1.4, h: 1.6, seatH: 0.9, back: 0.3 },
+      armchair: { w: 1.9, d: 1.9, h: 2.4, seatH: 1.4, back: 0.8, area: 340 },
+      wardrobe: { w: 2.4, d: 4.0, h: 6.4, area: 420 },
+      sofa: { w: 2.4, d: 6.0, h: 2.6, seatH: 1.4, back: 0.8, area: 520 },
+      table: { w: 1.6, d: 3.0, h: 1.4, gap: 1.0 },
     };
-    const layoutCleaners = (L: number, W: number, n: number, cwOpt?: number): Cleaner[] => {
-      // Base footprint: scales with the room (floor CW_MIN) but stops growing at
-      // CW_MAX so big rooms don't get absurd cleaners. cwOpt (the readability
-      // pass) overrides that base. The 3.2 ft cap keeps even a widened unit
-      // appliance-sized, and W·0.55 keeps a lone centered unit off both side
-      // walls. The absolute 0.2 ft floor only ever bites in a room already too
-      // small to draw (< 3 ft), and exists so a box can never invert.
-      const cwBase = Math.min(Math.max(Math.min(L, W) * 0.16, CW_MIN), CW_MAX);
-      let cw = Math.min(cwOpt ?? cwBase, W * 0.55, 3.2);
-      // Anti-overlap ceilings, applied once a side actually carries a pair
-      // (n ≥ 3) or the two sides face each other (n ≥ 2). Both can legitimately
-      // defeat the readability floor in a small room, which we accept.
-      //   ACROSS the width: 2·cw + g ≤ 0.7·W with g = max(1, 0.5·cw). f(cw) is
-      //   monotone, so the largest admissible cw is 0.28·W where that lands at
-      //   or above the g = 0.5·cw branch point (cw ≥ 2, i.e. W ≥ 7.14 ft), and
-      //   0.35·W − 0.5 below it. The pair then spans at most 70% of the width.
-      //   ALONG the length: the front and back boxes must keep a 0.6 ft aisle
-      //   between them → cw ≤ (L − 2.4)/2, from x0_front − x1_back ≥ 0.6.
-      if (n >= 3) cw = Math.min(cw, W * 0.28 >= 2 ? W * 0.28 : W * 0.35 - 0.5);
-      if (n >= 2) cw = Math.min(cw, (L - 2.4) / 2);
-      cw = Math.max(cw, 0.2);
-      const ch = cw * 1.5;   // a floor-standing unit is taller than it is wide
-      // Gap between the two units of a pair, and the resulting slot offset from
-      // the room's mid-width: each unit's CENTER sits at W/2 ∓ (cw/2 + g/2), so
-      // the two boxes leave exactly g of floor between them.
-      const g = Math.max(1, cw * 0.5);
-      const slot = cw / 2 + g / 2;
-      // Does a side carry two units? Front pairs up at n ≥ 3, back at n = 4.
-      const frontPair = n >= 3, backPair = n >= 4;
-      const out: Cleaner[] = [];
-      for (let k = 0; k < n; k++) {
-        const side: 'front' | 'back' = k % 2 === 0 ? 'front' : 'back';
-        const paired = side === 'front' ? frontPair : backPair;
-        // Index 0/1 take the lower-y slot of their side, 2/3 the higher one.
-        const cyc = !paired ? W / 2 : W / 2 + (k < 2 ? -slot : slot);
-        // Front: 1.2 ft of clearance from the x=L edge the cutaway opens on.
-        // Back:  0.6 ft off the x=0 wall (a wall gap, not a walking aisle).
-        const x0 = side === 'front' ? L - 1.2 - cw : 0.6;
-        out.push({ x0, y0: cyc - cw / 2, x1: x0 + cw, y1: cyc + cw / 2, h: ch, side });
+    const clamp = (v: number, lo: number, hi: number) => Math.max(Math.min(v, hi), lo);
+    // clamp, except that a collapsed window (lo > hi) centres instead of pinning to lo.
+    const inside = (v: number, lo: number, hi: number) => (lo > hi ? (lo + hi) / 2 : clamp(v, lo, hi));
+    // The offsets a free-standing piece tries around its spot, nearest first
+    // (built once: layoutRoom runs every frame of a morph).
+    const OFFS = [0, 1, -1, 2, -2, 3, -3, 4, -4, 6, -6];
+    const RING = OFFS.flatMap((dx) => OFFS.map((dy): Pt => [dx, dy]))
+      .sort((a, b) => Math.sqrt(a[0] * a[0] + a[1] * a[1]) - Math.sqrt(b[0] * b[0] + b[1] * b[1]));
+    type Rect = { x0: number; y0: number; x1: number; y1: number };
+    type Cleaner = Rect & { h: number };
+    type Box6 = [number, number, number, number, number, number];   // x0 y0 z0 x1 y1 z1
+    type Piece = { rect: Rect; boxes: Record<string, Box6>; seams: [Vec3, Vec3][] };
+    const overlaps = (a: Rect, b: Rect) =>
+      a.x0 < b.x1 - 1e-6 && a.x1 > b.x0 + 1e-6 && a.y0 < b.y1 - 1e-6 && a.y1 > b.y0 + 1e-6;
+    // Back-to-front order of disjoint floor footprints (see drawScene's paint-
+    // order note); returns indices into rs.
+    const depthOrder = (rs: Rect[]): number[] => {
+      const behind = (a: Rect, b: Rect) =>
+        (a.x1 <= b.x0 + 1e-6 && a.y0 < b.y1 - 1e-6 && b.y0 < a.y1 - 1e-6)
+        || (a.y1 <= b.y0 + 1e-6 && a.x0 < b.x1 - 1e-6 && b.x0 < a.x1 - 1e-6);
+      const key = (r: Rect) => r.x0 + r.x1 + r.y0 + r.y1;
+      const left = rs.map((_, i) => i);
+      const out: number[] = [];
+      while (left.length) {
+        const ready = left.filter((i) => !left.some((j) => j !== i && behind(rs[j], rs[i])));
+        const pool = ready.length ? ready : left;   // a cycle cannot happen for disjoint boxes; fall back anyway
+        const pick = pool.reduce((a, b) => (key(rs[b]) < key(rs[a]) ? b : a));
+        out.push(pick);
+        left.splice(left.indexOf(pick), 1);
       }
       return out;
     };
-    // The floor rectangle the BACK units occupy (plus a walking margin), or null
-    // when no unit stands against the x=0 wall. layoutDetails keeps furniture out
-    // of it — see the reservation rule there.
-    const backZone = (cls: Cleaner[]) => {
-      const back = cls.filter((c) => c.side === 'back');
-      if (!back.length) return null;
-      const M = 0.6;  // ft of clearance around the units
-      return {
-        x0: 0,
-        x1: Math.max(...back.map((c) => c.x1)) + M,
-        y0: Math.min(...back.map((c) => c.y0)) - M,
-        y1: Math.max(...back.map((c) => c.y1)) + M,
-      };
-    };
-    type BackZone = ReturnType<typeof backZone>;
+    // The last order drawScene appended the pieces in.
+    let pieceOrderSig = '';
 
-    // Room dressing — the openings in the two walls, the rug, and the furniture
-    // standing on the floor. All positions are pure, deterministic functions of
-    // the eased dims — no randomness — so the dressing morphs in lockstep with the
-    // room and the drag grips.
-    const WIN_POOL = 2;                                 // per-wall slots; matches WINDOW_SLOTS in the frontmatter
-    const WIN_W = 3.0;                                  // ft — fixed; count scales, size doesn't
-    // Furniture pool, ordered BACK-TO-FRONT by (fx + fy) so document order IS
-    // painter order and no runtime depth sort is needed. fx/fy place the item's
-    // CENTER as a fraction of L/W; sx/sy/h are its world size in feet. minArea is
-    // the floor area (ft²) at which the piece appears — growth is purely
-    // area-driven, and because the 0.22 lerp is monotone each threshold fires
-    // exactly once per morph, so furniture arrives one piece at a time and never
-    // flickers. `snap` pins a piece flush against a wall: 'x' against x=0 (the
-    // left wall), 'y' against y=0 (the right one).
-    // A BED IS A WALL PIECE: its head goes against the y=0 wall, never adrift in
-    // the middle of the floor. It cannot take the x=0 wall instead — that wall
-    // now hosts back cleaner units 2 and 4 at mid-width, and a 5 ft-deep bed
-    // would land in their reserved zone. So the y=0 wall carries three pieces
-    // (dresser, bed, desk) that have to share its length; they are spaced
-    // low-x → center → door-end here, and packed for real in the wall pass below.
-    type FurnDef = { fx: number; fy: number; sx: number; sy: number; h: number; minArea: number; snap?: 'x' | 'y' };
-    const FURN_DEFS: FurnDef[] = [
-      { fx: 0.12, fy: 0.06, sx: 3.6, sy: 1.5, h: 2.7, minArea: 90,  snap: 'y' }, // 1 dresser
-      { fx: 0.05, fy: 0.28, sx: 1.1, sy: 3.2, h: 5.6, minArea: 0,   snap: 'x' }, // 2 bookshelf
-      { fx: 0.42, fy: 0.06, sx: 6.4, sy: 5.0, h: 1.7, minArea: 0,   snap: 'y' }, // 3 bed (head to the wall)
-      { fx: 0.72, fy: 0.06, sx: 3.2, sy: 1.6, h: 2.5, minArea: 260, snap: 'y' }, // 4 desk
-      { fx: 0.05, fy: 0.74, sx: 1.4, sy: 1.4, h: 2.1, minArea: 140, snap: 'x' }, // 5 nightstand
-      { fx: 0.10, fy: 0.90, sx: 1.1, sy: 1.1, h: 3.0, minArea: 220 },            // 6 plant
-      { fx: 0.70, fy: 0.86, sx: 1.9, sy: 1.9, h: 2.4, minArea: 320 },            // 7 armchair
-    ];
-    // Placement priority on the y=0 wall (FURN_DEFS indices: bed, dresser, desk).
-    // NOT paint order — the table above stays sorted back-to-front, which along
-    // this wall means by x, so document order is still painter order.
-    const WALL_ORDER = [2, 0, 3];
-    // The rug is the one flat piece — a quad on the floor at the foot of the bed,
-    // no height. It follows the bed toward the y=0 wall.
-    const RUG = { fx: 0.46, fy: 0.40, sx: 8.0, sy: 6.5, minArea: 150 };
-    const clamp = (v: number, lo: number, hi: number) => Math.max(Math.min(v, hi), lo);
-    // Evenly distributed window centers across a span: n windows sit at the
-    // midpoints of n equal slots, so fixed-width windows never overlap.
-    const winCenters = (span0: number, span1: number, n: number): number[] => {
-      const S = span1 - span0;
-      if (n < 1 || S < WIN_W) return [];
-      return Array.from({ length: n }, (_, i) => span0 + (S * (i + 0.5)) / n);
-    };
-    type FurnBox = { x0: number; y0: number; x1: number; y1: number; h: number };
-    const layoutDetails = (L: number, W: number, H: number, zone: BackZone) => {
+    // The whole floor plan for a room, as pure deterministic functions of the
+    // eased dims — no randomness — so the dressing morphs in lockstep with the
+    // room and the drag grips. Cleaners and furniture are laid out together
+    // because they depend on each other: the bed is set in from the left wall
+    // far enough for cleaner 1 to stand beside it, cleaner 3 stands at the
+    // bed's foot, and nothing may enter a cleaner's clearance square.
+    //
+    // CLEANER PLACEMENT follows the tool's own usage tips — where you sleep,
+    // along a wall but out of the corners, a foot of space all round, more than
+    // one → opposite sides. Each index has a FIXED side:
+    //   1 → beside the bed, against the x=0 wall
+    //   2 → directly across, on the x=L side
+    //   3 → at the foot of the bed, on the y=W side
+    //   4 → the x=L side again, toward the back wall
+    // The width cw is the fixed appliance size (cwOpt is the readability pass's
+    // override) and shrinks until no two units' footprints come within g of
+    // each other, so units never overlap.
+    const layoutRoom = (L: number, W: number, H: number, n: number, cwOpt?: number) => {
+      const BR = BEDROOM;
+      const CLR = BR.clr;
+      // A room too small to read draws bare walls + floor only.
       const degenerate = L < 3 || W < 3 || H < 3.5;
-      // ONE row of windows per wall, seen from inside: sill at ~0.38H, opening
-      // ~0.42H tall, both clamped so the head never runs into the ceiling.
-      const sill = Math.min(3.2, H * 0.38);
-      const winH = Math.min(Math.min(3.4, H * 0.42), Math.max(0.4, 0.85 * H - sill));
-      // Left wall (x=0): windows spread across the full width — 1 once the wall is
-      // 6 ft, a second once it is 15.
-      const nL = degenerate ? 0 : (W >= 15 ? 2 : (W >= 6 ? 1 : 0));
-      const winL = winCenters(0, W, nL);
-      // Right wall (y=0) carries the DOOR, near the near (L,0) corner where the
-      // cutaway opens, so the windows share what's left of that wall.
-      const doorOn = !degenerate && L >= 8 && H >= 5;
-      const doorH = Math.min(6.8, H * 0.8);
-      const winSpan0 = 1.5, winSpan1 = doorOn ? L - 5.5 : L - 1.5;
-      const span = winSpan1 - winSpan0;
-      const nR = degenerate ? 0 : (span >= 12 ? 2 : (span >= 3 ? 1 : 0));
-      const winR = winCenters(winSpan0, winSpan1, nR);
-      // Furniture. A room too small to walk around gets none at all; beyond that
-      // each piece is gated purely on floor area. Sizes cap at 30% of the room so
-      // a bed can't swallow a small room, heights at 75% of the ceiling.
-      const furn: (FurnBox | null)[] = [];
-      const roomy = !degenerate && Math.min(L, W) >= 5;
+      const doorOn = !degenerate && W >= 8 && H >= 5;
+      const doorY0 = W - BR.doorFrom, doorY1 = W - BR.doorTo;
+      // Never wider than 55% of the SHORT side, so a unit always fits the floor.
+      let cw = Math.min(cwOpt ?? CW_BASE, Math.min(L, W) * 0.55, CW_HARD_MAX);
+      // With four units the x=L pair shares that side at 0.3·W and 0.7·W: keep
+      // 2·cw + g inside the 0.4·W between them (g = max(1, cw/2), solved for cw).
+      if (n >= 4) cw = Math.min(cw, W * 0.16 >= 2 ? W * 0.16 : W * 0.2 - 0.5);
+      cw = Math.max(cw, 0.2);
+      let m = 0;
+      let cs: Pt[] = [];
+      let bed = { x0: 0, w: 0, d: 0, on: false };
+      for (let tries = 0; ; tries++) {
+        m = CLR + cw / 2;                       // a unit's centre, one clearance off its wall
+        const g = Math.max(1, 0.5 * cw);
+        const bx0 = 2 * CLR + cw + 0.2;         // clear of unit 1's clearance square
+        // The bed SHRINKS rather than hides: its depth stops short of unit 3's
+        // clearance at the y=W side, its width short of the x=L units' — down to
+        // a 3 × 4.5 ft single bed, below which there is no bed.
+        const d = Math.min(Math.max(Math.min(BR.bedD, 0.6 * W), BR.bedMinD), W - 2 * m - 0.3);
+        const bw = Math.min(Math.max(Math.min(BR.bedW, 0.42 * L, L - 2 * m - bx0), BR.bedMinW), BR.bedW);
+        const bedOn = !degenerate && d >= BR.bedMinD - 1e-9 && bx0 + bw + 0.3 <= L;
+        const want: Pt[] = [
+          [m, clamp(0.45 * W, 0.1 + BR.ns + m, (doorOn ? doorY0 : W) - m)],
+          [L - m, 0.7 * W],
+          [bedOn ? bx0 + bw / 2 : L / 2, W - m],
+          [L - m, Math.max(0.3 * W, 0.1 + BR.ns + m + 0.2)],
+        ];
+        // Never off the floor, whatever the room: 0.3 ft in from every edge,
+        // or centred on an axis too short for that.
+        cs = want.slice(0, n).map(([x, y]): Pt => [
+          inside(x, 0.3 + cw / 2, L - 0.3 - cw / 2),
+          inside(y, 0.3 + cw / 2, W - 0.3 - cw / 2),
+        ]);
+        // Unit 4's nightstand floor can push it into unit 2: back it off first.
+        if (n >= 4 && cs[1][1] - cs[3][1] < cw + g) cs[3][1] = Math.max(0.3 + cw / 2, cs[1][1] - cw - g);
+        bed = { x0: bx0, w: bw, d, on: bedOn };
+        let clash = false;
+        for (let i = 0; i < cs.length; i++) {
+          for (let j = i + 1; j < cs.length; j++) {
+            if (Math.abs(cs[i][0] - cs[j][0]) < cw + g - 1e-6 && Math.abs(cs[i][1] - cs[j][1]) < cw + g - 1e-6) clash = true;
+          }
+        }
+        if (!clash || cw <= 0.2 || tries >= 12) break;
+        cw = Math.max(0.2, cw * 0.85);
+      }
+      // A floor-standing unit is taller than it is wide; never taller than the room.
+      const ch = Math.min(Math.max(1.6 * cw, 2.0), 2.6, Math.max(0.3, 0.85 * H));
+      const cleaners: Cleaner[] = cs.map(([x, y]) => ({
+        x0: x - cw / 2, y0: y - cw / 2, x1: x + cw / 2, y1: y + cw / 2, h: ch,
+      }));
+      const clear: Rect[] = cleaners.map((c) => ({
+        x0: c.x0 - CLR, y0: c.y0 - CLR, x1: c.x1 + CLR, y1: c.y1 + CLR,
+      }));
+      const free = (r: Rect) => !clear.some((c) => overlaps(r, c));
+      // The bed set — furniture never enters a drawn unit's clearance square:
+      // the bed + headboard hide as a whole (taking the nightstands and rug with
+      // them), each nightstand on its own. The rug is flat, so a unit may stand
+      // on it.
+      const bx0 = bed.x0, bw = bed.w, bd = bed.d;
+      const bedRect: Rect = { x0: bx0 - 0.2, y0: 0, x1: bx0 + bw + 0.2, y1: bd };
+      const bedOn = bed.on
+        && free({ x0: bx0 - 0.2, y0: 0, x1: bx0 + bw + 0.2, y1: BR.headT })
+        && free({ x0: bx0, y0: 0.3, x1: bx0 + bw, y1: bd });
+      const nsL: Rect = { x0: bx0 - 0.2 - BR.ns, y0: 0.1, x1: bx0 - 0.2, y1: 0.1 + BR.ns };
+      const nsR: Rect = { x0: bx0 + bw + 0.2, y0: 0.1, x1: bx0 + bw + 0.2 + BR.ns, y1: 0.1 + BR.ns };
+      const nsLOn = bedOn && nsL.x0 >= 0.3 && free(nsL);
+      const nsROn = bedOn && nsR.x1 <= L - 0.3 && free(nsR);
+      const rug: Rect = {
+        x0: Math.max(0.2, bx0 - 0.8), y0: bd - 2.2,
+        x1: Math.min(L - 0.2, bx0 + bw + 0.8), y1: Math.min(bd + 4, W - 0.4),
+      };
+      const rugOn = bedOn && rug.y1 - rug.y0 >= 2.5;
+
+      // THE POOL — the rest of the furniture, one piece per floor-area
+      // threshold, placed in threshold order so a piece that has appeared is
+      // never displaced by a later one. A piece may not touch (within GAP) a
+      // drawn unit's clearance square, the door's swing, the bed set or a piece
+      // already placed, and must stay 0.3 ft inside the walls. Wall pieces
+      // slide along their wall to the nearest free spot; free-standing ones try
+      // a ring of 1–6 ft offsets around their spot; nothing free → not drawn.
+      const GAP = 0.2;
+      const hCap = 0.75 * H;
       const area = L * W;
-      // WALL PASS — the three y=0-wall pieces share one stretch of wall, so their
-      // x-spans are packed in PRIORITY order (bed, then dresser, then desk)
-      // before the pool loop below. Each takes its preferred x, is pushed off any
-      // span already claimed to whichever free side is nearer, and is simply not
-      // placed when the wall has nothing left — the same collapse→null rule the
-      // floor clamps use. The window is [lo, hi]: WALL_LO in from the x=0 wall,
-      // stopping short of the door when there is one (what used to be the desk's
-      // private rule, now shared — a pushed piece could cross the door too), and
-      // starting past the back cleaners' zone for any piece deep enough to reach
-      // into it (the bed is 5 ft deep, so in a short room its head would
-      // otherwise sit where a back unit stands).
-      // WALL_LO clears the CORNER: a piece against the x=0 wall reaches x = 0.3 +
-      // its width (1.4 for the bookshelf, 1.7 for the nightstand at their capped
-      // widest), and the two walls' pieces would otherwise overlap where they
-      // meet — the bed's head landing inside the bookshelf in a short room.
-      const WALL_LO = 1.8;
-      const wallX = new Map<number, number | null>();
-      const taken: [number, number][] = [];
-      for (const k of WALL_ORDER) {
-        const d = FURN_DEFS[k];
-        if (!roomy || area < d.minArea) { wallX.set(k, null); continue; }
-        const sx = Math.min(d.sx, L * 0.30), sy = Math.min(d.sy, W * 0.30);
-        const hi = Math.min(L - CLEANER_STRIP - sx, doorOn ? L - 4.6 - sx : Infinity);
-        const lo = zone && 0.3 < zone.y1 && 0.3 + sy > zone.y0 ? Math.max(WALL_LO, zone.x1) : WALL_LO;
-        if (hi < lo) { wallX.set(k, null); continue; }
-        const clashOf = (v: number) => taken.find(([a, b]) => v < b - 1e-9 && v + sx > a + 1e-9);
-        let x: number | null = clamp(d.fx * L - sx / 2, lo, hi);
-        for (let pass = 0; x != null && pass <= taken.length; pass++) {
-          const c = clashOf(x);
-          if (!c) break;
-          const at = x;
-          const opts = [c[1], c[0] - sx].filter((v) => v >= lo - 1e-9 && v <= hi + 1e-9);
-          opts.sort((p, q) => Math.abs(p - at) - Math.abs(q - at));
-          x = opts.length ? opts[0] : null;
+      const blocked: Rect[] = clear.slice();
+      if (doorOn) blocked.push({ x0: 0, y0: doorY0, x1: BR.doorW, y1: doorY1 });
+      if (bedOn) blocked.push(bedRect);
+      if (nsLOn) blocked.push(nsL);
+      if (nsROn) blocked.push(nsR);
+      const fits = (r: Rect) =>
+        r.x0 >= 0.3 - 1e-6 && r.y0 >= 0.3 - 1e-6 && r.x1 <= L - 0.3 + 1e-6 && r.y1 <= W - 0.3 + 1e-6
+        && !blocked.some((b) => overlaps(r, { x0: b.x0 - GAP, y0: b.y0 - GAP, x1: b.x1 + GAP, y1: b.y1 + GAP }));
+      // Along a wall: the preferred spot, then every position flush against
+      // either side of an obstacle, nearest first (the old wall-pass packing).
+      // On the x=0 wall (axis 'y') a piece must also keep off unit 1's y-span:
+      // widened by 0.2 ft on the far side, and on the near side (larger y) by
+      // as far as a piece that deep reaches across the unit on screen. The depth
+      // sort would draw such a piece correctly over the unit, but a cleaner
+      // hidden behind a wardrobe is not one the user can see. Returns that
+      // keep-out [y0, y1].
+      const u1 = cleaners[0];
+      const unitShadow = (r: Rect): Pt => [u1.y0 - 0.2, u1.y1 + 0.2 + Math.max(0, r.x1 - u1.x0)];
+      const slide = (axis: 'x' | 'y', len: number, make: (t: number) => Rect, pref: number, lo = 0.3): Rect | null => {
+        const hi = (axis === 'x' ? L : W) - 0.3 - len;
+        if (hi < lo) return null;
+        const cands = [clamp(pref, lo, hi)];
+        for (const b of blocked) {
+          const a0 = axis === 'x' ? b.x0 : b.y0, a1 = axis === 'x' ? b.x1 : b.y1;
+          cands.push(a1 + GAP + 1e-3, a0 - GAP - len - 1e-3);
         }
-        if (x == null || clashOf(x)) { wallX.set(k, null); continue; }
-        taken.push([x, x + sx]);
-        wallX.set(k, x);
-      }
-      for (let k = 0; k < FURN_DEFS.length; k++) {
-        const d = FURN_DEFS[k];
-        if (!roomy || area < d.minArea) { furn.push(null); continue; }
-        const sx = Math.min(d.sx, L * 0.30), sy = Math.min(d.sy, W * 0.30);
-        // Wall-snapped pieces sit 0.3 ft off their wall — the y=0 ones at the x
-        // the wall pass above packed them into (null there means the wall could
-        // not hold them). Free-standing ones center on (fx·L, fy·W) and are
-        // clamped inside the floor — never into the front cleaners' strip along
-        // x=L, and never over the front edge at y=W. A piece whose clamp window
-        // has collapsed (the floor cannot hold it clear of both) is simply not
-        // placed: at the smallest furnished sizes the armchair would otherwise be
-        // pushed into the bookshelf and the cleaner.
-        const hiX = L - CLEANER_STRIP - sx, hiY = W - 1 - sy;
-        if ((d.snap !== 'x' && hiX < 1) || (d.snap !== 'y' && hiY < 1)) { furn.push(null); continue; }
-        const wx = d.snap === 'y' ? wallX.get(k) ?? null : null;
-        if (d.snap === 'y' && wx == null) { furn.push(null); continue; }
-        const x0 = d.snap === 'x' ? 0.3 : d.snap === 'y' ? wx! : clamp(d.fx * L - sx / 2, 1, hiX);
-        let y0 = d.snap === 'y' ? 0.3 : clamp(d.fy * W - sy / 2, 1, hiY);
-        // BACK-ZONE RESERVATION (n ≥ 2). The far end of the room now belongs to
-        // the x=0-wall cleaners, exactly as the near end belongs to the x=L ones
-        // via CLEANER_STRIP — but the back units move with the layout, so the
-        // zone is a rectangle handed in rather than a constant. The y=0-wall
-        // pieces already dodged it in the wall pass (they cannot leave their
-        // wall, so they dodge along x); everything else — the x-snapped
-        // bookshelf and nightstand, and the free-standing pool — slides along y
-        // to whichever side of the zone is nearer and still fits between the
-        // floor clamps, or is not placed at all when neither side has room. That
-        // is the same collapse→null rule as above, and in a room barely wider
-        // than the zone it will legitimately empty the x=0 wall: a small room
-        // with four cleaners is mostly cleaners.
-        if (zone && d.snap !== 'y' && x0 < zone.x1 && x0 + sx > zone.x0 && y0 < zone.y1 && y0 + sy > zone.y0) {
-          const near = zone.y0 - sy, far = zone.y1;   // just below / just above
-          const order = Math.abs(y0 - near) <= Math.abs(y0 - far) ? [near, far] : [far, near];
-          // A piece already flush against the x=0 wall may run all the way into
-          // the corner (y = 0.3, the same wall gap the y=0 pieces use) — WALL_LO
-          // holds that corner open for it. A free-standing piece may not: at
-          // y = 0.3 it would be sitting in the middle of the other wall's row.
-          const loY = d.snap === 'x' ? 0.3 : 1;
-          const slotY = order.find((v) => v >= loY && v <= hiY);
-          if (slotY == null) { furn.push(null); continue; }
-          y0 = slotY;
+        const shade = axis === 'y' ? unitShadow(make(lo)) : null;
+        if (shade) cands.push(shade[1] + 1e-3, shade[0] - len - 1e-3);
+        cands.sort((p, p2) => Math.abs(p - pref) - Math.abs(p2 - pref));
+        for (const t of cands) {
+          if (t < lo - 1e-9 || t > hi + 1e-9) continue;
+          const r = make(t);
+          if (shade && r.y1 > shade[0] && r.y0 < shade[1]) continue;
+          if (fits(r)) return r;
         }
-        furn.push({ x0, y0, x1: x0 + sx, y1: y0 + sy, h: Math.min(d.h, H * 0.75) });
+        return null;
+      };
+      const near = (sx: number, sy: number, cx: number, cy: number): Rect | null => {
+        for (const [dx, dy] of RING) {
+          const x0 = cx + dx - sx / 2, y0 = cy + dy - sy / 2;
+          const r = { x0, y0, x1: x0 + sx, y1: y0 + sy };
+          if (fits(r)) return r;
+        }
+        return null;
+      };
+      const take = (r: Rect | null, gate: number) => (!degenerate && area >= gate && r ? (blocked.push(r), r) : null);
+      const pieces: Record<PoolId, Piece | null> = {
+        dresser: null, plant: null, bookshelf: null, desk: null, chair: null,
+        armchair: null, wardrobe: null, sofa: null, table: null,
+      };
+      // Dresser — y=0 wall, right of the bed set; two drawer seams on its front.
+      const D = BR.dresser;
+      const dr = area >= D.area ? take(slide('x', D.w, (t) => ({ x0: t, y0: 0.3, x1: t + D.w, y1: 0.3 + D.d }),
+        (nsROn ? nsR.x1 : bedOn ? bedRect.x1 : 0.5 * L) + 0.4), D.area) : null;
+      if (dr) {
+        const h = Math.min(D.h, hCap);
+        pieces.dresser = {
+          rect: dr, boxes: { body: [dr.x0, dr.y0, 0, dr.x1, dr.y1, h] },
+          seams: [h / 3, (2 * h) / 3].map((z): [Vec3, Vec3] => [[dr.x0 + 0.2, dr.y1, z], [dr.x1 - 0.2, dr.y1, z]]),
+        };
       }
-      // Rug — centered on (fx·L, fy·W), sized to the room, clamped like the
-      // free-standing furniture so it never runs under a wall or the cleaners.
-      const rugOn = roomy && area >= RUG.minArea;
-      const rsx = Math.min(RUG.sx, L * 0.5), rsy = Math.min(RUG.sy, W * 0.55);
-      const rx0 = clamp(RUG.fx * L - rsx / 2, 0.8, L - CLEANER_STRIP - rsx);
-      const ry0 = clamp(RUG.fy * W - rsy / 2, 0.8, W - 0.8 - rsy);
+      // Plant — the back-right corner on the y=0 wall: a pot and a crown. A
+      // corner piece: it may slide toward the bed but not past mid-room (it
+      // would otherwise land in the far corner the bookshelf wants).
+      const Pl = BR.plant;
+      const pr = area >= Pl.area ? take(slide('x', Pl.crown, (t) => ({ x0: t, y0: 0.3, x1: t + Pl.crown, y1: 0.3 + Pl.crown }),
+        L - 1.5 - Pl.crown / 2, 0.5 * L), Pl.area) : null;
+      if (pr) {
+        const cx = (pr.x0 + pr.x1) / 2, cy = (pr.y0 + pr.y1) / 2, hp = Pl.pot / 2;
+        const potH = Math.min(Pl.potH, hCap);
+        pieces.plant = {
+          rect: pr,
+          boxes: {
+            pot: [cx - hp, cy - hp, 0, cx + hp, cy + hp, potH],
+            crown: [pr.x0, pr.y0, potH, pr.x1, pr.y1, Math.min(potH + Pl.crownH, hCap)],
+          },
+          seams: [],
+        };
+      }
+      // Bookshelf — x=0 wall, just past the left nightstand; three shelves on
+      // its visible (x = x1) side.
+      const Bk = BR.bookshelf;
+      const br = area >= Bk.area ? take(slide('y', Bk.d, (t) => ({ x0: 0.3, y0: t, x1: 0.3 + Bk.w, y1: t + Bk.d }),
+        (nsLOn ? nsL.y1 : 0) + 0.3), Bk.area) : null;
+      if (br) {
+        const h = Math.min(Bk.h, hCap);
+        pieces.bookshelf = {
+          rect: br, boxes: { body: [br.x0, br.y0, 0, br.x1, br.y1, h] },
+          seams: [0.25, 0.5, 0.75].map((f): [Vec3, Vec3] => [[br.x1, br.y0 + 0.1, h * f], [br.x1, br.y1 - 0.1, h * f]]),
+        };
+      }
+      // Desk + chair — the y=0 wall past the dresser, else the x=0 wall past
+      // the bookshelf. The chair stands in front of the desk, its back away
+      // from it. The pair is placed as one footprint, drawn as two pieces.
+      const Dk = BR.desk, Ch = BR.chair;
+      const deep = Dk.d + GAP + Ch.d;
+      if (area >= Dk.area && !degenerate) {
+        const hd = Math.min(Dk.h, hCap), hs = Math.min(Ch.seatH, hCap), hb = Math.min(Ch.h, hCap);
+        const onY = slide('x', Dk.w, (t) => ({ x0: t, y0: 0.3, x1: t + Dk.w, y1: 0.3 + deep }),
+          (dr ? dr.x1 : nsROn ? nsR.x1 : 0.5 * L) + 0.4);
+        const onX = onY ? null : slide('y', Dk.w, (t) => ({ x0: 0.3, y0: t, x1: 0.3 + deep, y1: t + Dk.w }),
+          (br ? br.y1 : 2) + 0.4);
+        const g = take(onY ?? onX, Dk.area);
+        if (g && onY) {
+          const c = (g.x0 + g.x1) / 2, a = c - Ch.w / 2, b = c + Ch.w / 2, s0 = g.y0 + Dk.d + GAP;
+          pieces.desk = { rect: { x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y0 + Dk.d }, boxes: { body: [g.x0, g.y0, 0, g.x1, g.y0 + Dk.d, hd] }, seams: [] };
+          pieces.chair = {
+            rect: { x0: a, y0: s0, x1: b, y1: g.y1 },
+            boxes: { seat: [a, s0, 0, b, g.y1 - Ch.back, hs], back: [a, g.y1 - Ch.back, 0, b, g.y1, hb] },
+            seams: [],
+          };
+        } else if (g) {
+          const c = (g.y0 + g.y1) / 2, a = c - Ch.w / 2, b = c + Ch.w / 2, s0 = g.x0 + Dk.d + GAP;
+          pieces.desk = { rect: { x0: g.x0, y0: g.y0, x1: g.x0 + Dk.d, y1: g.y1 }, boxes: { body: [g.x0, g.y0, 0, g.x0 + Dk.d, g.y1, hd] }, seams: [] };
+          pieces.chair = {
+            rect: { x0: s0, y0: a, x1: g.x1, y1: b },
+            boxes: { seat: [s0, a, 0, g.x1 - Ch.back, b, hs], back: [g.x1 - Ch.back, a, 0, g.x1, b, hb] },
+            seams: [],
+          };
+        }
+      }
+      // Armchair — free-standing near (0.70·L, 0.50·W), its back toward x=0.
+      const Ac = BR.armchair;
+      const ar = area >= Ac.area ? take(near(Ac.w, Ac.d, 0.7 * L, 0.5 * W), Ac.area) : null;
+      if (ar) {
+        pieces.armchair = {
+          rect: ar,
+          boxes: {
+            back: [ar.x0, ar.y0, 0, ar.x0 + Ac.back, ar.y1, Math.min(Ac.h, hCap)],
+            seat: [ar.x0 + Ac.back, ar.y0, 0, ar.x1, ar.y1, Math.min(Ac.seatH, hCap)],
+          },
+          seams: [],
+        };
+      }
+      // Wardrobe — x=0 wall; two door seams on its visible side.
+      const Wd = BR.wardrobe;
+      const wr = area >= Wd.area ? take(slide('y', Wd.d, (t) => ({ x0: 0.3, y0: t, x1: 0.3 + Wd.w, y1: t + Wd.d }),
+        0.5 * W - Wd.d / 2), Wd.area) : null;
+      if (wr) {
+        const h = Math.min(Wd.h, hCap);
+        pieces.wardrobe = {
+          rect: wr, boxes: { body: [wr.x0, wr.y0, 0, wr.x1, wr.y1, h] },
+          seams: [1 / 3, 2 / 3].map((f): [Vec3, Vec3] => {
+            const y = wr.y0 + (wr.y1 - wr.y0) * f;
+            return [[wr.x1, y, 0.2], [wr.x1, y, h - 0.2]];
+          }),
+        };
+      }
+      // Sofa + coffee table — a seating group near (0.45·L, 0.72·W): the sofa's
+      // back toward x=0, the table in front of it.
+      const Sf = BR.sofa, Tb = BR.table;
+      const sr = area >= Sf.area ? take(near(Sf.w + Tb.gap + Tb.w, Sf.d, 0.45 * L, 0.72 * W), Sf.area) : null;
+      if (sr) {
+        const sx1 = sr.x0 + Sf.w;
+        const ty0 = (sr.y0 + sr.y1) / 2 - Tb.d / 2;
+        pieces.sofa = {
+          rect: { x0: sr.x0, y0: sr.y0, x1: sx1, y1: sr.y1 },
+          boxes: {
+            back: [sr.x0, sr.y0, 0, sr.x0 + Sf.back, sr.y1, Math.min(Sf.h, hCap)],
+            seat: [sr.x0 + Sf.back, sr.y0, 0, sx1, sr.y1, Math.min(Sf.seatH, hCap)],
+          },
+          seams: [],
+        };
+        const tr = { x0: sx1 + Tb.gap, y0: ty0, x1: sr.x1, y1: ty0 + Tb.d };
+        pieces.table = { rect: tr, boxes: { body: [tr.x0, tr.y0, 0, tr.x1, tr.y1, Math.min(Tb.h, hCap)] }, seams: [] };
+      }
+
+      // Openings. One sill for both walls, clamped so a low ceiling still fits
+      // the window under it; the door's height as before.
+      const sill = Math.min(BR.winSill, H * 0.48);
+      const winH = Math.min(BR.winH, H * 0.42, Math.max(0.4, 0.9 * H - sill));
+      const doorH = Math.min(6.8, H * 0.8);
+      // Back wall (y=0): a window over the bed, or a centred 3 ft one without it.
+      const winBackX: Pt | null = degenerate ? null
+        : bedOn ? [bx0 + BR.winBackInset, bx0 + bw - BR.winBackInset]
+        : L >= 6 ? [L / 2 - 1.5, L / 2 + 1.5] : null;
+      // Left wall (x=0): a window centred between the back corner and the door
+      // (a window sits on the wall ABOVE a unit, so unit 1 does not move it).
+      const sideHi = (doorOn ? doorY0 : W) - 1.2;
+      const sideSpan = sideHi - 1.2;
+      const sideW = Math.min(BR.winSideW, sideSpan), sideC = (1.2 + sideHi) / 2;
+      const winLeftY: Pt | null = !degenerate && sideSpan >= 1.4 ? [sideC - sideW / 2, sideC + sideW / 2] : null;
+      // Floorboards every BR.board ft, thinning out past 30 ft so a big room
+      // doesn't turn into a grey wash.
+      const boardStep = L > 30 ? Math.ceil(L / 30) : BR.board;
       return {
-        degenerate, sill, winH, doorOn, doorH, winL, winR, furn,
-        rugOn, rx0, ry0, rx1: rx0 + rsx, ry1: ry0 + rsy,
+        degenerate, cw, ch, cleaners, clear,
+        bedOn, bed: { x0: bx0, w: bw, d: bd }, bedRect, nsL, nsR, nsLOn, nsROn, rug, rugOn, pieces,
+        sill, winH, doorOn, doorY0, doorY1, doorH, winBackX, winLeftY, boardStep,
       };
     };
 
@@ -2500,16 +2927,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (!hasScene) return;
       const n = Math.min(Math.max(1, sceneN), MAX_CLEANERS);
 
-      // Capacity ghost is flush with the room's open FRONT side (x=L) — the side
-      // where the first cleaner stands — and centered on the width, so it reads
-      // as the cleaners' reach from where they sit: growing back across the room
-      // as coverage rises, spreading past the side walls once it outgrows them.
-      // Footprint scaled by capS; cleaner-independent, so computed once and fed
-      // into both fit passes.
+      // Capacity ghost: anchored at the room's FAR corner (0,0) and growing
+      // toward the viewer, so its two far faces lie on the wall planes and its
+      // near corner (gL, gW) reads against the room's open front. Footprint
+      // scaled by capS, room height. Cleaner-independent, so computed once and
+      // fed into both fit passes.
       const drawCap = capS > 0.01;
       const gL = L * capS, gW = W * capS;
-      const gx0 = L - gL;                       // far x face (negative when bigger than the room)
-      const gy0 = (W - gW) / 2, gy1 = (W + gW) / 2; // centered on the width
 
       // The shadow pad under the diorama: the room footprint plus a margin that
       // grows with the room, at the underside of the floor slab. It also covers the
@@ -2538,7 +2962,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         for (const c of cls) box(c.x0, c.y0, c.x1, c.y1, c.h);
         // Feed the ghost into the fit so the whole ghost stays inside the safe
         // area (when it's larger than the room, it's what drives the fit).
-        if (drawCap) box(gx0, gy0, L, gy1, H);
+        if (drawCap) box(0, 0, gL, gW, H);
         for (const [x, y] of [
           [-shadowM, -shadowM], [L + shadowM, -shadowM],
           [L + shadowM, W + shadowM], [-shadowM, W + shadowM],
@@ -2564,23 +2988,21 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
       // Pass 1: world-capped cleaner. If that footprint would paint below
       // UNIT_MIN_PX on screen (the whole scene zoomed out to fit a huge room),
-      // re-lay the cleaner wider in WORLD units so it clears the readability floor,
-      // then re-fit once. The 1.1 headroom compensates for pass 2's slightly
-      // smaller scale (a wider cleaner is more content to fit). One extra pass only.
-      let cleaners = layoutCleaners(L, W, n);
-      let fit = computeFit(cleaners);
-      const cw1 = cleaners[0].x1 - cleaners[0].x0;
-      if (cw1 * fit.scale < UNIT_MIN_PX) {
-        cleaners = layoutCleaners(L, W, n, (UNIT_MIN_PX * 1.1) / fit.scale);
-        fit = computeFit(cleaners);
+      // re-lay the room with the cleaner wider in WORLD units so it clears the
+      // readability floor, then re-fit once. The 1.1 headroom compensates for
+      // pass 2's slightly smaller scale (a wider cleaner is more content to fit).
+      // One extra pass only. The dressing comes out of the same layout, so it
+      // always dodges the FINAL cleaners.
+      let lay = layoutRoom(L, W, H, n);
+      let fit = computeFit(lay.cleaners);
+      if (lay.cw * fit.scale < UNIT_MIN_PX) {
+        lay = layoutRoom(L, W, H, n, (UNIT_MIN_PX * 1.1) / fit.scale);
+        fit = computeFit(lay.cleaners);
       }
       const { scale, ox, oy } = fit;
       fitScale = scale;
-      // Room dressing is laid out AFTER the cleaners because it has to dodge
-      // them: the furniture reserves the back units' zone, which depends on the
-      // FINAL cleaner width (the readability pass above can widen it).
-      const det = layoutDetails(L, W, H, backZone(cleaners));
-      const w = (x: number, y: number, z: number): Pt => {
+      const cleaners = lay.cleaners;
+      const w: Proj = (x, y, z) => {
         const p = project(x, y, z);
         return [ox + p[0] * scale, oy + p[1] * scale];
       };
@@ -2602,167 +3024,215 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       setPoly('[data-wall-cap="right"]', [w(L, 0, H), w(L, -WALL_T, H), w(L, -WALL_T, 0), w(L, 0, 0)]);
 
       // The floor slab — the floor plane plus the two front edges of its depth.
-      const floorQuad = [w(0, 0, 0), w(L, 0, 0), w(L, W, 0), w(0, W, 0)];
-      setPoly('[data-room="floor"]', floorQuad);
+      setPoly('[data-room="floor"]', [w(0, 0, 0), w(L, 0, 0), w(L, W, 0), w(0, W, 0)]);
       setPoly('[data-floor-edge="left"]', [w(0, W, 0), w(L, W, 0), w(L, W, -FLOOR_D), w(0, W, -FLOOR_D)]);
       setPoly('[data-floor-edge="right"]', [w(L, 0, 0), w(L, W, 0), w(L, W, -FLOOR_D), w(L, 0, -FLOOR_D)]);
-      // …and the same quad again as the clip every cleaning pulse rides inside,
-      // so a ring at full radius stops at the floor's edge instead of spilling
-      // up the walls or out onto the dot paper (the units stand close to a wall,
-      // so at least one ring is always pushing against one).
-      setPoly('[data-floor-clip]', floorQuad);
+      // The room's footprint again, lifted to the units' vent height: the clip
+      // every wave rides inside, so a wave at full reach stops at the walls.
+      const ch = lay.ch;
+      setPts(waveClip, [w(0, 0, ch), w(L, 0, ch), w(L, W, ch), w(0, W, ch)]);
 
-      // Room dressing — re-derived every frame from the eased dims. Counts come
-      // from cur: the 0.22 lerp is monotone (no overshoot), so a count steps
-      // through each threshold exactly once per morph — a window opens, or a piece
-      // of furniture arrives, ONE at a time as the room grows, never flickering.
-      // A degenerate room (too small to read) draws bare walls + floor only, so
-      // all three dressing groups go hidden together.
-      if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
-      if (furnG) furnG.style.visibility = det.degenerate ? 'hidden' : '';
-      if (furnBackG) furnBackG.style.visibility = det.degenerate ? 'hidden' : '';
-      if (det.degenerate) setDetail('[data-rug]', false);
-      if (!det.degenerate) {
-        const hw = WIN_W / 2;
-        const z0 = det.sill, z1 = det.sill + det.winH;   // one row of windows per wall
-        for (let s = 1; s <= WIN_POOL; s++) {
-          const cl = det.winL[s - 1];   // left wall: x = 0 plane, window spans in y
-          setDetail(`[data-win-l="${s}"]`, cl != null, cl != null ? [
-            w(0, cl - hw, z1), w(0, cl + hw, z1), w(0, cl + hw, z0), w(0, cl - hw, z0),
-          ] : undefined);
-          const cr = det.winR[s - 1];   // right wall: y = 0 plane, window spans in x
-          setDetail(`[data-win-r="${s}"]`, cr != null, cr != null ? [
-            w(cr - hw, 0, z1), w(cr + hw, 0, z1), w(cr + hw, 0, z0), w(cr - hw, 0, z0),
-          ] : undefined);
-        }
-        // Door on the y=0 wall, near the (L,0) corner the cutaway opens on.
-        setDetail('[data-door]', det.doorOn, det.doorOn ? [
-          w(L - 4.2, 0, det.doorH), w(L - 1.2, 0, det.doorH), w(L - 1.2, 0, 0), w(L - 4.2, 0, 0),
-        ] : undefined);
-        // Rug — the one flat piece, lying on the floor at z=0.
-        setDetail('[data-rug]', det.rugOn, det.rugOn ? [
-          w(det.rx0, det.ry0, 0), w(det.rx1, det.ry0, 0), w(det.rx1, det.ry1, 0), w(det.rx0, det.ry1, 0),
-        ] : undefined);
-
-        // Furniture — each piece the same 3-face mini-box as a cleaner unit, but
-        // standing on the floor (z from 0 to its height). The pool is already in
-        // back-to-front order, so drawing it in index order is correct depth.
-        // Paint order vs the BACK cleaners: a piece wholly behind one (viewer
-        // looks from +x,+y, so smaller x or y is farther) moves to the back
-        // layer, which paints before them. Re-parent only when the assignment
-        // changes — drawScene runs every animation frame.
-        const layer = det.furn.map((f) => {
-          if (!f) return 'f';
-          return cleaners.slice(0, n).some((c) => {
-            if (c.side !== 'back') return false;
-            const fBehind = f.x1 <= c.x0 + 1e-6 || f.y1 <= c.y0 + 1e-6;
-            const fFront = c.x1 <= f.x0 + 1e-6 || c.y1 <= f.y0 + 1e-6;
-            return fBehind && !fFront;
-          }) ? 'b' : 'f';
-        });
-        const sig = layer.join('');
-        if (furnBackG && furnG && sig !== furnLayerSig) {
-          furnLayerSig = sig;
-          for (let k = 0; k < FURN_DEFS.length; k++) {
-            const gl = svg.querySelector<SVGGElement>(`[data-furn="${k + 1}"]`);
-            if (gl) (layer[k] === 'b' ? furnBackG : furnG).appendChild(gl);
-          }
-        }
-        for (let k = 0; k < FURN_DEFS.length; k++) {
-          const u = det.furn[k];
-          const g = svg.querySelector<SVGGElement>(`[data-furn="${k + 1}"]`);
-          if (g) g.style.visibility = u ? '' : 'hidden';
-          if (!u) continue;
-          const zt = u.h;
-          setPoly(`[data-furn="${k + 1}"] [data-furn-face="top"]`,   [w(u.x0, u.y0, zt), w(u.x1, u.y0, zt), w(u.x1, u.y1, zt), w(u.x0, u.y1, zt)]);
-          setPoly(`[data-furn="${k + 1}"] [data-furn-face="left"]`,  [w(u.x0, u.y1, zt), w(u.x1, u.y1, zt), w(u.x1, u.y1, 0), w(u.x0, u.y1, 0)]);
-          setPoly(`[data-furn="${k + 1}"] [data-furn-face="right"]`, [w(u.x1, u.y0, zt), w(u.x1, u.y1, zt), w(u.x1, u.y1, 0), w(u.x1, u.y0, 0)]);
-        }
+      // Room dressing — re-derived every frame from the eased dims. The 0.22
+      // lerp is monotone (no overshoot), so each threshold (a window, the bed
+      // set, a nightstand) is crossed once per morph and nothing flickers.
+      const dressed = !lay.degenerate;
+      vis(detailsG, dressed);
+      vis(boardsEl, dressed);
+      if (dressed && boardsEl) {
+        let d = '';
+        for (let x = lay.boardStep; x < L - 1e-6; x += lay.boardStep) d += segD(w(x, 0, 0), w(x, W, 0));
+        boardsEl.setAttribute('d', d);
+      }
+      // Windows: the pane, then a centre cross of mullions joining the midpoints
+      // of opposite sides (quad order: top-left, top-right, bottom-right,
+      // bottom-left as seen from inside).
+      const setWindow = (els: ReturnType<typeof winEls>, quad: Pt[] | null) => {
+        vis(els.g, !!quad);
+        if (!quad) return;
+        setPts(els.pane, quad);
+        const [a, b, c, d] = quad;
+        els.mull?.setAttribute('d', segD(mid(a, b), mid(d, c)) + segD(mid(a, d), mid(b, c)));
+      };
+      const z0 = lay.sill, z1 = lay.sill + lay.winH;
+      const wb = lay.winBackX, wl = lay.winLeftY;
+      setWindow(winBack, wb ? [w(wb[0], 0, z1), w(wb[1], 0, z1), w(wb[1], 0, z0), w(wb[0], 0, z0)] : null);
+      setWindow(winLeft, wl ? [w(0, wl[0], z1), w(0, wl[1], z1), w(0, wl[1], z0), w(0, wl[0], z0)] : null);
+      // Door on the left wall near the open front, with two inset panels.
+      vis(doorG, lay.doorOn);
+      if (lay.doorOn) {
+        const y0 = lay.doorY0, y1 = lay.doorY1, dh = lay.doorH, inset = 0.4;
+        setPts(doorLeaf, [w(0, y0, dh), w(0, y1, dh), w(0, y1, 0), w(0, y0, 0)]);
+        const panel = (za: number, zb: number) =>
+          quadD([w(0, y0 + inset, za), w(0, y1 - inset, za), w(0, y1 - inset, zb), w(0, y0 + inset, zb)]);
+        doorPanels?.setAttribute('d', panel(dh * 0.93, dh * 0.56) + panel(dh * 0.49, dh * 0.09));
       }
 
-      // Capacity ghost — the same cutaway language the room uses (floor + the
-      // two faces away from the viewer) at the scaled footprint, flush with the
-      // open front and centered on the width. Purely decorative (pointer-events
-      // inherit none). Group visibility is owned by recompute().
-      //
-      // DEPTH: the ghost scales uniformly, so its body is either entirely inside
-      // the room (draw it in the in-front twin, over the floor and walls) or
-      // extends entirely beyond it (draw it in the behind-the-walls twin at
-      // [data-capg-back], so its bottom borders duck behind the back walls the
-      // way real depth demands). The inactive twin is blanked, not hidden — both
-      // groups' visibility belongs to recompute().
-      if (drawCap) {
-        const bodyG = gx0 < -1e-6 ? '[data-capg-back]' : '[data-capg]';
-        const idleG = gx0 < -1e-6 ? '[data-capg]' : '[data-capg-back]';
-        for (const f of ['floor', 'left', 'right']) setPoly(`${idleG} [data-cap="${f}"]`, []);
-        setPoly(`${bodyG} [data-cap="floor"]`, [w(gx0, gy0, 0), w(L, gy0, 0), w(L, gy1, 0), w(gx0, gy1, 0)]);
-        setPoly(`${bodyG} [data-cap="left"]`, [w(gx0, gy0, H), w(gx0, gy1, H), w(gx0, gy1, 0), w(gx0, gy0, 0)]);
-        setPoly(`${bodyG} [data-cap="right"]`, [w(gx0, gy0, H), w(L, gy0, H), w(L, gy0, 0), w(gx0, gy0, 0)]);
-        // Fill-less top face + near-corner vertical: the edges the three faces
-        // above don't cover, completing the box outline.
-        setPoly('[data-cap="top"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, gy1, H), w(gx0, gy1, H)]);
-        const capEdge = svg.querySelector<SVGLineElement>('[data-cap-edge]');
+      // The bedroom set — the bed's head against the back (y=0) wall. (The
+      // container is never hidden: it also holds the units. Each piece hides
+      // on its own, and none is placed in a degenerate room.)
+      vis(bedEls.g, lay.bedOn);
+      vis(rugEl, lay.rugOn);
+      if (lay.rugOn) {
+        const r = lay.rug;
+        setPts(rugEl, [w(r.x0, r.y0, 0), w(r.x1, r.y0, 0), w(r.x1, r.y1, 0), w(r.x0, r.y1, 0)]);
+      }
+      vis(nsEls[0].g, lay.nsLOn);
+      vis(nsEls[1].g, lay.nsROn);
+      if (lay.bedOn) {
+        const BR = BEDROOM;
+        const { x0, w: bw, d } = lay.bed;
+        const zf = BR.frameH, zm = zf + BR.mattH, zb = zm + 0.04, zd = zb - 0.9;
+        setBox(bedEls.head, w, x0 - 0.2, 0, 0, x0 + bw + 0.2, BR.headT, BR.headH);
+        setBox(bedEls.frame, w, x0, 0.3, 0, x0 + bw, d, zf);
+        setBox(bedEls.mattress, w, x0 + 0.1, 0.3, zf, x0 + bw - 0.1, d - 0.1, zm);
+        const pw = bw / 2 - 0.6;
+        setBox(bedEls.pillowL, w, x0 + 0.4, 0.5, zm, x0 + 0.4 + pw, 0.5 + BR.pillowD, zm + BR.pillowH);
+        setBox(bedEls.pillowR, w, x0 + bw / 2 + 0.2, 0.5, zm, x0 + bw / 2 + 0.2 + pw, 0.5 + BR.pillowD, zm + BR.pillowH);
+        // The blanket covers the lower two thirds and drapes over the foot and
+        // the right side, with a fold line just below its top edge.
+        const ba = x0 + 0.1, bb = x0 + bw - 0.1;
+        const by0 = 0.3 + (d - 0.4) * BR.blanketFrom, by1 = d - 0.1;
+        setPts(bedEls.blanketTop, [w(ba, by0, zb), w(bb, by0, zb), w(bb, by1, zb), w(ba, by1, zb)]);
+        setPts(bedEls.blanketFront, [w(ba, by1, zb), w(bb, by1, zb), w(bb, by1, zd), w(ba, by1, zd)]);
+        setPts(bedEls.blanketSide, [w(bb, by0, zb), w(bb, by1, zb), w(bb, by1, zd), w(bb, by0, zd)]);
+        bedEls.fold?.setAttribute('d', segD(w(ba, by0 + 0.5, zb), w(bb, by0 + 0.5, zb)));
+        // Nightstands: a drawer seam on the front, a lamp stem and shade on top.
+        const stands: [boolean, Rect][] = [[lay.nsLOn, lay.nsL], [lay.nsROn, lay.nsR]];
+        stands.forEach(([on, r], k) => {
+          if (!on) return;
+          const e = nsEls[k];
+          const zs = BR.nsH, zt = zs + BR.lampStemH;
+          const cx = (r.x0 + r.x1) / 2, cy = (r.y0 + r.y1) / 2;
+          const hs = BR.lampStem / 2, hh = BR.shade / 2;
+          setBox(e.box, w, r.x0, r.y0, 0, r.x1, r.y1, zs);
+          e.seam?.setAttribute('d', segD(w(r.x0 + 0.2, r.y1, zs - 0.7), w(r.x1 - 0.2, r.y1, zs - 0.7)));
+          setBox(e.stem, w, cx - hs, cy - hs, zs, cx + hs, cy + hs, zt);
+          setBox(e.shade, w, cx - hh, cy - hh, zt, cx + hh, cy + hh, zt + BR.shadeH);
+        });
+      }
+      // The area-gated pool: boxes by part, plus each piece's seam path.
+      for (const id of POOL_IDS) {
+        const p = lay.pieces[id], e = poolEls[id];
+        vis(e.g, !!p);
+        if (!p) continue;
+        for (const part of Object.keys(p.boxes)) setBox(e.box(part), w, ...p.boxes[part]);
+        e.seam?.setAttribute('d', p.seams.map(([a, b]) => segD(w(a[0], a[1], a[2]), w(b[0], b[1], b[2]))).join(''));
+      }
+      // Paint order. Pieces slide along their walls, so no fixed document order
+      // is right for every room: sort the visible ones back to front and
+      // re-append them — only when the order actually changes (drawScene runs
+      // every frame). For two disjoint footprints, A is BEHIND B when A ends
+      // before B starts along x with their y spans overlapping, or along y
+      // with their x spans overlapping; diagonal pairs cannot overlap on
+      // screen, so any order between them is right. A topological sort over
+      // that relation, ties broken by x+y of the centre.
+      const items: { el: SVGElement; r: Rect }[] = [];
+      if (lay.bedOn && bedEls.g) items.push({ el: bedEls.g, r: lay.bedRect });
+      if (lay.nsLOn && nsEls[0].g) items.push({ el: nsEls[0].g, r: lay.nsL });
+      if (lay.nsROn && nsEls[1].g) items.push({ el: nsEls[1].g, r: lay.nsR });
+      for (const id of POOL_IDS) {
+        const p = lay.pieces[id], el = poolEls[id].g;
+        if (p && el) items.push({ el, r: p.rect });
+      }
+      // The units sort with the furniture (same container), by footprint.
+      lay.cleaners.forEach((c, i) => {
+        const el = unitEls[i].g;
+        if (el) items.push({ el, r: c });
+      });
+      const order = depthOrder(items.map((it) => it.r)).map((k) => items[k].el);
+      const sig = order.map((el) => el.dataset.piece ?? `unit-${el.dataset.unitg}`).join(',');
+      if (furnG && sig !== pieceOrderSig) {
+        pieceOrderSig = sig;
+        for (const el of order) furnG.appendChild(el);
+      }
+
+      // Capacity ghost — floor + the two far faces, which lie on the wall planes,
+      // plus the fill-less top face and the near vertical edge that complete
+      // the box outline. Purely decorative (pointer-events inherit none). Group
+      // visibility: recompute() decides whether there is a ghost at all
+      // (capSTgt > 0); this also keeps both groups hidden until the eased scale
+      // is big enough to draw, so they never show a previous ghost's geometry
+      // or caption.
+      const capOn = drawCap && capSTgt > 0;
+      vis(capG, capOn);
+      vis(capLabel, capOn);
+      if (capOn) {
+        setPoly('[data-capg] [data-cap="floor"]', [w(0, 0, 0), w(gL, 0, 0), w(gL, gW, 0), w(0, gW, 0)]);
+        setPoly('[data-capg] [data-cap="left"]', [w(0, 0, H), w(0, gW, H), w(0, gW, 0), w(0, 0, 0)]);
+        setPoly('[data-capg] [data-cap="right"]', [w(0, 0, H), w(gL, 0, H), w(gL, 0, 0), w(0, 0, 0)]);
+        setPoly('[data-cap="top"]', [w(0, 0, H), w(gL, 0, H), w(gL, gW, H), w(0, gW, H)]);
+        const capEdge = el1('[data-cap-edge]');
         if (capEdge) {
-          const e0 = w(L, gy1, 0), e1 = w(L, gy1, H);
+          const e0 = w(gL, gW, 0), e1 = w(gL, gW, H);
           capEdge.setAttribute('x1', `${e0[0]}`); capEdge.setAttribute('y1', `${e0[1]}`);
           capEdge.setAttribute('x2', `${e1[0]}`); capEdge.setAttribute('y2', `${e1[1]}`);
         }
-        // Label just past the ghost's near corner (L, gy1) — its front edge on
-        // the open side — nudged down-right so it sits over open paper at any
-        // scale (the label itself paints above the room contents regardless).
-        // capLabelAt() owns the rest: that corner is a fit boundary, so the nudge
-        // alone would run the text off the band and under the pause control.
-        const [cx, cy] = w(L, gy1, 0);
-        const prefix = capClamped ? '≥' : '';
+        // Label just past the ghost's near corner (gL, gW), nudged down-right so
+        // it sits over open paper at any scale (the label itself paints above
+        // the room contents regardless). capLabelAt() owns the rest: that corner
+        // is a fit boundary, so the nudge alone would run the text off the band
+        // and under the pause control.
+        const [cx, cy] = w(gL, gW, 0);
         // Match the results card's unit toggle: ft² floor area (default) or ft³ volume.
         const capFt3 = raw('units') === 'ft3';
         const capText = capFt3 ? `${fmt(capMaxVol, 0)} ft³` : `${fmt(capMaxVol / 8, 0)} ft²`;
-        const capCaption = `covers a room up to ${prefix}${capText}`;
+        const capCaption = `covers a room up to ${capText}`;
         setLabel('capacity', capLabelAt(cx, cy, capCaption), capCaption);
       }
 
-      // Per cleaner: its cleaning-pulse group (rings lying on the floor) and its
-      // unit group (the box standing on the floor). Groups beyond n are hidden via
-      // style.visibility — NOT display: this scene toggles everything the same
-      // way, and a group that was ever display:none has bitten WebKit here before
-      // (it can come back unpainted). Visibility keeps the subtree live and the
-      // floor clip resolved. (An SVGGElement has no `.hidden`, so we set the style
-      // property directly.)
+      // Per cleaner: its clearance square, its waves and its unit. Slots past n
+      // are hidden (and their ring points blanked: visibility alone would leave
+      // last draw's stale points, which flash for a frame when the group comes
+      // back at a different room size).
+      // Unit detail in face units (FACE_U ft each): five grille slats on the
+      // lower half of the front and side faces, four vent lines on the top.
+      const cw = lay.cw;
+      const cu = cw / FACE_U, hu = ch / FACE_U;
+      let grilleD = '', ventD = '';
+      for (let k = 0; k < 5; k++) {
+        const x = (cu * (0.2 + 0.15 * k)).toFixed(2);
+        grilleD += `M${x},${(0.45 * hu).toFixed(2)}V${(0.88 * hu).toFixed(2)}`;
+      }
+      for (let k = 0; k < 4; k++) {
+        const y = (cu * (0.25 + k / 6)).toFixed(2);
+        ventD += `M${(0.21 * cu).toFixed(2)},${y}H${(0.79 * cu).toFixed(2)}`;
+      }
+      // Each wave starts just outside its unit (r0) and travels out to that
+      // unit's coverage radius at the target: the floor area one unit keeps at
+      // target is (its ACH share ÷ target) × L·W, so reach = √(that ÷ π). Floored
+      // so a weak unit still shows a ripple, capped so a strong one stays a
+      // local radius (the room clip trims whatever overruns the walls).
+      const r0 = cw;   // one unit-width out: the first ring clears the unit's own top face
+      const reachLo = Math.max(2.5, r0 + 1), reachHi = 0.6 * Math.max(L, W);
       ringDefs.length = 0;
       for (let i = 0; i < MAX_CLEANERS; i++) {
-        const ringsG = svg.querySelector<SVGGElement>(`.smaqmd-cityview__rings[data-rings="${i + 1}"]`);
-        const unitG = svg.querySelector<SVGGElement>(`.smaqmd-cityview__unitg[data-unitg="${i + 1}"]`);
+        const u = unitEls[i];
         const on = i < n;
-        if (ringsG) ringsG.style.visibility = on ? '' : 'hidden';
-        if (unitG) unitG.style.visibility = on ? '' : 'hidden';
+        vis(ringGroups[i], on);
+        vis(u.g, on);
+        vis(clearEls[i], on);
         if (!on) {
-          // Blank as well as hide: visibility alone would leave last draw's stale
-          // points on the ring polygons, which flash for a frame when the group
-          // comes back at a different room size.
           ringDefs[i] = null;
           (ringPolys[i] || []).forEach((p) => p.setAttribute('points', ''));
           continue;
         }
         const c = cleaners[i];
+        // The clearance square, trimmed to the floor.
+        const r = lay.clear[i];
+        const qx0 = Math.max(0, r.x0), qy0 = Math.max(0, r.y0);
+        const qx1 = Math.min(L, r.x1), qy1 = Math.min(W, r.y1);
+        setPts(clearEls[i], [w(qx0, qy0, 0), w(qx1, qy0, 0), w(qx1, qy1, 0), w(qx0, qy1, 0)]);
 
-        // The cleaning pulse's geometry, cached for the animation tick. Center is
-        // the unit's footprint center; the pulse starts just outside the box
-        // (0.75 × its width, so the first ring reads as leaving the unit rather
-        // than being drawn on it) and travels out to rMax. rMax is a share of the
-        // room's SHORT side, floored so a tiny room still shows a ripple and
-        // capped so a huge room's pulse stays a local radius rather than a
-        // room-spanning ring — the floor clip trims whatever overruns the walls.
-        const cw = c.x1 - c.x0;
         const ucx = (c.x0 + c.x1) / 2, ucy = (c.y0 + c.y1) / 2;
-        const r0 = 0.75 * cw;
-        const rMax = Math.max(r0 + 0.5, Math.min(7, Math.max(2.5, 0.45 * Math.min(L, W))));
+        const share = laneAch[i] > 0 && sceneTarget > 0 ? laneAch[i] / sceneTarget : 0;
+        const rMax = clamp(Math.sqrt((share * L * W) / Math.PI), reachLo, reachHi);
         // The projection is linear, so a world circle maps to an exact ellipse and
         // the two unit-foot basis vectors below capture it completely — one
         // subtraction each, once per cleaner per draw, instead of re-projecting
-        // 84 ring points.
-        const [bx, by] = w(ucx, ucy, 0);
-        const [exx, exy] = w(ucx + 1, ucy, 0);
-        const [fyx, fyy] = w(ucx, ucy + 1, 0);
+        // every ring point.
+        const [bx, by] = w(ucx, ucy, ch);
+        const [exx, exy] = w(ucx + 1, ucy, ch);
+        const [fyx, fyy] = w(ucx, ucy + 1, ch);
         ringDefs[i] = {
           cx: bx, cy: by,
           ex: exx - bx, ey: exy - by,
@@ -2770,19 +3240,23 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           r0, rMax,
         };
 
-        // Air-cleaner unit — same three faces, appliance-sized, on the floor.
-        const setUnitG = (sel: string, pts: Pt[]) => {
-          const el = unitG?.querySelector(sel);
-          if (el) el.setAttribute('points', ptsAttr(pts));
-        };
-        setUnitG('[data-unit="top"]', [w(c.x0, c.y0, c.h), w(c.x1, c.y0, c.h), w(c.x1, c.y1, c.h), w(c.x0, c.y1, c.h)]);
-        setUnitG('[data-unit="left"]', [w(c.x0, c.y1, c.h), w(c.x1, c.y1, c.h), w(c.x1, c.y1, 0), w(c.x0, c.y1, 0)]);
-        setUnitG('[data-unit="right"]', [w(c.x1, c.y0, c.h), w(c.x1, c.y1, c.h), w(c.x1, c.y1, 0), w(c.x1, c.y0, 0)]);
+        // The unit: three faces, then the face-local detail groups.
+        setBox(u.faces, w, c.x0, c.y0, 0, c.x1, c.y1, ch);
+        u.front?.setAttribute('transform', faceMatrix(w, [c.x0, c.y1, ch], [1, 0, 0], [0, 0, -1]));
+        u.side?.setAttribute('transform', faceMatrix(w, [c.x1, c.y1, ch], [0, -1, 0], [0, 0, -1]));
+        u.top?.setAttribute('transform', faceMatrix(w, [c.x0, c.y0, ch], [1, 0, 0], [0, 1, 0]));
+        u.grilleF?.setAttribute('d', grilleD);
+        u.grilleS?.setAttribute('d', grilleD);
+        u.vent?.setAttribute('d', ventD);
+        if (u.tag) {
+          u.tag.setAttribute('x', (cu / 2).toFixed(2));
+          u.tag.setAttribute('y', (0.3 * hu).toFixed(2));
+          u.tag.setAttribute('font-size', Math.max(1, 4.2 * cw).toFixed(2));
+        }
       }
 
-      // Dimension labels around the room's LEFT-front corner (0,W) — away from
-      // the cleaners on the right, so nothing collides. Length rides the FRONT
-      // FLOOR EDGE, the open side of the cutaway.
+      // Dimension labels around the room's LEFT-front corner (0,W). Length rides
+      // the FRONT FLOOR EDGE, the open side of the cutaway.
       // Text reads the TRUE feet (drawn × labelK) — identical to the drawn value
       // unless SCENE_MAX has clamped the box.
       const [lx, ly] = mid(w(0, W, 0), w(L, W, 0)); setLabel('length', [lx - 4, ly + 20], `${fmt(L * labelK.L, 1)} ft`);
@@ -2796,14 +3270,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // visible knob at the edge midpoint. Positioned every draw so they track
       // the morphing room.
       const HANDLE_DEG: Record<string, number> = { length: 30, width: 150, height: 90 };
-      const setLine = (dim: string, p: Pt, q: Pt) => {
-        const line = svg.querySelector(`.smaqmd-cityview__hit[data-grip="${dim}"]`);
+      const setLine = (dim: string, p: Pt, q2: Pt) => {
+        const line = el1(`.smaqmd-cityview__hit[data-grip="${dim}"]`);
         if (line) {
           line.setAttribute('x1', p[0].toFixed(1)); line.setAttribute('y1', p[1].toFixed(1));
-          line.setAttribute('x2', q[0].toFixed(1)); line.setAttribute('y2', q[1].toFixed(1));
+          line.setAttribute('x2', q2[0].toFixed(1)); line.setAttribute('y2', q2[1].toFixed(1));
         }
-        const [mx, my] = mid(p, q);
-        const handle = svg.querySelector(`.smaqmd-cityview__handle[data-grip="${dim}"]`);
+        const [mx, my] = mid(p, q2);
+        const handle = el1(`.smaqmd-cityview__handle[data-grip="${dim}"]`);
         if (handle) handle.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${HANDLE_DEG[dim]})`);
       };
       // All three edges survive the cutaway: length is the front floor edge, width
@@ -2812,13 +3286,24 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       setLine('width', w(0, 0, H), w(0, W, H)); // left wall top edge, meets top of height
       setLine('height', w(0, W, 0), w(0, W, H));
 
-      // Repaint the pulse from the bases just cached. Doing it HERE rather than
-      // only in the rAF tick is what keeps the rings correct on the draws that
-      // aren't part of the animation — the initial render, and the re-fit after a
+      // Repaint the waves from the bases just cached. Doing it HERE rather than
+      // only in the rAF tick is what keeps them correct on the draws that aren't
+      // part of the animation — the initial render, and the re-fit after a
       // resize (which under prefers-reduced-motion is the only draw there is, and
       // would otherwise leave rings sitting at the previous fit's coordinates).
       paintRings();
+      drawKey = sceneKey(L, W, H);
     };
+    // Everything drawScene's output depends on besides the wave phase. While it
+    // is unchanged (a settled room with the waves running), frame() repaints
+    // only the rings instead of re-laying and re-projecting the whole scene.
+    let drawKey = '';
+    const sceneKey = (L: number, W: number, H: number) => [
+      L, W, H, sceneN, capS, capSTgt, capMaxVol, sceneTarget,
+      safe.x, safe.y, safe.w, safe.h, viewW, viewH,
+      pauseBox ? `${pauseBox.x},${pauseBox.y},${pauseBox.w},${pauseBox.h}` : '',
+      labelK.L, labelK.W, labelK.H, laneAch.join('/'), raw('units'),
+    ].join('|');
 
     // ---- animation loop: room morph + the cleaning pulse on each cleaner ----
     // Time scale: HOUR_SECONDS of wall-clock = one hour. ONE RING travelling from
@@ -2841,10 +3326,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     let capS = 0;
     let capSTgt = 0;
     let capMaxVol = 0;      // true (un-clamped) largest coverable volume, for the label
-    let capClamped = false; // whether the drawn scale hit the 3× clamp
     const capG = svg.querySelector<SVGGElement>('[data-capg]');
-    // The behind-the-walls twin (see the markup note) — same lockstep visibility.
-    const capGBack = svg.querySelector<SVGGElement>('[data-capg-back]');
     // The ghost's upper outline (top face + near vertical) and caption are a
     // sibling group drawn after the room contents (see the markup note) —
     // shown/hidden in lockstep with capG.
@@ -2863,7 +3345,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     let last = 0;
     // Where each cleaner's pulse sits in its cycle, 0…1. One full cycle is one air
     // change for THAT cleaner; ring k rides k/RING_COUNT ahead of the phase, which
-    // is what keeps the three ripples evenly spaced no matter the cadence.
+    // is what keeps the four waves evenly spaced no matter the cadence.
     const ringPhase = new Array<number>(MAX_CLEANERS).fill(0);
     const animating = () => stateNow !== 'idle' && !pulsePaused;
 
@@ -2896,7 +3378,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             );
           }
           poly.setAttribute('points', pts.join(' '));
-          poly.setAttribute('stroke-opacity', (0.55 * (1 - p)).toFixed(2));
+          poly.setAttribute('stroke-opacity', (0.85 * Math.pow(1 - p, 1.2)).toFixed(3));
         }
       }
     };
@@ -2938,7 +3420,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // A crossing into narrow can land mid-loop; drop out on the next tick
       // rather than waiting for the morph to finish against a hidden scene.
       if (!sceneLive) { running = false; return; }
-      const dt = Math.min(0.05, (ts - last) / 1000 || 0);
+      // Clamped at 0 too: a rAF timestamp can precede the performance.now()
+      // startLoop() took, and a negative dt makes the lerp factor negative and
+      // the morph diverge.
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000 || 0));
       last = ts;
 
       // Ease the room toward the entered dimensions, and the capacity ghost's
@@ -2959,8 +3444,10 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Advance the pulse BEFORE drawing: drawScene re-caches each cleaner's ring
       // bases for the room's current size and then repaints from them, so this
       // order paints this tick's phase against this tick's geometry.
+      // Nothing but the phase has moved → repaint only the rings.
       updateRings(dt);
-      drawScene(cur.L, cur.W, cur.H);
+      if (sceneKey(cur.L, cur.W, cur.H) !== drawKey) drawScene(cur.L, cur.W, cur.H);
+      else paintRings();
 
       if (morphing || animating()) requestAnimationFrame(frame);
       else running = false;
@@ -3387,6 +3874,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       const cleanerCount = hasCleaners() ? Math.max(1, blocks.length) : 1;
       sceneN = Math.min(Math.max(1, blocks.length), MAX_CLEANERS);
       const target = pos('target') || 2;
+      sceneTarget = target;
       setReadout('target', fmt(target, 2));
       // A target of 0 (or less) is not a real goal — it's blocked (invalid). A
       // positive target below the CARB-recommended 2 is allowed but flagged.
@@ -3443,10 +3931,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         capMaxVol = (flow * 60) / target;
         const s = Math.sqrt(capMaxVol / vol);
         capSTgt = Math.min(s, 3);
-        capClamped = s > 3;
         container.dataset.capCompare = capMaxVol >= vol ? 'bigger' : 'smaller';
         if (capG) capG.style.visibility = '';
-        if (capGBack) capGBack.style.visibility = '';
         if (capLabel) capLabel.style.visibility = '';
       } else if (shopPreview) {
         // Shop mode: the ghost is the RECOMMENDED setup's coverage, and the
@@ -3464,16 +3950,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         // equivalent area rather than its literal footprint.)
         capMaxVol = vol;
         capSTgt = 1;
-        capClamped = false;
         container.dataset.capCompare = 'bigger';
         if (capG) capG.style.visibility = '';
-        if (capGBack) capGBack.style.visibility = '';
         if (capLabel) capLabel.style.visibility = '';
       } else {
         capSTgt = 0;
-        capClamped = false;
+        // No ghost → nothing to compare against, so the room un-fades.
+        container.dataset.capCompare = 'bigger';
         if (capG) capG.style.visibility = 'hidden';
-        if (capGBack) capGBack.style.visibility = 'hidden';
         if (capLabel) capLabel.style.visibility = 'hidden';
       }
 

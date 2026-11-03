@@ -9,6 +9,7 @@
 .smaqmd-aerb {
   --smaqmd-brand-2: #f4f9fb;
   --smaqmd-brand-3: #e5f0f5;
+  --smaqmd-brand-4: #d5e8f1;
   --smaqmd-brand-6: #a8cade;
   --smaqmd-brand-9: #0073b2;
   --smaqmd-brand-10: #076ea9;
@@ -30,6 +31,7 @@
   --smaqmd-gray-6: #d9d9d9;
   --smaqmd-gray-7: #cecece;
   --smaqmd-gray-8: #bbbbbb;
+  --smaqmd-gray-9: #8d8d8d;
   --smaqmd-gray-11: #646464;
   --smaqmd-gray-12: #121212;
 
@@ -42,6 +44,7 @@
   --color-content-brand: var(--smaqmd-brand-11);
   --color-content-link: var(--smaqmd-brand-11);
   --color-content-on-brand-muted: var(--smaqmd-brand-12);
+  --color-content-on-brand: var(--smaqmd-gray-1);
 
   --color-content-default: var(--smaqmd-gray-12);
   --color-content-default-secondary: var(--smaqmd-gray-11);
@@ -1105,8 +1108,12 @@
   stroke-width: 1;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__win[data-win-r] {
-  fill: color-mix(in srgb, var(--color-background-brand) 15%, transparent);
+.smaqmd-aerb .smaqmd-cityview__mull,
+.smaqmd-aerb .smaqmd-cityview__door-line,
+.smaqmd-aerb .smaqmd-cityview__seam {
+  fill: none;
+  stroke: var(--color-border-default);
+  stroke-width: 1;
 }
 .smaqmd-aerb .smaqmd-cityview__door {
   fill: color-mix(in srgb, var(--smaqmd-gray-6) 85%, transparent);
@@ -1114,34 +1121,80 @@
   stroke-width: 1;
   stroke-linejoin: round;
 }
+.smaqmd-aerb .smaqmd-cityview__board {
+  fill: none;
+  stroke: color-mix(in srgb, var(--smaqmd-gray-7) 60%, transparent);
+  stroke-width: 1;
+}
 .smaqmd-aerb .smaqmd-cityview__rug {
   fill: color-mix(in srgb, var(--color-background-brand) 7%, transparent);
   stroke: color-mix(in srgb, var(--color-background-brand) 25%, transparent);
   stroke-width: 1;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__furn-face {
+.smaqmd-aerb .smaqmd-cityview__wood,
+.smaqmd-aerb .smaqmd-cityview__stem,
+.smaqmd-aerb .smaqmd-cityview__fabric,
+.smaqmd-aerb .smaqmd-cityview__sheet,
+.smaqmd-aerb .smaqmd-cityview__shade {
   stroke: var(--color-border-default);
   stroke-width: 1;
   stroke-linejoin: round;
 }
-.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="top"] {
-  fill: color-mix(
-    in srgb,
-    var(--color-background-elevation-raised) 96%,
-    transparent
-  );
+.smaqmd-aerb .smaqmd-cityview__wood[data-face="top"] {
+  fill: var(--smaqmd-gray-4);
 }
-.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="left"] {
+.smaqmd-aerb .smaqmd-cityview__wood[data-face="left"] {
+  fill: var(--smaqmd-gray-5);
+}
+.smaqmd-aerb .smaqmd-cityview__wood[data-face="right"] {
+  fill: var(--smaqmd-gray-6);
+}
+.smaqmd-aerb .smaqmd-cityview__stem[data-face="top"],
+.smaqmd-aerb .smaqmd-cityview__fabric[data-face="top"] {
+  fill: color-mix(in srgb, var(--smaqmd-gray-1) 96%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__stem[data-face="left"],
+.smaqmd-aerb .smaqmd-cityview__fabric[data-face="left"] {
   fill: color-mix(in srgb, var(--smaqmd-gray-4) 92%, transparent);
 }
-.smaqmd-aerb .smaqmd-cityview__furn-face[data-furn-face="right"] {
+.smaqmd-aerb .smaqmd-cityview__stem[data-face="right"],
+.smaqmd-aerb .smaqmd-cityview__fabric[data-face="right"] {
   fill: color-mix(in srgb, var(--smaqmd-gray-5) 92%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__sheet,
+.smaqmd-aerb .smaqmd-cityview__shade {
+  fill: var(--color-background-elevation-raised);
+}
+.smaqmd-aerb .smaqmd-cityview__blanket {
+  fill: var(--smaqmd-brand-4);
+  stroke: var(--smaqmd-brand-6);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.smaqmd-aerb .smaqmd-cityview__blanket-side {
+  fill: color-mix(in srgb, var(--smaqmd-brand-6) 70%, var(--smaqmd-brand-4));
+  stroke: var(--smaqmd-brand-6);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.smaqmd-aerb .smaqmd-cityview__fold {
+  fill: none;
+  stroke: var(--smaqmd-brand-6);
+  stroke-width: 1;
 }
 .smaqmd-aerb
   .smaqmd-cityview[data-cap-compare="smaller"]
   .smaqmd-cityview__details {
   opacity: 0.45;
+}
+
+.smaqmd-aerb .smaqmd-cityview__clear {
+  fill: none;
+  stroke: var(--smaqmd-gray-9);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
 }
 
 .smaqmd-aerb .smaqmd-cityview__unit-face {
@@ -1214,6 +1267,26 @@
   .smaqmd-cityview[data-state="fail"]
   .smaqmd-cityview__unit-face[data-unit="right"] {
   fill: var(--color-orange-10);
+}
+.smaqmd-aerb .smaqmd-cityview__grille,
+.smaqmd-aerb .smaqmd-cityview__vent {
+  fill: none;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.smaqmd-aerb .smaqmd-cityview__grille {
+  stroke: color-mix(in srgb, var(--color-content-on-brand) 50%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__vent {
+  stroke: color-mix(in srgb, var(--color-content-on-brand) 80%, transparent);
+}
+.smaqmd-aerb .smaqmd-cityview__tag {
+  fill: var(--color-content-on-brand);
+  font-weight: var(--typography-font-weight-semibold);
+  font-family: var(--typography-font-family-sans);
+}
+.smaqmd-aerb .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__tag {
+  fill: var(--color-content-on-utility-warning);
 }
 
 .smaqmd-aerb .smaqmd-cityview__dim {

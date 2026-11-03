@@ -158,31 +158,23 @@
   var viewW = 480;
   var viewH = 380;
   var safe = { x: 52, y: 52, w: 376, h: 276 };
-  var MAX_SCALE = 12;
+  var MAX_SCALE = 24;
   var SCENE_MAX = 60;
   var SCENE_MAX_H = 20;
   var labelK = { L: 1, W: 1, H: 1 };
-  var CW_MAX = 2.6;
-  var CW_MIN = 1.4;
+  var CW_BASE = 1.4;
+  var CW_HARD_MAX = 2.4;
   var UNIT_MIN_PX = 22;
-  var CLEANER_STRIP = 3.8;
   var WALL_T = 0.35;
   var FLOOR_D = 0.35;
   var sceneSentinel = root.querySelector('[data-safe]');
   var sentinel = sceneSentinel || document.createElement('div');
   var hasScene = !!(sceneSvg && sceneStage && sceneSentinel);
-  // The pulse's pause/play control, queried HERE rather than in the toggle section
-  // below: it floats over the stage's lower-right corner, which is exactly where
-  // the capacity caption lands, so syncViewport must be able to measure it. The
-  // toggle wiring further down reuses this reference.
+
   var pulseToggle = root.querySelector('[data-pulse-toggle]');
-  // …its rect in STAGE coordinates, refreshed by syncViewport. Same contract as
-  // `safe`: CSS owns where the button sits (and at which breakpoint), JS only
-  // measures. null = not rendered, so no keep-out.
+
   var pauseBox = null;
-  // Half of the ghost's dashed outline paints OUTSIDE the corner points the fit is
-  // handed, so computeFit gives that half back on every side. Read off the
-  // rendered stroke rather than typed, so the CSS stays the single source.
+
   var capStrokeEl = svg.querySelector('[data-cap="top"]');
   var capStroke = capStrokeEl ? parseFloat(getComputedStyle(capStrokeEl).strokeWidth) || 0 : 0;
   var isResponsive = root.getAttribute('data-variant') === 'responsive';
@@ -196,10 +188,7 @@
     var s = sentinel.getBoundingClientRect();
     var c = container.getBoundingClientRect();
     safe = { x: s.left - c.left, y: s.top - c.top, w: s.width, h: s.height };
-    // The button's box, in the same stage coordinates — measured on re-layout only
-    // (never per frame): its position is CSS, and CSS only moves it when the
-    // breakpoint does, which is a resize. A zero rect means it is not being
-    // rendered, which is no keep-out at all.
+
     var p = pulseToggle ? pulseToggle.getBoundingClientRect() : null;
     pauseBox =
       p && p.width ? { x: p.left - c.left, y: p.top - c.top, w: p.width, h: p.height } : null;
@@ -210,9 +199,10 @@
   }
 
   var ringDefs = [];
-  var RING_COUNT = 3;
+  var RING_COUNT = 4;
   var RING_STEPS = 28;
   var sceneN = 1;
+  var sceneTarget = 2;
   var MAX_CLEANERS = 4;
   var ringPolys = [];
   for (var rp = 0; hasScene && rp < MAX_CLEANERS; rp++) {
@@ -230,12 +220,17 @@
       })
       .join(' ');
   };
+  var elCache = {};
+  var el1 = function (sel) {
+    if (!Object.prototype.hasOwnProperty.call(elCache, sel)) elCache[sel] = svg.querySelector(sel);
+    return elCache[sel];
+  };
   var setPoly = function (sel, pts) {
-    var el = svg.querySelector(sel);
+    var el = el1(sel);
     if (el) el.setAttribute('points', ptsAttr(pts));
   };
   var setLabel = function (name, at, text) {
-    var el = svg.querySelector('[data-label="' + name + '"]');
+    var el = el1('[data-label="' + name + '"]');
     if (!el) return;
     el.setAttribute('x', at[0].toFixed(1));
     el.setAttribute('y', at[1].toFixed(1));
@@ -245,239 +240,498 @@
     return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
   };
 
-  var detailsG = svg.querySelector('[data-room-details]');
-  var furnG = svg.querySelector('[data-furniture]');
-  var furnBackG = svg.querySelector('[data-furniture-back]');
-  var furnLayerSig = '';
-  var setDetail = function (sel, on, pts) {
-    var el = svg.querySelector(sel);
-    if (!el) return;
-    el.style.visibility = on ? '' : 'hidden';
-    if (on && pts) el.setAttribute('points', ptsAttr(pts));
+  var q = function (sel) {
+    return svg.querySelector(sel);
+  };
+  var vis = function (el, on) {
+    if (el) el.style.visibility = on ? '' : 'hidden';
+  };
+  var setPts = function (el, pts) {
+    if (el) el.setAttribute('points', ptsAttr(pts));
+  };
+  var FACE_IDS = ['top', 'left', 'right'];
+  var boxEls = function (scope) {
+    return FACE_IDS.map(function (f) {
+      return q(scope + ' [data-face="' + f + '"]');
+    });
+  };
+  var detailsG = q('[data-room-details]');
+  var furnG = q('[data-furniture]');
+  var waveClip = q('[data-wave-clip]');
+  var winEls = function (side) {
+    return {
+      g: q('[data-win="' + side + '"]'),
+      pane: q('[data-win="' + side + '"] [data-win-pane]'),
+      mull: q('[data-win="' + side + '"] [data-win-mull]'),
+    };
+  };
+  var winBack = winEls('back');
+  var winLeft = winEls('left');
+  var doorG = q('[data-door]');
+  var doorLeaf = q('[data-door-leaf]');
+  var doorPanels = q('[data-door-panels]');
+  var boardsEl = q('[data-boards]');
+  var rugEl = q('[data-rug]');
+  var bedEls = {
+    g: q('[data-piece="bed"]'),
+    head: boxEls('[data-box="headboard"]'),
+    frame: boxEls('[data-box="frame"]'),
+    mattress: boxEls('[data-box="mattress"]'),
+    pillowL: boxEls('[data-box="pillow-l"]'),
+    pillowR: boxEls('[data-box="pillow-r"]'),
+    blanketTop: q('[data-blanket="top"]'),
+    blanketFront: q('[data-blanket="front"]'),
+    blanketSide: q('[data-blanket="side"]'),
+    fold: q('[data-fold]'),
+  };
+  var POOL_IDS = ['dresser', 'plant', 'bookshelf', 'desk', 'chair', 'armchair', 'wardrobe', 'sofa', 'table'];
+  var poolEls = {};
+  POOL_IDS.forEach(function (id) {
+    var at = '[data-piece="' + id + '"]';
+    var parts = {};
+    var partEls = svg.querySelectorAll(at + ' [data-box]');
+    for (var pi = 0; pi < partEls.length; pi++) {
+      var part = partEls[pi].getAttribute('data-box');
+      parts[part] = boxEls(at + ' [data-box="' + part + '"]');
+    }
+    poolEls[id] = {
+      g: q(at),
+      seam: q(at + ' [data-seam]'),
+      box: function (name) {
+        return parts[name] || [];
+      },
+    };
+  });
+  var nsEls = ['l', 'r'].map(function (s) {
+    var at = '[data-piece="ns-' + s + '"]';
+    return {
+      g: q(at),
+      box: boxEls(at + ' [data-box="ns"]'),
+      seam: q(at + ' [data-seam]'),
+      stem: boxEls(at + ' [data-box="stem"]'),
+      shade: boxEls(at + ' [data-box="shade"]'),
+    };
+  });
+  var clearEls = [1, 2, 3, 4].map(function (i) {
+    return q('[data-clear="' + i + '"]');
+  });
+  var ringGroups = [1, 2, 3, 4].map(function (i) {
+    return q('.smaqmd-cityview__rings[data-rings="' + i + '"]');
+  });
+  var unitEls = [1, 2, 3, 4].map(function (i) {
+    var at = '[data-unitg="' + i + '"]';
+    return {
+      g: q(at),
+      faces: [q(at + ' [data-unit="top"]'), q(at + ' [data-unit="left"]'), q(at + ' [data-unit="right"]')],
+      front: q(at + ' [data-unit-face="front"]'),
+      side: q(at + ' [data-unit-face="side"]'),
+      top: q(at + ' [data-unit-face="top"]'),
+      grilleF: q(at + ' [data-unit-face="front"] [data-grille]'),
+      grilleS: q(at + ' [data-unit-face="side"] [data-grille]'),
+      vent: q(at + ' [data-vent]'),
+      tag: q(at + ' [data-tag]'),
+    };
+  });
+
+  var setBox = function (els, w, x0, y0, z0, x1, y1, z1) {
+    if (!els) return;
+    setPts(els[0], [w(x0, y0, z1), w(x1, y0, z1), w(x1, y1, z1), w(x0, y1, z1)]);
+    setPts(els[1], [w(x0, y1, z1), w(x1, y1, z1), w(x1, y1, z0), w(x0, y1, z0)]);
+    setPts(els[2], [w(x1, y0, z1), w(x1, y1, z1), w(x1, y1, z0), w(x1, y0, z0)]);
+  };
+  var xy = function (p) {
+    return p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  };
+  var segD = function (a, b) {
+    return 'M' + xy(a) + 'L' + xy(b);
+  };
+  var quadD = function (pts) {
+    return 'M' + pts.map(xy).join('L') + 'Z';
+  };
+  var FACE_U = 0.1;
+  var faceMatrix = function (w, o, u, v) {
+    var p = w(o[0], o[1], o[2]);
+    var pu = w(o[0] + u[0] * FACE_U, o[1] + u[1] * FACE_U, o[2] + u[2] * FACE_U);
+    var pv = w(o[0] + v[0] * FACE_U, o[1] + v[1] * FACE_U, o[2] + v[2] * FACE_U);
+    return (
+      'matrix(' +
+      (pu[0] - p[0]).toFixed(4) + ' ' + (pu[1] - p[1]).toFixed(4) + ' ' +
+      (pv[0] - p[0]).toFixed(4) + ' ' + (pv[1] - p[1]).toFixed(4) + ' ' +
+      p[0].toFixed(2) + ' ' + p[1].toFixed(2) + ')'
+    );
   };
 
-  var layoutCleaners = function (L, W, n, cwOpt) {
-    var cwBase = Math.min(Math.max(Math.min(L, W) * 0.16, CW_MIN), CW_MAX);
-    var cw = Math.min(cwOpt == null ? cwBase : cwOpt, W * 0.55, 3.2);
-    if (n >= 3) cw = Math.min(cw, W * 0.28 >= 2 ? W * 0.28 : W * 0.35 - 0.5);
-    if (n >= 2) cw = Math.min(cw, (L - 2.4) / 2);
-    cw = Math.max(cw, 0.2);
-    var ch = cw * 1.5;
-    var g = Math.max(1, cw * 0.5);
-    var slot = cw / 2 + g / 2;
-    var frontPair = n >= 3;
-    var backPair = n >= 4;
-    var out = [];
-    for (var k = 0; k < n; k++) {
-      var side = k % 2 === 0 ? 'front' : 'back';
-      var paired = side === 'front' ? frontPair : backPair;
-      var cyc = !paired ? W / 2 : W / 2 + (k < 2 ? -slot : slot);
-      var x0 = side === 'front' ? L - 1.2 - cw : 0.6;
-      out.push({
-        x0: x0,
-        y0: cyc - cw / 2,
-        x1: x0 + cw,
-        y1: cyc + cw / 2,
-        h: ch,
-        side: side,
-      });
-    }
-    return out;
+  var BEDROOM = {
+    bedW: 5.0, bedD: 6.7, bedMinW: 3, bedMinD: 4.5, headT: 0.3, headH: 3.4, frameH: 1.0, mattH: 0.7,
+    pillowD: 1.0, pillowH: 0.3, blanketFrom: 0.33, ns: 1.4, nsH: 1.8, lampStem: 0.3, lampStemH: 0.7,
+    shade: 0.8, shadeH: 0.6, doorW: 2.8, doorFrom: 3.6, doorTo: 0.8, winBackInset: 0.8, winSideW: 3.4,
+    winSill: 3.8, winH: 3.4, clr: 1, board: 1,
+    dresser: { w: 3.6, d: 1.6, h: 2.7, area: 140 },
+    plant: { pot: 1.2, potH: 1.0, crown: 1.4, crownH: 1.6, area: 200 },
+    bookshelf: { w: 1.1, d: 3.2, h: 5.6, area: 220 },
+    desk: { w: 3.2, d: 1.6, h: 2.5, area: 280 },
+    chair: { w: 1.4, d: 1.4, h: 1.6, seatH: 0.9, back: 0.3 },
+    armchair: { w: 1.9, d: 1.9, h: 2.4, seatH: 1.4, back: 0.8, area: 340 },
+    wardrobe: { w: 2.4, d: 4.0, h: 6.4, area: 420 },
+    sofa: { w: 2.4, d: 6.0, h: 2.6, seatH: 1.4, back: 0.8, area: 520 },
+    table: { w: 1.6, d: 3.0, h: 1.4, gap: 1.0 },
   };
-  var backZone = function (cls) {
-    var M = 0.6;
-    var x1 = -Infinity;
-    var y0 = Infinity;
-    var y1 = -Infinity;
-    var any = false;
-    for (var i = 0; i < cls.length; i++) {
-      if (cls[i].side !== 'back') continue;
-      any = true;
-      if (cls[i].x1 > x1) x1 = cls[i].x1;
-      if (cls[i].y0 < y0) y0 = cls[i].y0;
-      if (cls[i].y1 > y1) y1 = cls[i].y1;
-    }
-    if (!any) return null;
-    return { x0: 0, x1: x1 + M, y0: y0 - M, y1: y1 + M };
-  };
-
-  var WIN_POOL = 2;
-  var WIN_W = 3.0;
-  var FURN_DEFS = [
-    { fx: 0.12, fy: 0.06, sx: 3.6, sy: 1.5, h: 2.7, minArea: 90, snap: 'y' },
-    { fx: 0.05, fy: 0.28, sx: 1.1, sy: 3.2, h: 5.6, minArea: 0, snap: 'x' },
-    { fx: 0.42, fy: 0.06, sx: 6.4, sy: 5.0, h: 1.7, minArea: 0, snap: 'y' },
-    { fx: 0.72, fy: 0.06, sx: 3.2, sy: 1.6, h: 2.5, minArea: 260, snap: 'y' },
-    { fx: 0.05, fy: 0.74, sx: 1.4, sy: 1.4, h: 2.1, minArea: 140, snap: 'x' },
-    { fx: 0.1, fy: 0.9, sx: 1.1, sy: 1.1, h: 3.0, minArea: 220 },
-    { fx: 0.7, fy: 0.86, sx: 1.9, sy: 1.9, h: 2.4, minArea: 320 },
-  ];
-  var WALL_ORDER = [2, 0, 3];
-  var RUG = { fx: 0.46, fy: 0.4, sx: 8.0, sy: 6.5, minArea: 150 };
   var clamp = function (v, lo, hi) {
     return Math.max(Math.min(v, hi), lo);
   };
-  var winCenters = function (span0, span1, n) {
-    var S = span1 - span0;
-    if (n < 1 || S < WIN_W) return [];
+  var inside = function (v, lo, hi) {
+    return lo > hi ? (lo + hi) / 2 : clamp(v, lo, hi);
+  };
+  var OFFS = [0, 1, -1, 2, -2, 3, -3, 4, -4, 6, -6];
+  var RING = [];
+  OFFS.forEach(function (dx) {
+    OFFS.forEach(function (dy) {
+      RING.push([dx, dy]);
+    });
+  });
+  RING.sort(function (a, b) {
+    return Math.sqrt(a[0] * a[0] + a[1] * a[1]) - Math.sqrt(b[0] * b[0] + b[1] * b[1]);
+  });
+  var overlaps = function (a, b) {
+    return a.x0 < b.x1 - 1e-6 && a.x1 > b.x0 + 1e-6 && a.y0 < b.y1 - 1e-6 && a.y1 > b.y0 + 1e-6;
+  };
+  var depthOrder = function (rs) {
+    var behind = function (a, b) {
+      return (
+        (a.x1 <= b.x0 + 1e-6 && a.y0 < b.y1 - 1e-6 && b.y0 < a.y1 - 1e-6) ||
+        (a.y1 <= b.y0 + 1e-6 && a.x0 < b.x1 - 1e-6 && b.x0 < a.x1 - 1e-6)
+      );
+    };
+    var key = function (r) {
+      return r.x0 + r.x1 + r.y0 + r.y1;
+    };
+    var left = rs.map(function (_, i) {
+      return i;
+    });
     var out = [];
-    for (var i = 0; i < n; i++) out.push(span0 + (S * (i + 0.5)) / n);
+    var isReady = function (i) {
+      return !left.some(function (j) {
+        return j !== i && behind(rs[j], rs[i]);
+      });
+    };
+    var nearer = function (a, b) {
+      return key(rs[b]) < key(rs[a]) ? b : a;
+    };
+    while (left.length) {
+      var ready = left.filter(isReady);
+      var pool = ready.length ? ready : left;
+      var pick = pool.reduce(nearer);
+      out.push(pick);
+      left.splice(left.indexOf(pick), 1);
+    }
     return out;
   };
-  var layoutDetails = function (L, W, H, zone) {
+  var pieceOrderSig = '';
+
+  var layoutRoom = function (L, W, H, n, cwOpt) {
+    var BR = BEDROOM;
+    var CLR = BR.clr;
     var degenerate = L < 3 || W < 3 || H < 3.5;
-    var sill = Math.min(3.2, H * 0.38);
-    var winH = Math.min(Math.min(3.4, H * 0.42), Math.max(0.4, 0.85 * H - sill));
-    var nL = degenerate ? 0 : W >= 15 ? 2 : W >= 6 ? 1 : 0;
-    var winL = winCenters(0, W, nL);
-    var doorOn = !degenerate && L >= 8 && H >= 5;
-    var doorH = Math.min(6.8, H * 0.8);
-    var winSpan0 = 1.5;
-    var winSpan1 = doorOn ? L - 5.5 : L - 1.5;
-    var span = winSpan1 - winSpan0;
-    var nR = degenerate ? 0 : span >= 12 ? 2 : span >= 3 ? 1 : 0;
-    var winR = winCenters(winSpan0, winSpan1, nR);
-    var furn = [];
-    var roomy = !degenerate && Math.min(L, W) >= 5;
+    var doorOn = !degenerate && W >= 8 && H >= 5;
+    var doorY0 = W - BR.doorFrom;
+    var doorY1 = W - BR.doorTo;
+    var cw = Math.min(cwOpt == null ? CW_BASE : cwOpt, Math.min(L, W) * 0.55, CW_HARD_MAX);
+    if (n >= 4) cw = Math.min(cw, W * 0.16 >= 2 ? W * 0.16 : W * 0.2 - 0.5);
+    cw = Math.max(cw, 0.2);
+    var m = 0;
+    var cs = [];
+    var bed = { x0: 0, w: 0, d: 0, on: false };
+    var clampCentre = function (c) {
+      return [inside(c[0], 0.3 + cw / 2, L - 0.3 - cw / 2), inside(c[1], 0.3 + cw / 2, W - 0.3 - cw / 2)];
+    };
+    for (var tries = 0; ; tries++) {
+      m = CLR + cw / 2;
+      var g = Math.max(1, 0.5 * cw);
+      var bx0 = 2 * CLR + cw + 0.2;
+      var d = Math.min(Math.max(Math.min(BR.bedD, 0.6 * W), BR.bedMinD), W - 2 * m - 0.3);
+      var bw = Math.min(Math.max(Math.min(BR.bedW, 0.42 * L, L - 2 * m - bx0), BR.bedMinW), BR.bedW);
+      var bedOn = !degenerate && d >= BR.bedMinD - 1e-9 && bx0 + bw + 0.3 <= L;
+      var want = [
+        [m, clamp(0.45 * W, 0.1 + BR.ns + m, (doorOn ? doorY0 : W) - m)],
+        [L - m, 0.7 * W],
+        [bedOn ? bx0 + bw / 2 : L / 2, W - m],
+        [L - m, Math.max(0.3 * W, 0.1 + BR.ns + m + 0.2)],
+      ];
+      cs = want.slice(0, n).map(clampCentre);
+      if (n >= 4 && cs[1][1] - cs[3][1] < cw + g) cs[3][1] = Math.max(0.3 + cw / 2, cs[1][1] - cw - g);
+      bed = { x0: bx0, w: bw, d: d, on: bedOn };
+      var clash = false;
+      for (var i = 0; i < cs.length; i++) {
+        for (var j = i + 1; j < cs.length; j++) {
+          if (Math.abs(cs[i][0] - cs[j][0]) < cw + g - 1e-6 && Math.abs(cs[i][1] - cs[j][1]) < cw + g - 1e-6) clash = true;
+        }
+      }
+      if (!clash || cw <= 0.2 || tries >= 12) break;
+      cw = Math.max(0.2, cw * 0.85);
+    }
+    var ch = Math.min(Math.max(1.6 * cw, 2.0), 2.6, Math.max(0.3, 0.85 * H));
+    var cleaners = cs.map(function (c) {
+      return { x0: c[0] - cw / 2, y0: c[1] - cw / 2, x1: c[0] + cw / 2, y1: c[1] + cw / 2, h: ch };
+    });
+    var clear = cleaners.map(function (c) {
+      return { x0: c.x0 - CLR, y0: c.y0 - CLR, x1: c.x1 + CLR, y1: c.y1 + CLR };
+    });
+    var free = function (r) {
+      return !clear.some(function (c) {
+        return overlaps(r, c);
+      });
+    };
+    bx0 = bed.x0;
+    bw = bed.w;
+    var bd = bed.d;
+    var bedRect = { x0: bx0 - 0.2, y0: 0, x1: bx0 + bw + 0.2, y1: bd };
+    bedOn =
+      bed.on &&
+      free({ x0: bx0 - 0.2, y0: 0, x1: bx0 + bw + 0.2, y1: BR.headT }) &&
+      free({ x0: bx0, y0: 0.3, x1: bx0 + bw, y1: bd });
+    var nsL = { x0: bx0 - 0.2 - BR.ns, y0: 0.1, x1: bx0 - 0.2, y1: 0.1 + BR.ns };
+    var nsR = { x0: bx0 + bw + 0.2, y0: 0.1, x1: bx0 + bw + 0.2 + BR.ns, y1: 0.1 + BR.ns };
+    var nsLOn = bedOn && nsL.x0 >= 0.3 && free(nsL);
+    var nsROn = bedOn && nsR.x1 <= L - 0.3 && free(nsR);
+    var rug = {
+      x0: Math.max(0.2, bx0 - 0.8),
+      y0: bd - 2.2,
+      x1: Math.min(L - 0.2, bx0 + bw + 0.8),
+      y1: Math.min(bd + 4, W - 0.4),
+    };
+    var rugOn = bedOn && rug.y1 - rug.y0 >= 2.5;
+
+    var GAP = 0.2;
+    var hCap = 0.75 * H;
     var area = L * W;
-    var WALL_LO = 1.8;
-    var wallX = [];
-    var taken = [];
-    var clashAt = function (v, sx) {
-      for (var t = 0; t < taken.length; t++) {
-        if (v < taken[t][1] - 1e-9 && v + sx > taken[t][0] + 1e-9) return taken[t];
+    var blocked = clear.slice();
+    if (doorOn) blocked.push({ x0: 0, y0: doorY0, x1: BR.doorW, y1: doorY1 });
+    if (bedOn) blocked.push(bedRect);
+    if (nsLOn) blocked.push(nsL);
+    if (nsROn) blocked.push(nsR);
+    var fits = function (r) {
+      return (
+        r.x0 >= 0.3 - 1e-6 && r.y0 >= 0.3 - 1e-6 && r.x1 <= L - 0.3 + 1e-6 && r.y1 <= W - 0.3 + 1e-6 &&
+        !blocked.some(function (b) {
+          return overlaps(r, { x0: b.x0 - GAP, y0: b.y0 - GAP, x1: b.x1 + GAP, y1: b.y1 + GAP });
+        })
+      );
+    };
+    var u1 = cleaners[0];
+    var unitShadow = function (r) {
+      return [u1.y0 - 0.2, u1.y1 + 0.2 + Math.max(0, r.x1 - u1.x0)];
+    };
+    var slide = function (axis, len, make, pref, lo) {
+      if (lo === undefined) lo = 0.3;
+      var hi = (axis === 'x' ? L : W) - 0.3 - len;
+      if (hi < lo) return null;
+      var cands = [clamp(pref, lo, hi)];
+      blocked.forEach(function (b) {
+        var a0 = axis === 'x' ? b.x0 : b.y0;
+        var a1 = axis === 'x' ? b.x1 : b.y1;
+        cands.push(a1 + GAP + 1e-3, a0 - GAP - len - 1e-3);
+      });
+      var shade = axis === 'y' ? unitShadow(make(lo)) : null;
+      if (shade) cands.push(shade[1] + 1e-3, shade[0] - len - 1e-3);
+      cands.sort(function (p, p2) {
+        return Math.abs(p - pref) - Math.abs(p2 - pref);
+      });
+      for (var k = 0; k < cands.length; k++) {
+        var t = cands[k];
+        if (t < lo - 1e-9 || t > hi + 1e-9) continue;
+        var r = make(t);
+        if (shade && r.y1 > shade[0] && r.y0 < shade[1]) continue;
+        if (fits(r)) return r;
       }
       return null;
     };
-    for (var wi = 0; wi < WALL_ORDER.length; wi++) {
-      var wk = WALL_ORDER[wi];
-      var wd = FURN_DEFS[wk];
-      if (!roomy || area < wd.minArea) {
-        wallX[wk] = null;
-        continue;
+    var near = function (sx, sy, cx, cy) {
+      for (var k = 0; k < RING.length; k++) {
+        var x0 = cx + RING[k][0] - sx / 2;
+        var y0 = cy + RING[k][1] - sy / 2;
+        var r = { x0: x0, y0: y0, x1: x0 + sx, y1: y0 + sy };
+        if (fits(r)) return r;
       }
-      var wsx = Math.min(wd.sx, L * 0.3);
-      var wsy = Math.min(wd.sy, W * 0.3);
-      var hi = Math.min(L - CLEANER_STRIP - wsx, doorOn ? L - 4.6 - wsx : Infinity);
-      var lo = zone && 0.3 < zone.y1 && 0.3 + wsy > zone.y0 ? Math.max(WALL_LO, zone.x1) : WALL_LO;
-      if (hi < lo) {
-        wallX[wk] = null;
-        continue;
+      return null;
+    };
+    var take = function (r, gate) {
+      if (!degenerate && area >= gate && r) {
+        blocked.push(r);
+        return r;
       }
-      var wx0 = clamp(wd.fx * L - wsx / 2, lo, hi);
-      for (var pass = 0; wx0 != null && pass <= taken.length; pass++) {
-        var clash = clashAt(wx0, wsx);
-        if (!clash) break;
-        var at = wx0;
-        var cand = [clash[1], clash[0] - wsx];
-        var opts = [];
-        for (var oi = 0; oi < cand.length; oi++) {
-          if (cand[oi] >= lo - 1e-9 && cand[oi] <= hi + 1e-9) opts.push(cand[oi]);
-        }
-        opts.sort(function (p, q) {
-          return Math.abs(p - at) - Math.abs(q - at);
-        });
-        wx0 = opts.length ? opts[0] : null;
-      }
-      if (wx0 == null || clashAt(wx0, wsx)) {
-        wallX[wk] = null;
-        continue;
-      }
-      taken.push([wx0, wx0 + wsx]);
-      wallX[wk] = wx0;
+      return null;
+    };
+    var pieces = {
+      dresser: null, plant: null, bookshelf: null, desk: null, chair: null,
+      armchair: null, wardrobe: null, sofa: null, table: null,
+    };
+    var D = BR.dresser;
+    var dr = area >= D.area ? take(slide('x', D.w, function (t) {
+      return { x0: t, y0: 0.3, x1: t + D.w, y1: 0.3 + D.d };
+    }, (nsROn ? nsR.x1 : bedOn ? bedRect.x1 : 0.5 * L) + 0.4), D.area) : null;
+    if (dr) {
+      var hDr = Math.min(D.h, hCap);
+      pieces.dresser = {
+        rect: dr,
+        boxes: { body: [dr.x0, dr.y0, 0, dr.x1, dr.y1, hDr] },
+        seams: [hDr / 3, (2 * hDr) / 3].map(function (z) {
+          return [[dr.x0 + 0.2, dr.y1, z], [dr.x1 - 0.2, dr.y1, z]];
+        }),
+      };
     }
-    for (var k = 0; k < FURN_DEFS.length; k++) {
-      var d = FURN_DEFS[k];
-      if (!roomy || area < d.minArea) {
-        furn.push(null);
-        continue;
-      }
-      var sx = Math.min(d.sx, L * 0.3);
-      var sy = Math.min(d.sy, W * 0.3);
-      var hiX = L - CLEANER_STRIP - sx;
-      var hiY = W - 1 - sy;
-      if ((d.snap !== 'x' && hiX < 1) || (d.snap !== 'y' && hiY < 1)) {
-        furn.push(null);
-        continue;
-      }
-      var wx = d.snap === 'y' ? (wallX[k] == null ? null : wallX[k]) : null;
-      if (d.snap === 'y' && wx == null) {
-        furn.push(null);
-        continue;
-      }
-      var x0 = d.snap === 'x' ? 0.3 : d.snap === 'y' ? wx : clamp(d.fx * L - sx / 2, 1, hiX);
-      var y0 = d.snap === 'y' ? 0.3 : clamp(d.fy * W - sy / 2, 1, hiY);
-      if (
-        zone &&
-        d.snap !== 'y' &&
-        x0 < zone.x1 &&
-        x0 + sx > zone.x0 &&
-        y0 < zone.y1 &&
-        y0 + sy > zone.y0
-      ) {
-        var near = zone.y0 - sy;
-        var far = zone.y1;
-        var order = Math.abs(y0 - near) <= Math.abs(y0 - far) ? [near, far] : [far, near];
-        var loY = d.snap === 'x' ? 0.3 : 1;
-        var slotY = null;
-        for (var oj = 0; oj < order.length; oj++) {
-          if (order[oj] >= loY && order[oj] <= hiY) {
-            slotY = order[oj];
-            break;
-          }
-        }
-        if (slotY == null) {
-          furn.push(null);
-          continue;
-        }
-        y0 = slotY;
-      }
-      furn.push({ x0: x0, y0: y0, x1: x0 + sx, y1: y0 + sy, h: Math.min(d.h, H * 0.75) });
+    var Pl = BR.plant;
+    var pr = area >= Pl.area ? take(slide('x', Pl.crown, function (t) {
+      return { x0: t, y0: 0.3, x1: t + Pl.crown, y1: 0.3 + Pl.crown };
+    }, L - 1.5 - Pl.crown / 2, 0.5 * L), Pl.area) : null;
+    if (pr) {
+      var pcx = (pr.x0 + pr.x1) / 2;
+      var pcy = (pr.y0 + pr.y1) / 2;
+      var hp = Pl.pot / 2;
+      var potH = Math.min(Pl.potH, hCap);
+      pieces.plant = {
+        rect: pr,
+        boxes: {
+          pot: [pcx - hp, pcy - hp, 0, pcx + hp, pcy + hp, potH],
+          crown: [pr.x0, pr.y0, potH, pr.x1, pr.y1, Math.min(potH + Pl.crownH, hCap)],
+        },
+        seams: [],
+      };
     }
-    var rugOn = roomy && area >= RUG.minArea;
-    var rsx = Math.min(RUG.sx, L * 0.5);
-    var rsy = Math.min(RUG.sy, W * 0.55);
-    var rx0 = clamp(RUG.fx * L - rsx / 2, 0.8, L - CLEANER_STRIP - rsx);
-    var ry0 = clamp(RUG.fy * W - rsy / 2, 0.8, W - 0.8 - rsy);
+    var Bk = BR.bookshelf;
+    var br = area >= Bk.area ? take(slide('y', Bk.d, function (t) {
+      return { x0: 0.3, y0: t, x1: 0.3 + Bk.w, y1: t + Bk.d };
+    }, (nsLOn ? nsL.y1 : 0) + 0.3), Bk.area) : null;
+    if (br) {
+      var hBk = Math.min(Bk.h, hCap);
+      pieces.bookshelf = {
+        rect: br,
+        boxes: { body: [br.x0, br.y0, 0, br.x1, br.y1, hBk] },
+        seams: [0.25, 0.5, 0.75].map(function (f) {
+          return [[br.x1, br.y0 + 0.1, hBk * f], [br.x1, br.y1 - 0.1, hBk * f]];
+        }),
+      };
+    }
+    var Dk = BR.desk;
+    var Ch = BR.chair;
+    var deep = Dk.d + GAP + Ch.d;
+    if (area >= Dk.area && !degenerate) {
+      var hd = Math.min(Dk.h, hCap);
+      var hs = Math.min(Ch.seatH, hCap);
+      var hb = Math.min(Ch.h, hCap);
+      var onY = slide('x', Dk.w, function (t) {
+        return { x0: t, y0: 0.3, x1: t + Dk.w, y1: 0.3 + deep };
+      }, (dr ? dr.x1 : nsROn ? nsR.x1 : 0.5 * L) + 0.4);
+      var onX = onY ? null : slide('y', Dk.w, function (t) {
+        return { x0: 0.3, y0: t, x1: 0.3 + deep, y1: t + Dk.w };
+      }, (br ? br.y1 : 2) + 0.4);
+      var dg = take(onY || onX, Dk.area);
+      if (dg && onY) {
+        var dcx = (dg.x0 + dg.x1) / 2;
+        var da = dcx - Ch.w / 2;
+        var db = dcx + Ch.w / 2;
+        var ds0 = dg.y0 + Dk.d + GAP;
+        pieces.desk = {
+          rect: { x0: dg.x0, y0: dg.y0, x1: dg.x1, y1: dg.y0 + Dk.d },
+          boxes: { body: [dg.x0, dg.y0, 0, dg.x1, dg.y0 + Dk.d, hd] },
+          seams: [],
+        };
+        pieces.chair = {
+          rect: { x0: da, y0: ds0, x1: db, y1: dg.y1 },
+          boxes: { seat: [da, ds0, 0, db, dg.y1 - Ch.back, hs], back: [da, dg.y1 - Ch.back, 0, db, dg.y1, hb] },
+          seams: [],
+        };
+      } else if (dg) {
+        var dcy = (dg.y0 + dg.y1) / 2;
+        var ea = dcy - Ch.w / 2;
+        var eb = dcy + Ch.w / 2;
+        var es0 = dg.x0 + Dk.d + GAP;
+        pieces.desk = {
+          rect: { x0: dg.x0, y0: dg.y0, x1: dg.x0 + Dk.d, y1: dg.y1 },
+          boxes: { body: [dg.x0, dg.y0, 0, dg.x0 + Dk.d, dg.y1, hd] },
+          seams: [],
+        };
+        pieces.chair = {
+          rect: { x0: es0, y0: ea, x1: dg.x1, y1: eb },
+          boxes: { seat: [es0, ea, 0, dg.x1 - Ch.back, eb, hs], back: [dg.x1 - Ch.back, ea, 0, dg.x1, eb, hb] },
+          seams: [],
+        };
+      }
+    }
+    var Ac = BR.armchair;
+    var ar = area >= Ac.area ? take(near(Ac.w, Ac.d, 0.7 * L, 0.5 * W), Ac.area) : null;
+    if (ar) {
+      pieces.armchair = {
+        rect: ar,
+        boxes: {
+          back: [ar.x0, ar.y0, 0, ar.x0 + Ac.back, ar.y1, Math.min(Ac.h, hCap)],
+          seat: [ar.x0 + Ac.back, ar.y0, 0, ar.x1, ar.y1, Math.min(Ac.seatH, hCap)],
+        },
+        seams: [],
+      };
+    }
+    var Wd = BR.wardrobe;
+    var wr = area >= Wd.area ? take(slide('y', Wd.d, function (t) {
+      return { x0: 0.3, y0: t, x1: 0.3 + Wd.w, y1: t + Wd.d };
+    }, 0.5 * W - Wd.d / 2), Wd.area) : null;
+    if (wr) {
+      var hWd = Math.min(Wd.h, hCap);
+      pieces.wardrobe = {
+        rect: wr,
+        boxes: { body: [wr.x0, wr.y0, 0, wr.x1, wr.y1, hWd] },
+        seams: [1 / 3, 2 / 3].map(function (f) {
+          var y = wr.y0 + (wr.y1 - wr.y0) * f;
+          return [[wr.x1, y, 0.2], [wr.x1, y, hWd - 0.2]];
+        }),
+      };
+    }
+    var Sf = BR.sofa;
+    var Tb = BR.table;
+    var sr = area >= Sf.area ? take(near(Sf.w + Tb.gap + Tb.w, Sf.d, 0.45 * L, 0.72 * W), Sf.area) : null;
+    if (sr) {
+      var sx1 = sr.x0 + Sf.w;
+      var ty0 = (sr.y0 + sr.y1) / 2 - Tb.d / 2;
+      pieces.sofa = {
+        rect: { x0: sr.x0, y0: sr.y0, x1: sx1, y1: sr.y1 },
+        boxes: {
+          back: [sr.x0, sr.y0, 0, sr.x0 + Sf.back, sr.y1, Math.min(Sf.h, hCap)],
+          seat: [sr.x0 + Sf.back, sr.y0, 0, sx1, sr.y1, Math.min(Sf.seatH, hCap)],
+        },
+        seams: [],
+      };
+      var tr = { x0: sx1 + Tb.gap, y0: ty0, x1: sr.x1, y1: ty0 + Tb.d };
+      pieces.table = { rect: tr, boxes: { body: [tr.x0, tr.y0, 0, tr.x1, tr.y1, Math.min(Tb.h, hCap)] }, seams: [] };
+    }
+
+    var sill = Math.min(BR.winSill, H * 0.48);
+    var winH = Math.min(BR.winH, H * 0.42, Math.max(0.4, 0.9 * H - sill));
+    var doorH = Math.min(6.8, H * 0.8);
+    var winBackX = degenerate
+      ? null
+      : bedOn
+        ? [bx0 + BR.winBackInset, bx0 + bw - BR.winBackInset]
+        : L >= 6
+          ? [L / 2 - 1.5, L / 2 + 1.5]
+          : null;
+    var sideHi = (doorOn ? doorY0 : W) - 1.2;
+    var sideSpan = sideHi - 1.2;
+    var sideW = Math.min(BR.winSideW, sideSpan);
+    var sideC = (1.2 + sideHi) / 2;
+    var winLeftY = !degenerate && sideSpan >= 1.4 ? [sideC - sideW / 2, sideC + sideW / 2] : null;
+    var boardStep = L > 30 ? Math.ceil(L / 30) : BR.board;
     return {
-      degenerate: degenerate,
-      sill: sill,
-      winH: winH,
-      doorOn: doorOn,
-      doorH: doorH,
-      winL: winL,
-      winR: winR,
-      furn: furn,
-      rugOn: rugOn,
-      rx0: rx0,
-      ry0: ry0,
-      rx1: rx0 + rsx,
-      ry1: ry0 + rsy,
+      degenerate: degenerate, cw: cw, ch: ch, cleaners: cleaners, clear: clear,
+      bedOn: bedOn, bed: { x0: bx0, w: bw, d: bd }, bedRect: bedRect, nsL: nsL, nsR: nsR,
+      nsLOn: nsLOn, nsROn: nsROn, rug: rug, rugOn: rugOn, pieces: pieces,
+      sill: sill, winH: winH, doorOn: doorOn, doorY0: doorY0, doorY1: doorY1, doorH: doorH,
+      winBackX: winBackX, winLeftY: winLeftY, boardStep: boardStep,
     };
   };
 
-  // ---- capacity caption placement ----
-  // The caption is the ONE piece of the scene drawn outside the fitted geometry:
-  // it hangs off the ghost's near corner, and a height-limited fit puts that
-  // corner ON the safe-area edge — so the raw anchor pushes ~19px of text box past
-  // the safe edge, which on the narrow band (12px inset) is past the stage itself
-  // and the SVG slices it mid-glyph. Feeding the text to the fit is the wrong lever
-  // (it would shrink the whole composition at every width for a label that is
-  // usually nowhere near an edge), so the ANCHOR is clamped instead, against the
-  // measured text box, under two constraints in order:
-  //   1. the box sits inside the stage, inset by edgeInset()
-  //   2. the box never meets the pause control's keep-out
-  // This lives in drawScene's call path, which every draw routes through — the rAF
-  // tick, syncViewport, and the paused / reduced-motion draws alike.
-  var CAP_GAP = 8; // px from the ghost's near corner to the caption box
+  var CAP_GAP = 8;
   var capLabelEl = svg.querySelector('[data-label="capacity"]');
-  // Cached per string, so a getBBox costs one layout per NEW reading: the number
-  // changes in recompute() only, never across the frames of a morph.
+
   var capMetrics = null;
-  // How far the caption keeps off the stage edge: the SMALLEST inset the safe area
-  // already declares at this breakpoint (12px narrow, 24px wide). Derived from the
-  // measured rect rather than typed, so it inherits the CSS spacing tokens and
-  // follows them whenever they change.
+
   var edgeInset = function () {
     return Math.max(
       2,
@@ -490,11 +744,7 @@
     capLabelEl.textContent = text;
     capLabelEl.setAttribute('x', '0');
     capLabelEl.setAttribute('y', '0');
-    // dx/dy are the box's offset from the ANCHOR at (0,0) — left side bearing and
-    // -ascent — which is what lets the clamp work in box space and back-solve the
-    // anchor. getBBox is unusable inside a display:none subtree (the narrow layout
-    // hides the whole stage off the result step): no metrics, no clamp, and nothing
-    // cached, so the next visible draw measures for real.
+
     var b = null;
     try {
       b = capLabelEl.getBBox();
@@ -506,13 +756,12 @@
     return capMetrics;
   };
   var capLabelAt = function (cx, cy, text) {
-    // Preferred spot: down-right of the corner, over open paper at any scale.
     var x = cx + CAP_GAP;
     var y = cy + 2 * CAP_GAP;
     var m = capLabelMetrics(text);
     if (!m) return [x, y];
     var pad = edgeInset();
-    // place() takes the BOX's top-left and back-solves the text anchor.
+
     var place = function (bx, by) {
       x = bx - m.dx;
       y = by - m.dy;
@@ -522,8 +771,6 @@
       clamp(y + m.dy, pad, Math.max(pad, viewH - pad - m.h)),
     );
     if (pauseBox) {
-      // The button's rect grown by the same edge margin, so the caption clears it by
-      // the gap it keeps from the stage edge rather than merely touching it.
       var k0x = pauseBox.x - pad;
       var k0y = pauseBox.y - pad;
       var k1x = pauseBox.x + pauseBox.w + pad;
@@ -531,9 +778,6 @@
       var bx = x + m.dx;
       var by = y + m.dy;
       if (bx < k1x && bx + m.w > k0x && by < k1y && by + m.h > k0y) {
-        // Prefer sliding LEFT of the button — same baseline, still reading off the
-        // ghost's corner. Only when the caption is too long for that row does it
-        // lift clear above, which always fits (the button is a corner control).
         if (k0x - m.w >= pad) place(k0x - m.w, by);
         else place(bx, Math.max(pad, k0y - m.h));
       }
@@ -548,9 +792,6 @@
     var drawCap = capS > 0.01;
     var gL = L * capS;
     var gW = W * capS;
-    var gx0 = L - gL;
-    var gy0 = (W - gW) / 2;
-    var gy1 = (W + gW) / 2;
 
     var shadowM = Math.max(2, 0.08 * (L + W));
 
@@ -573,7 +814,7 @@
         var c = cls[ci];
         box(c.x0, c.y0, c.x1, c.y1, c.h);
       }
-      if (drawCap) box(gx0, gy0, L, gy1, H);
+      if (drawCap) box(0, 0, gL, gW, H);
       var pad = [
         [-shadowM, -shadowM],
         [L + shadowM, -shadowM],
@@ -593,11 +834,7 @@
         if (p[1] < minY) minY = p[1];
         if (p[1] > maxY) maxY = p[1];
       }
-      // Fit into the safe area MINUS the ghost's stroke bleed. Every point above is
-      // a geometric corner, but the ghost is drawn with a centred dashed stroke, so
-      // half of it paints outside the corner it belongs to — and when the ghost is
-      // what drives the fit (bigger than the room) that corner lands exactly ON the
-      // safe edge, putting the outline's outer half past it.
+
       var bleed = capStroke / 2;
       var fw = Math.max(1, safe.w - capStroke);
       var fh = Math.max(1, safe.h - capStroke);
@@ -607,18 +844,17 @@
       return { scale: scale, ox: ox, oy: oy };
     };
 
-    var cleaners = layoutCleaners(L, W, n);
-    var fit = computeFit(cleaners);
-    var cw1 = cleaners[0].x1 - cleaners[0].x0;
-    if (cw1 * fit.scale < UNIT_MIN_PX) {
-      cleaners = layoutCleaners(L, W, n, (UNIT_MIN_PX * 1.1) / fit.scale);
-      fit = computeFit(cleaners);
+    var lay = layoutRoom(L, W, H, n);
+    var fit = computeFit(lay.cleaners);
+    if (lay.cw * fit.scale < UNIT_MIN_PX) {
+      lay = layoutRoom(L, W, H, n, (UNIT_MIN_PX * 1.1) / fit.scale);
+      fit = computeFit(lay.cleaners);
     }
     var scale = fit.scale;
     var ox = fit.ox;
     var oy = fit.oy;
     fitScale = scale;
-    var det = layoutDetails(L, W, H, backZone(cleaners));
+    var cleaners = lay.cleaners;
     var w = function (x, y, z) {
       var p = project(x, y, z);
       return [ox + p[0] * scale, oy + p[1] * scale];
@@ -638,8 +874,7 @@
     setPoly('[data-wall-cap="left"]', [w(0, W, H), w(-WALL_T, W, H), w(-WALL_T, W, 0), w(0, W, 0)]);
     setPoly('[data-wall-cap="right"]', [w(L, 0, H), w(L, -WALL_T, H), w(L, -WALL_T, 0), w(L, 0, 0)]);
 
-    var floorQuad = [w(0, 0, 0), w(L, 0, 0), w(L, W, 0), w(0, W, 0)];
-    setPoly('[data-room="floor"]', floorQuad);
+    setPoly('[data-room="floor"]', [w(0, 0, 0), w(L, 0, 0), w(L, W, 0), w(0, W, 0)]);
     setPoly('[data-floor-edge="left"]', [
       w(0, W, 0),
       w(L, W, 0),
@@ -652,139 +887,180 @@
       w(L, W, -FLOOR_D),
       w(L, 0, -FLOOR_D),
     ]);
-    setPoly('[data-floor-clip]', floorQuad);
+    var ch = lay.ch;
+    setPts(waveClip, [w(0, 0, ch), w(L, 0, ch), w(L, W, ch), w(0, W, ch)]);
 
-    if (detailsG) detailsG.style.visibility = det.degenerate ? 'hidden' : '';
-    if (furnG) furnG.style.visibility = det.degenerate ? 'hidden' : '';
-    if (furnBackG) furnBackG.style.visibility = det.degenerate ? 'hidden' : '';
-    if (det.degenerate) setDetail('[data-rug]', false);
-    if (!det.degenerate) {
-      var hw = WIN_W / 2;
-      var z0 = det.sill;
-      var z1 = det.sill + det.winH;
-      for (var s = 1; s <= WIN_POOL; s++) {
-        var cl = det.winL[s - 1];
-        setDetail(
-          '[data-win-l="' + s + '"]',
-          cl != null,
-          cl != null
-            ? [w(0, cl - hw, z1), w(0, cl + hw, z1), w(0, cl + hw, z0), w(0, cl - hw, z0)]
-            : undefined
-        );
-        var cr = det.winR[s - 1];
-        setDetail(
-          '[data-win-r="' + s + '"]',
-          cr != null,
-          cr != null
-            ? [w(cr - hw, 0, z1), w(cr + hw, 0, z1), w(cr + hw, 0, z0), w(cr - hw, 0, z0)]
-            : undefined
-        );
+    var dressed = !lay.degenerate;
+    vis(detailsG, dressed);
+    vis(boardsEl, dressed);
+    if (dressed && boardsEl) {
+      var boardD = '';
+      for (var bxs = lay.boardStep; bxs < L - 1e-6; bxs += lay.boardStep) boardD += segD(w(bxs, 0, 0), w(bxs, W, 0));
+      boardsEl.setAttribute('d', boardD);
+    }
+    var setWindow = function (els, quad) {
+      vis(els.g, !!quad);
+      if (!quad) return;
+      setPts(els.pane, quad);
+      if (els.mull) {
+        els.mull.setAttribute('d', segD(mid(quad[0], quad[1]), mid(quad[3], quad[2])) + segD(mid(quad[0], quad[3]), mid(quad[1], quad[2])));
       }
-      setDetail(
-        '[data-door]',
-        det.doorOn,
-        det.doorOn
-          ? [w(L - 4.2, 0, det.doorH), w(L - 1.2, 0, det.doorH), w(L - 1.2, 0, 0), w(L - 4.2, 0, 0)]
-          : undefined
-      );
-      setDetail(
-        '[data-rug]',
-        det.rugOn,
-        det.rugOn
-          ? [
-              w(det.rx0, det.ry0, 0),
-              w(det.rx1, det.ry0, 0),
-              w(det.rx1, det.ry1, 0),
-              w(det.rx0, det.ry1, 0),
-            ]
-          : undefined
-      );
-
-      // Paint order: the back-wall cleaners sit between the two furniture
-      // layers. A piece wholly behind a back cleaner (viewer looks from +x,+y,
-      // so smaller x or y is farther) goes in the back layer; everything else
-      // stays in the main layer, which paints over them. Re-parent only when
-      // the assignment changes — drawScene runs every animation frame.
-      var layer = [];
-      for (var kb = 0; kb < FURN_DEFS.length; kb++) {
-        var fb = det.furn[kb];
-        var behind = false;
-        for (var cb = 0; fb && cb < n; cb++) {
-          var cbx = cleaners[cb];
-          if (cbx.side !== 'back') continue;
-          var fBehind = fb.x1 <= cbx.x0 + 1e-6 || fb.y1 <= cbx.y0 + 1e-6;
-          var fFront = cbx.x1 <= fb.x0 + 1e-6 || cbx.y1 <= fb.y0 + 1e-6;
-          if (fBehind && !fFront) behind = true;
-        }
-        layer.push(behind ? 'b' : 'f');
-      }
-      var sig = layer.join('');
-      if (furnBackG && furnG && sig !== furnLayerSig) {
-        furnLayerSig = sig;
-        for (var kl = 0; kl < FURN_DEFS.length; kl++) {
-          var gl = svg.querySelector('[data-furn="' + (kl + 1) + '"]');
-          if (gl) (layer[kl] === 'b' ? furnBackG : furnG).appendChild(gl);
-        }
-      }
-      for (var k2 = 0; k2 < FURN_DEFS.length; k2++) {
-        var u2 = det.furn[k2];
-        var g = svg.querySelector('[data-furn="' + (k2 + 1) + '"]');
-        if (g) g.style.visibility = u2 ? '' : 'hidden';
-        if (!u2) continue;
-        var zt = u2.h;
-        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="top"]', [
-          w(u2.x0, u2.y0, zt),
-          w(u2.x1, u2.y0, zt),
-          w(u2.x1, u2.y1, zt),
-          w(u2.x0, u2.y1, zt),
-        ]);
-        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="left"]', [
-          w(u2.x0, u2.y1, zt),
-          w(u2.x1, u2.y1, zt),
-          w(u2.x1, u2.y1, 0),
-          w(u2.x0, u2.y1, 0),
-        ]);
-        setPoly('[data-furn="' + (k2 + 1) + '"] [data-furn-face="right"]', [
-          w(u2.x1, u2.y0, zt),
-          w(u2.x1, u2.y1, zt),
-          w(u2.x1, u2.y1, 0),
-          w(u2.x1, u2.y0, 0),
-        ]);
-      }
+    };
+    var z0 = lay.sill;
+    var z1 = lay.sill + lay.winH;
+    var wb = lay.winBackX;
+    var wl = lay.winLeftY;
+    setWindow(winBack, wb ? [w(wb[0], 0, z1), w(wb[1], 0, z1), w(wb[1], 0, z0), w(wb[0], 0, z0)] : null);
+    setWindow(winLeft, wl ? [w(0, wl[0], z1), w(0, wl[1], z1), w(0, wl[1], z0), w(0, wl[0], z0)] : null);
+    vis(doorG, lay.doorOn);
+    if (lay.doorOn) {
+      var dy0 = lay.doorY0;
+      var dy1 = lay.doorY1;
+      var dh = lay.doorH;
+      var inset = 0.4;
+      setPts(doorLeaf, [w(0, dy0, dh), w(0, dy1, dh), w(0, dy1, 0), w(0, dy0, 0)]);
+      var panel = function (za, zb) {
+        return quadD([w(0, dy0 + inset, za), w(0, dy1 - inset, za), w(0, dy1 - inset, zb), w(0, dy0 + inset, zb)]);
+      };
+      if (doorPanels) doorPanels.setAttribute('d', panel(dh * 0.93, dh * 0.56) + panel(dh * 0.49, dh * 0.09));
     }
 
-    if (drawCap) {
-      var bodyG = gx0 < -1e-6 ? '[data-capg-back]' : '[data-capg]';
-      var idleG = gx0 < -1e-6 ? '[data-capg]' : '[data-capg-back]';
-      setPoly(idleG + ' [data-cap="floor"]', []);
-      setPoly(idleG + ' [data-cap="left"]', []);
-      setPoly(idleG + ' [data-cap="right"]', []);
-      setPoly(bodyG + ' [data-cap="floor"]', [w(gx0, gy0, 0), w(L, gy0, 0), w(L, gy1, 0), w(gx0, gy1, 0)]);
-      setPoly(bodyG + ' [data-cap="left"]', [w(gx0, gy0, H), w(gx0, gy1, H), w(gx0, gy1, 0), w(gx0, gy0, 0)]);
-      setPoly(bodyG + ' [data-cap="right"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, gy0, 0), w(gx0, gy0, 0)]);
-      setPoly('[data-cap="top"]', [w(gx0, gy0, H), w(L, gy0, H), w(L, gy1, H), w(gx0, gy1, H)]);
-      var capEdge = svg.querySelector('[data-cap-edge]');
+    vis(bedEls.g, lay.bedOn);
+    vis(rugEl, lay.rugOn);
+    if (lay.rugOn) {
+      var rg = lay.rug;
+      setPts(rugEl, [w(rg.x0, rg.y0, 0), w(rg.x1, rg.y0, 0), w(rg.x1, rg.y1, 0), w(rg.x0, rg.y1, 0)]);
+    }
+    vis(nsEls[0].g, lay.nsLOn);
+    vis(nsEls[1].g, lay.nsROn);
+    if (lay.bedOn) {
+      var BR = BEDROOM;
+      var x0 = lay.bed.x0;
+      var bw = lay.bed.w;
+      var d = lay.bed.d;
+      var zf = BR.frameH;
+      var zm = zf + BR.mattH;
+      var zb = zm + 0.04;
+      var zd = zb - 0.9;
+      setBox(bedEls.head, w, x0 - 0.2, 0, 0, x0 + bw + 0.2, BR.headT, BR.headH);
+      setBox(bedEls.frame, w, x0, 0.3, 0, x0 + bw, d, zf);
+      setBox(bedEls.mattress, w, x0 + 0.1, 0.3, zf, x0 + bw - 0.1, d - 0.1, zm);
+      var pw = bw / 2 - 0.6;
+      setBox(bedEls.pillowL, w, x0 + 0.4, 0.5, zm, x0 + 0.4 + pw, 0.5 + BR.pillowD, zm + BR.pillowH);
+      setBox(bedEls.pillowR, w, x0 + bw / 2 + 0.2, 0.5, zm, x0 + bw / 2 + 0.2 + pw, 0.5 + BR.pillowD, zm + BR.pillowH);
+      var ba = x0 + 0.1;
+      var bb = x0 + bw - 0.1;
+      var by0 = 0.3 + (d - 0.4) * BR.blanketFrom;
+      var by1 = d - 0.1;
+      setPts(bedEls.blanketTop, [w(ba, by0, zb), w(bb, by0, zb), w(bb, by1, zb), w(ba, by1, zb)]);
+      setPts(bedEls.blanketFront, [w(ba, by1, zb), w(bb, by1, zb), w(bb, by1, zd), w(ba, by1, zd)]);
+      setPts(bedEls.blanketSide, [w(bb, by0, zb), w(bb, by1, zb), w(bb, by1, zd), w(bb, by0, zd)]);
+      if (bedEls.fold) bedEls.fold.setAttribute('d', segD(w(ba, by0 + 0.5, zb), w(bb, by0 + 0.5, zb)));
+      var stands = [[lay.nsLOn, lay.nsL], [lay.nsROn, lay.nsR]];
+      stands.forEach(function (st, k) {
+        if (!st[0]) return;
+        var r = st[1];
+        var e = nsEls[k];
+        var zs = BR.nsH;
+        var zt = zs + BR.lampStemH;
+        var cx = (r.x0 + r.x1) / 2;
+        var cy = (r.y0 + r.y1) / 2;
+        var hs = BR.lampStem / 2;
+        var hh = BR.shade / 2;
+        setBox(e.box, w, r.x0, r.y0, 0, r.x1, r.y1, zs);
+        if (e.seam) e.seam.setAttribute('d', segD(w(r.x0 + 0.2, r.y1, zs - 0.7), w(r.x1 - 0.2, r.y1, zs - 0.7)));
+        setBox(e.stem, w, cx - hs, cy - hs, zs, cx + hs, cy + hs, zt);
+        setBox(e.shade, w, cx - hh, cy - hh, zt, cx + hh, cy + hh, zt + BR.shadeH);
+      });
+    }
+    POOL_IDS.forEach(function (id) {
+      var p = lay.pieces[id];
+      var e = poolEls[id];
+      vis(e.g, !!p);
+      if (!p) return;
+      Object.keys(p.boxes).forEach(function (part) {
+        var b = p.boxes[part];
+        setBox(e.box(part), w, b[0], b[1], b[2], b[3], b[4], b[5]);
+      });
+      if (e.seam) {
+        e.seam.setAttribute('d', p.seams.map(function (s) {
+          return segD(w(s[0][0], s[0][1], s[0][2]), w(s[1][0], s[1][1], s[1][2]));
+        }).join(''));
+      }
+    });
+    var items = [];
+    if (lay.bedOn && bedEls.g) items.push({ el: bedEls.g, r: lay.bedRect });
+    if (lay.nsLOn && nsEls[0].g) items.push({ el: nsEls[0].g, r: lay.nsL });
+    if (lay.nsROn && nsEls[1].g) items.push({ el: nsEls[1].g, r: lay.nsR });
+    POOL_IDS.forEach(function (id) {
+      var p = lay.pieces[id];
+      var el = poolEls[id].g;
+      if (p && el) items.push({ el: el, r: p.rect });
+    });
+    lay.cleaners.forEach(function (c, i) {
+      var el = unitEls[i].g;
+      if (el) items.push({ el: el, r: c });
+    });
+    var order = depthOrder(items.map(function (it) {
+      return it.r;
+    })).map(function (k) {
+      return items[k].el;
+    });
+    var sig = order.map(function (el) {
+      return el.getAttribute('data-piece') || 'unit-' + el.getAttribute('data-unitg');
+    }).join(',');
+    if (furnG && sig !== pieceOrderSig) {
+      pieceOrderSig = sig;
+      order.forEach(function (el) {
+        furnG.appendChild(el);
+      });
+    }
+
+    var capOn = drawCap && capSTgt > 0;
+    vis(capG, capOn);
+    vis(capLabel, capOn);
+    if (capOn) {
+      setPoly('[data-capg] [data-cap="floor"]', [w(0, 0, 0), w(gL, 0, 0), w(gL, gW, 0), w(0, gW, 0)]);
+      setPoly('[data-capg] [data-cap="left"]', [w(0, 0, H), w(0, gW, H), w(0, gW, 0), w(0, 0, 0)]);
+      setPoly('[data-capg] [data-cap="right"]', [w(0, 0, H), w(gL, 0, H), w(gL, 0, 0), w(0, 0, 0)]);
+      setPoly('[data-cap="top"]', [w(0, 0, H), w(gL, 0, H), w(gL, gW, H), w(0, gW, H)]);
+      var capEdge = el1('[data-cap-edge]');
       if (capEdge) {
-        var ce0 = w(L, gy1, 0);
-        var ce1 = w(L, gy1, H);
+        var ce0 = w(gL, gW, 0);
+        var ce1 = w(gL, gW, H);
         capEdge.setAttribute('x1', ce0[0]); capEdge.setAttribute('y1', ce0[1]);
         capEdge.setAttribute('x2', ce1[0]); capEdge.setAttribute('y2', ce1[1]);
       }
-      var capPt = w(L, gy1, 0);
-      var prefix = capClamped ? '≥' : '';
+      var capPt = w(gL, gW, 0);
       var capFt3 = raw('units') === 'ft3';
       var capText = capFt3 ? fmt(capMaxVol, 0) + ' ft³' : fmt(capMaxVol / 8, 0) + ' ft²';
-      var capCaption = 'covers a room up to ' + prefix + capText;
+      var capCaption = 'covers a room up to ' + capText;
       setLabel('capacity', capLabelAt(capPt[0], capPt[1], capCaption), capCaption);
     }
 
+    var cw = lay.cw;
+    var cu = cw / FACE_U;
+    var hu = ch / FACE_U;
+    var grilleD = '';
+    var ventD = '';
+    for (var gk = 0; gk < 5; gk++) {
+      var gx = (cu * (0.2 + 0.15 * gk)).toFixed(2);
+      grilleD += 'M' + gx + ',' + (0.45 * hu).toFixed(2) + 'V' + (0.88 * hu).toFixed(2);
+    }
+    for (var vk = 0; vk < 4; vk++) {
+      var vy = (cu * (0.25 + vk / 6)).toFixed(2);
+      ventD += 'M' + (0.21 * cu).toFixed(2) + ',' + vy + 'H' + (0.79 * cu).toFixed(2);
+    }
+    var r0 = cw;
+    var reachLo = Math.max(2.5, r0 + 1);
+    var reachHi = 0.6 * Math.max(L, W);
     ringDefs.length = 0;
     for (var i2 = 0; i2 < MAX_CLEANERS; i2++) {
-      var ringsG = svg.querySelector('.smaqmd-cityview__rings[data-rings="' + (i2 + 1) + '"]');
-      var unitG = svg.querySelector('.smaqmd-cityview__unitg[data-unitg="' + (i2 + 1) + '"]');
+      var u = unitEls[i2];
       var on = i2 < n;
-      if (ringsG) ringsG.style.visibility = on ? '' : 'hidden';
-      if (unitG) unitG.style.visibility = on ? '' : 'hidden';
+      vis(ringGroups[i2], on);
+      vis(u.g, on);
+      vis(clearEls[i2], on);
       if (!on) {
         ringDefs[i2] = null;
         var stale = ringPolys[i2] || [];
@@ -792,15 +1068,20 @@
         continue;
       }
       var cc = cleaners[i2];
+      var cr = lay.clear[i2];
+      var qx0 = Math.max(0, cr.x0);
+      var qy0 = Math.max(0, cr.y0);
+      var qx1 = Math.min(L, cr.x1);
+      var qy1 = Math.min(W, cr.y1);
+      setPts(clearEls[i2], [w(qx0, qy0, 0), w(qx1, qy0, 0), w(qx1, qy1, 0), w(qx0, qy1, 0)]);
 
-      var cw2 = cc.x1 - cc.x0;
       var ucx = (cc.x0 + cc.x1) / 2;
       var ucy = (cc.y0 + cc.y1) / 2;
-      var r0 = 0.75 * cw2;
-      var rMax = Math.max(r0 + 0.5, Math.min(7, Math.max(2.5, 0.45 * Math.min(L, W))));
-      var basePt = w(ucx, ucy, 0);
-      var exPt = w(ucx + 1, ucy, 0);
-      var fyPt = w(ucx, ucy + 1, 0);
+      var share = laneAch[i2] > 0 && sceneTarget > 0 ? laneAch[i2] / sceneTarget : 0;
+      var rMax = clamp(Math.sqrt((share * L * W) / Math.PI), reachLo, reachHi);
+      var basePt = w(ucx, ucy, ch);
+      var exPt = w(ucx + 1, ucy, ch);
+      var fyPt = w(ucx, ucy + 1, ch);
       ringDefs[i2] = {
         cx: basePt[0],
         cy: basePt[1],
@@ -812,30 +1093,18 @@
         rMax: rMax,
       };
 
-      var setUnitG = (function (ug) {
-        return function (sel, pts) {
-          var el = ug ? ug.querySelector(sel) : null;
-          if (el) el.setAttribute('points', ptsAttr(pts));
-        };
-      })(unitG);
-      setUnitG('[data-unit="top"]', [
-        w(cc.x0, cc.y0, cc.h),
-        w(cc.x1, cc.y0, cc.h),
-        w(cc.x1, cc.y1, cc.h),
-        w(cc.x0, cc.y1, cc.h),
-      ]);
-      setUnitG('[data-unit="left"]', [
-        w(cc.x0, cc.y1, cc.h),
-        w(cc.x1, cc.y1, cc.h),
-        w(cc.x1, cc.y1, 0),
-        w(cc.x0, cc.y1, 0),
-      ]);
-      setUnitG('[data-unit="right"]', [
-        w(cc.x1, cc.y0, cc.h),
-        w(cc.x1, cc.y1, cc.h),
-        w(cc.x1, cc.y1, 0),
-        w(cc.x1, cc.y0, 0),
-      ]);
+      setBox(u.faces, w, cc.x0, cc.y0, 0, cc.x1, cc.y1, ch);
+      if (u.front) u.front.setAttribute('transform', faceMatrix(w, [cc.x0, cc.y1, ch], [1, 0, 0], [0, 0, -1]));
+      if (u.side) u.side.setAttribute('transform', faceMatrix(w, [cc.x1, cc.y1, ch], [0, -1, 0], [0, 0, -1]));
+      if (u.top) u.top.setAttribute('transform', faceMatrix(w, [cc.x0, cc.y0, ch], [1, 0, 0], [0, 1, 0]));
+      if (u.grilleF) u.grilleF.setAttribute('d', grilleD);
+      if (u.grilleS) u.grilleS.setAttribute('d', grilleD);
+      if (u.vent) u.vent.setAttribute('d', ventD);
+      if (u.tag) {
+        u.tag.setAttribute('x', (cu / 2).toFixed(2));
+        u.tag.setAttribute('y', (0.3 * hu).toFixed(2));
+        u.tag.setAttribute('font-size', Math.max(1, 4.2 * cw).toFixed(2));
+      }
     }
 
     var lm = mid(w(0, W, 0), w(L, W, 0));
@@ -846,20 +1115,20 @@
     setLabel('height', [hm[0] - 26, hm[1]], fmt(H * labelK.H, 1) + ' ft');
 
     var HANDLE_DEG = { length: 30, width: 150, height: 90 };
-    var setLine = function (dim, p, q) {
-      var lineEl = svg.querySelector('.smaqmd-cityview__hit[data-grip="' + dim + '"]');
+    var setLine = function (dim, p, q2) {
+      var lineEl = el1('.smaqmd-cityview__hit[data-grip="' + dim + '"]');
       if (lineEl) {
         lineEl.setAttribute('x1', p[0].toFixed(1));
         lineEl.setAttribute('y1', p[1].toFixed(1));
-        lineEl.setAttribute('x2', q[0].toFixed(1));
-        lineEl.setAttribute('y2', q[1].toFixed(1));
+        lineEl.setAttribute('x2', q2[0].toFixed(1));
+        lineEl.setAttribute('y2', q2[1].toFixed(1));
       }
-      var m = mid(p, q);
-      var handle = svg.querySelector('.smaqmd-cityview__handle[data-grip="' + dim + '"]');
+      var hmid = mid(p, q2);
+      var handle = el1('.smaqmd-cityview__handle[data-grip="' + dim + '"]');
       if (handle) {
         handle.setAttribute(
           'transform',
-          'translate(' + m[0].toFixed(1) + ' ' + m[1].toFixed(1) + ') rotate(' + HANDLE_DEG[dim] + ')'
+          'translate(' + hmid[0].toFixed(1) + ' ' + hmid[1].toFixed(1) + ') rotate(' + HANDLE_DEG[dim] + ')'
         );
       }
     };
@@ -868,6 +1137,16 @@
     setLine('height', w(0, W, 0), w(0, W, H));
 
     paintRings();
+    drawKey = sceneKey(L, W, H);
+  };
+  var drawKey = '';
+  var sceneKey = function (L, W, H) {
+    return [
+      L, W, H, sceneN, capS, capSTgt, capMaxVol, sceneTarget,
+      safe.x, safe.y, safe.w, safe.h, viewW, viewH,
+      pauseBox ? pauseBox.x + ',' + pauseBox.y + ',' + pauseBox.w + ',' + pauseBox.h : '',
+      labelK.L, labelK.W, labelK.H, laneAch.join('/'), raw('units'),
+    ].join('|');
   };
 
   var HOUR_SECONDS = 5;
@@ -878,9 +1157,7 @@
   var capS = 0;
   var capSTgt = 0;
   var capMaxVol = 0;
-  var capClamped = false;
   var capG = svg.querySelector('[data-capg]');
-  var capGBack = svg.querySelector('[data-capg-back]');
   var capLabel = svg.querySelector('[data-capg-top]');
   var laneAch = [];
   var stateNow = 'idle';
@@ -914,7 +1191,7 @@
           );
         }
         poly.setAttribute('points', pts.join(' '));
-        poly.setAttribute('stroke-opacity', (0.55 * (1 - p)).toFixed(2));
+        poly.setAttribute('stroke-opacity', (0.85 * Math.pow(1 - p, 1.2)).toFixed(3));
       }
     }
   };
@@ -944,7 +1221,7 @@
       running = false;
       return;
     }
-    var dt = Math.min(0.05, (ts - last) / 1000 || 0);
+    var dt = Math.max(0, Math.min(0.05, (ts - last) / 1000 || 0));
     last = ts;
 
     var k = 1 - Math.pow(1 - 0.22, dt * 60);
@@ -965,7 +1242,8 @@
       capS = capSTgt;
     }
     updateRings(dt);
-    drawScene(cur.L, cur.W, cur.H);
+    if (sceneKey(cur.L, cur.W, cur.H) !== drawKey) drawScene(cur.L, cur.W, cur.H);
+    else paintRings();
 
     if (morphing || animating()) requestAnimationFrame(frame);
     else running = false;
@@ -978,8 +1256,7 @@
   };
 
   var ROOM_MAX = { length: 100, width: 100, height: 30, area: 10000 };
-  // ACH per air-quality choice — KEEP IN SYNC with airQualityOptions and
-  // AIR_QUALITY_ACH in src/components/smaqmd-aer-wizard.astro.
+
   var AIR_QUALITY_ACH = { good: 2, unhealthy: 5, smoke: 7.5 };
   var ROOM_MIN = 1;
   var roomOversize = function () {
@@ -1331,8 +1608,7 @@
   var achWrap = block.querySelector('[data-metric="ach"]');
   var achEvidence = block.querySelector('[data-ach-evidence]');
   var fixWrap = block.querySelector('[data-metric="fix"]');
-  // The rating toggle lives top-right of the answer block, outside fixWrap —
-  // showFix() flips both together so the toggle never orphans its stat.
+
   var ratingWrap = block.querySelector('[data-rating-wrap]');
   var showFix = function (on) {
     show(fixWrap, on);
@@ -1374,6 +1650,7 @@
     var cleanerCount = hasCleaners() ? Math.max(1, blocks.length) : 1;
     sceneN = Math.min(Math.max(1, blocks.length), MAX_CLEANERS);
     var target = pos('target') || 2;
+    sceneTarget = target;
     setReadout('target', fmt(target, 2));
     var enteredTarget = num('target');
     var targetIsInvalid = isFinite(enteredTarget) && enteredTarget <= 0;
@@ -1408,24 +1685,19 @@
       capMaxVol = (flow * 60) / target;
       var sScale = Math.sqrt(capMaxVol / vol);
       capSTgt = Math.min(sScale, 3);
-      capClamped = sScale > 3;
       container.dataset.capCompare = capMaxVol >= vol ? 'bigger' : 'smaller';
       if (capG) capG.style.visibility = '';
-      if (capGBack) capGBack.style.visibility = '';
       if (capLabel) capLabel.style.visibility = '';
     } else if (shopPreview) {
       capMaxVol = vol;
       capSTgt = 1;
-      capClamped = false;
       container.dataset.capCompare = 'bigger';
       if (capG) capG.style.visibility = '';
-      if (capGBack) capGBack.style.visibility = '';
       if (capLabel) capLabel.style.visibility = '';
     } else {
       capSTgt = 0;
-      capClamped = false;
+      container.dataset.capCompare = 'bigger';
       if (capG) capG.style.visibility = 'hidden';
-      if (capGBack) capGBack.style.visibility = 'hidden';
       if (capLabel) capLabel.style.visibility = 'hidden';
     }
 
@@ -1438,21 +1710,12 @@
     syncLaneIdle();
 
     var needCadr = (target * vol) / 60;
-    // FAIL shops for the GAP, not the room's total: the cleaners already in the
-    // room supply the rest, and stating the total would make the user do the
-    // subtraction themselves. gapCadr = needCadr - flow = (target - ach) * vol
-    // / 60, so the ACH framing and the equivalence rows stay consistent when
-    // they price the gap instead.
+
     var renderFix = function (isGap) {
       var cadrGoal = isGap ? needCadr - flow : needCadr;
-      // The shop card's "choose an air cleaner with a CADR of N CFM or higher"
-      // sentence. Always the full requirement in CFM, never the gap and never the
-      // ACH framing: a CADR is only ever printed in CFM.
+
       setReadout('needcadr', fmt(needCadr, 0) + ' CFM');
       if (asAch) {
-        // FAIL+ACH: a fractional "+0.7 ACH" hero matches nothing printed on a
-        // box, so the stat hides, the equivalence list leads, and the gap
-        // demotes to a supporting line under the list.
         show(fixStat, !isGap);
         setMetric('fix', fmt(target, 2) + unitSpan('ACH'));
         if (fixLabel) fixLabel.textContent = 'ACH coverage to shop for';
@@ -1540,14 +1803,9 @@
         setReadout('moreunits', fmt(moreUnits, 0));
         setReadout('unitnoun', moreUnits === 1 ? 'air cleaner' : 'air cleaners');
       }
-      // On a fail the caution keys off the GAP the add-on cleaners must supply:
-      // below 700 CFM one added unit can still close it (and "Add N more"
-      // carries the multi-unit case), but past 700 no single add-on exists —
-      // and the "swap in stronger cleaners" line would otherwise be a dead end.
+
       show(cadrHighEl, !pass && needCadr - flow > 700);
-      // CLIENT COPY (SMAQMD communications review, Sep 2026): "the right size" /
-      // "too small". One subject for both verdicts — their phrasing puts the
-      // negation in the predicate, not the verb. KEEP IN SYNC with the wizard.
+
       var subj = blocks.length > 1 ? 'Your air cleaners are' : 'Your air cleaner is';
       setAnswer(
         pass ? subj + ' the right size for this room' : subj + ' too small for this room',
@@ -1638,8 +1896,7 @@
         prefillMode(getFieldValue(group) || 'dimensions');
       }
     }
-    // An air-quality choice writes its ACH into the target field (hidden unless
-    // "custom") — everything downstream reads the field, as before.
+
     if (el.type === 'radio' && el.name === 'airQuality') {
       var customWrap = root.querySelector('[data-target-custom]');
       if (customWrap) customWrap.hidden = el.value !== 'custom';
@@ -1681,8 +1938,7 @@
       }
       return;
     }
-    // CADR ⇄ ACH swap: write the hidden unit store, re-render, then move focus
-    // to the field that just appeared (the clicked button is now hidden).
+
     var swap = t.closest('[data-unit-swap]');
     if (swap) {
       e.preventDefault();

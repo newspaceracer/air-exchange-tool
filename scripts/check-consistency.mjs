@@ -15,14 +15,20 @@
 //    (inline on the cleaners step, in a disclosure on the result step) and must
 //    stay byte-identical; every .smaqmd-type-* rung the twin fixes must equal
 //    the theme's pin for the same rung; every radio group's options, labels and
-//    default must match; the engine constants (AIR_QUALITY_ACH, TITLES, …) must
-//    match; and the deliverable's HTML/CSS must carry no code comments.
+//    default must match; the engine constants (AIR_QUALITY_ACH, TITLES,
+//    BEDROOM, …) must match; the scene svg's data-* hooks must match; and the
+//    deliverable's HTML/CSS must carry no code comments.
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p) => readFileSync(resolve(root, p), 'utf8');
+// The checked tree. Defaults to this repo; an optional first argument points the
+// checks at another copy (`node scripts/check-consistency.mjs /path/to/copy`), so
+// a deliberately mutated scratch copy can prove a check fails. node_modules is
+// always read from this repo, so the copy needs only src/ and public/.
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const root = process.argv[2] ? resolve(process.argv[2]) : repo;
+const read = (p) => readFileSync(resolve(p.startsWith('node_modules/') ? repo : root, p), 'utf8');
 const failures = [];
 
 // ---- 1. every fluid composite size token is pinned ----
@@ -59,7 +65,7 @@ const ACKNOWLEDGED = new Set(['esa-stat.astro']); // label/sub sized via wizard 
 const usedLegos = execSync("grep -rhoE '@esa/ecology/esa-[a-z-]+' src/ | sort -u", { cwd: root })
   .toString().trim().split('\n').map((s) => s.replace('@esa/ecology/', ''));
 const compDir = 'node_modules/@esa/ecology/src/components';
-for (const f of readdirSync(resolve(root, compDir))) {
+for (const f of readdirSync(resolve(repo, compDir))) {
   if (!/\.(astro|ts)$/.test(f)) continue;
   if (!usedLegos.some((u) => f.startsWith(u))) continue;
   const src = read(`${compDir}/${f}`);
@@ -186,10 +192,53 @@ const literal = (src, name) => {
   const m = src.match(new RegExp(`(?:const|var|let) ${name}(?::[^=]+)?\\s*=\\s*([\\[{][\\s\\S]*?[\\]}]);`));
   return m ? m[1].replace(/\s+/g, '').replace(/"/g, "'").replace(/,([\]}])/g, '$1') : null;
 };
-for (const name of ['AIR_QUALITY_ACH', 'TITLES', 'ROOM_MAX', 'CLEANER_FIELDS']) {
+// (2g) BEDROOM is the scene's dressing — every bed, nightstand and pool-piece
+// size and floor-area threshold — so the two builds cannot furnish the same
+// room differently. It is a multi-line literal with nested objects; the
+// extractor still takes all of it, because the first bracket immediately
+// followed by ";" is the outer close.
+for (const name of ['AIR_QUALITY_ACH', 'TITLES', 'ROOM_MAX', 'CLEANER_FIELDS', 'BEDROOM']) {
   const a = literal(wizard, name);
   const b = literal(twinJs, name);
-  if (a !== b) failures.push(`${name} differs between builds:\n      wizard: ${a}\n      twin:   ${b}`);
+  if (a === null || b === null) failures.push(`${name} not found as a literal in ${a === null ? 'the wizard' : 'public/aer-tool/app.js'}`);
+  else if (a !== b) failures.push(`${name} differs between builds:\n      wizard: ${a}\n      twin:   ${b}`);
+}
+
+// ---- 2f. the scene markup's data-* hooks match between the builds ----
+// The engine finds every scene element by a data-* attribute, so a hook present
+// in one build's <svg class="smaqmd-cityview__svg"> and missing (or doubled, or
+// valued differently) in the other's is a part that silently never draws. The
+// wizard writes the svg out literally (no .map) precisely so the multiset of
+// data-* tokens — name, plus value when it has one — can be compared here.
+const sceneSvg = (src, label) => {
+  const at = src.indexOf('class="smaqmd-cityview__svg"');
+  if (at === -1) { failures.push(`${label}: no .smaqmd-cityview__svg found`); return null; }
+  const start = src.lastIndexOf('<svg', at);
+  const end = src.indexOf('</svg>', at);
+  return src.slice(start, end).replace(/<!--[\s\S]*?-->/g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+};
+const dataTokens = (svgSrc, label) => {
+  const out = [];
+  for (const m of svgSrc.matchAll(/\s(data-[\w-]+)(?:=(?:"([^"]*)"|(\{)))?/g)) {
+    if (m[3]) failures.push(`${label}: ${m[1]} has a computed value inside the scene svg — write it literally so 2f can compare it`);
+    out.push(m[2] === undefined ? m[1] : `${m[1]}="${m[2]}"`);
+  }
+  return out.sort();
+};
+{
+  const wSvg = sceneSvg(wizard, 'wizard');
+  const tSvg = sceneSvg(twinHtml, 'public/aer-tool/index.html');
+  if (wSvg !== null && tSvg !== null) {
+    const count = (arr) => arr.reduce((mp, t) => mp.set(t, (mp.get(t) ?? 0) + 1), new Map());
+    const wc = count(dataTokens(wSvg, 'wizard'));
+    const tc = count(dataTokens(tSvg, 'public/aer-tool/index.html'));
+    const drift = [...new Set([...wc.keys(), ...tc.keys()])]
+      .filter((t) => wc.get(t) !== tc.get(t))
+      .map((t) => `${t} ×${wc.get(t) ?? 0} wizard / ×${tc.get(t) ?? 0} twin`);
+    if (drift.length) {
+      failures.push(`scene svg data-* hooks differ between builds (${drift.length}):\n      ${drift.slice(0, 12).join('\n      ')}`);
+    }
+  }
 }
 
 // ---- 2d'. no dead helpers in the twin engine ----
@@ -208,7 +257,8 @@ for (const [, name] of twinJs.matchAll(/\bvar (\w+) = function\b/g)) {
 // The client embeds public/aer-tool verbatim, so it stands alone: no explanatory
 // comments and no spoke workflow tokens in its markup or styles. The ONLY
 // sanctioned comments are the two "=====" embed-region markers the README cites.
-// (app.js predates this guard and still carries comments — not yet enforced.)
+// app.js is checked with a real parser (acorn), so a "//" inside a string or
+// URL, or a "/*" inside a regex, can never count as a comment.
 const strayHtml = [...twinHtml.matchAll(/<!--([\s\S]*?)-->/g)].filter(([, c]) => !c.includes('====='));
 if (strayHtml.length) {
   failures.push(`public/aer-tool/index.html has ${strayHtml.length} code comment(s) besides the embed markers — the deliverable ships comment-free; keep notes in the wizard source`);
@@ -216,6 +266,19 @@ if (strayHtml.length) {
 const strayCss = twinCss.match(/\/\*[\s\S]*?\*\//g) ?? [];
 if (strayCss.length) {
   failures.push(`public/aer-tool/styles.css has ${strayCss.length} code comment(s) — the deliverable ships comment-free`);
+}
+{
+  const { parse } = await import('acorn');
+  const jsComments = [];
+  try {
+    parse(twinJs, { ecmaVersion: 'latest', onComment: (_b, _t, start) => jsComments.push(start) });
+  } catch (err) {
+    failures.push(`public/aer-tool/app.js does not parse: ${err.message}`);
+  }
+  if (jsComments.length) {
+    const line = twinJs.slice(0, jsComments[0]).split('\n').length;
+    failures.push(`public/aer-tool/app.js has ${jsComments.length} code comment(s) (first at line ${line}) — the deliverable ships comment-free; keep notes in the wizard source`);
+  }
 }
 
 // ---- 3. known-broken lego prop combinations ----
@@ -236,4 +299,4 @@ if (failures.length) {
   console.error('check-consistency FAILED:\n' + failures.map((f) => `  ✗ ${f}`).join('\n'));
   process.exit(1);
 }
-console.log(`check-consistency ok — ${new Set(fluidTokens).size} type tokens pinned, twin blocks identical, ${twinRungs.length} twin rungs matched, ${groupsChecked} radio groups matched, engine constants matched, deliverable comment-free`);
+console.log(`check-consistency ok — ${new Set(fluidTokens).size} type tokens pinned, twin blocks identical, ${twinRungs.length} twin rungs matched, ${groupsChecked} radio groups matched, engine constants matched, scene hooks matched, deliverable comment-free`);
