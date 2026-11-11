@@ -12,8 +12,10 @@
 // focus return. A modal dialog lives in the top layer, so it is not clipped by the
 // surface it covers; instead it is SIZED to that surface's on-screen rectangle on
 // open (and on resize), with a transparent ::backdrop so the page outside stays
-// visible. When the surface is not fully on screen (a phone, where the card flows
-// with the page), the sheet covers the viewport instead, so it never opens offscreen.
+// visible. Below the `fullscreen` media query (the page's own stacked/mobile
+// layout, where the surface flows with the page) the sheet covers the viewport
+// instead. Without that prop it falls back to covering the viewport whenever the
+// surface is not fully on screen, so it never opens offscreen.
 //
 // USAGE
 //   <div data-sheet-anchor> …the surface… </div>            the surface to cover
@@ -34,14 +36,23 @@ interface Props {
    * do nothing. It is then announced as an alertdialog.
    */
   dismissible?: boolean;
+  /**
+   * Media query under which the sheet covers the whole viewport instead of the
+   * surface. Pass the page's own layout breakpoint (e.g. "(max-width: 68rem)"),
+   * so the sheet's mode switches exactly when the layout does. Deciding by
+   * "does the surface fit on screen right now" instead flipped the mode back and
+   * forth as the window was resized within one layout.
+   */
+  fullscreen?: string;
 }
-const { name, heading, dismissible = true } = Astro.props;
+const { name, heading, dismissible = true, fullscreen } = Astro.props;
 ---
 
 <dialog
   class="smaqmd-sheet"
   data-sheet={name}
   data-sheet-required={dismissible ? undefined : ''}
+  data-sheet-fullscreen={fullscreen}
   role={dismissible ? undefined : 'alertdialog'}
   aria-label={heading}
 >
@@ -70,12 +81,26 @@ const { name, heading, dismissible = true } = Astro.props;
 
   const place = (sheet: HTMLDialogElement) => {
     const anchor = sheet.closest<HTMLElement>('[data-sheet-anchor]');
-    const r = anchor?.getBoundingClientRect();
+    // Cover the anchor's CONTENT box, not its border box: an anchor that pads
+    // around the visible card (the wizard panel pads 4px) would otherwise leave
+    // the sheet that much larger than the card on every side.
+    const box = anchor?.getBoundingClientRect();
+    const pad = anchor ? getComputedStyle(anchor) : null;
+    const r = box && pad ? {
+      top: box.top + parseFloat(pad.paddingTop),
+      left: box.left + parseFloat(pad.paddingLeft),
+      width: box.width - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight),
+      height: box.height - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom),
+      bottom: box.bottom - parseFloat(pad.paddingBottom),
+    } : undefined;
     const onScreen = !!r && r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
+    const fsQuery = sheet.dataset.sheetFullscreen;
+    const full = fsQuery ? window.matchMedia(fsQuery).matches || !onScreen : !onScreen;
     const s = sheet.style;
-    if (onScreen && r) {
+    if (!full && r) {
       s.top = `${r.top}px`; s.left = `${r.left}px`;
       s.width = `${r.width}px`; s.height = `${r.height}px`;
+      s.right = 'auto'; s.bottom = 'auto';
       sheet.dataset.fit = 'anchor';
     } else {
       // All four edges, not width/height 100%: a fixed box pinned to the edges
@@ -94,6 +119,20 @@ const { name, heading, dismissible = true } = Astro.props;
     document.documentElement.style.overflow = on ? 'hidden' : '';
   };
 
+  // Re-place an open sheet whenever its surface changes size or position: the
+  // scroll lock removing the page scrollbar, a layout shift, a resize. A window
+  // 'resize' alone missed the first two, which left the sheet a few px off.
+  const watched = new WeakMap<HTMLDialogElement, ResizeObserver>();
+  const watch = (sheet: HTMLDialogElement, on: boolean) => {
+    if (!on) { watched.get(sheet)?.disconnect(); watched.delete(sheet); return; }
+    const anchor = sheet.closest<HTMLElement>('[data-sheet-anchor]');
+    if (!anchor || watched.has(sheet) || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => { if (sheet.open) place(sheet); });
+    ro.observe(anchor);
+    ro.observe(document.documentElement);
+    watched.set(sheet, ro);
+  };
+
   const open = (sheet: HTMLDialogElement) => {
     // Reopened mid-close: cancel the pending close() and let the transition
     // retarget from wherever the panel is, rather than snapping.
@@ -101,8 +140,11 @@ const { name, heading, dismissible = true } = Astro.props;
     if (pending) { window.clearTimeout(pending); closeTimers.delete(sheet); }
     delete sheet.dataset.closing;
     if (!sheet.open) {
-      place(sheet);
+      // Lock FIRST: hiding the page scrollbar widens the layout, so measuring
+      // before it put the sheet a scrollbar's width off the surface.
       lockPage(true);
+      place(sheet);
+      watch(sheet, true);
       sheet.showModal();
       // showModal() focuses the first control, which sits inside the panel while
       // it is still translated below the box. The browser then SCROLLS the dialog
@@ -124,6 +166,7 @@ const { name, heading, dismissible = true } = Astro.props;
       closeTimers.delete(sheet);
       delete sheet.dataset.closing;
       sheet.close();
+      watch(sheet, false);
       if (!document.querySelector('dialog[data-sheet][open]')) lockPage(false);
     }, EXIT_MS));
   };
@@ -191,6 +234,9 @@ const { name, heading, dismissible = true } = Astro.props;
     max-inline-size: none;
     max-block-size: none;
     background: transparent;
+    /* A <dialog> resets text to the UA's pure black; take the theme's text
+       colour like the rest of the page. */
+    color: var(--color-content-default, #121212);
     overflow: hidden;
     overflow: clip; /* not even programmatically scrollable — see open() */
     border-radius: var(--radius-md, 0.5rem);
@@ -252,7 +298,7 @@ const { name, heading, dismissible = true } = Astro.props;
     padding: var(--spacing-400, 1rem) var(--spacing-400, 1rem) var(--spacing-300, 0.75rem) var(--spacing-500, 1.5rem);
     border-block-end: var(--border-width-default, 1px) solid var(--color-border-default-subtle, #d9d9d9);
   }
-  .smaqmd-sheet__title { margin: 0; }
+  .smaqmd-sheet__title { margin: 0; text-wrap: balance; }
   .smaqmd-sheet__body {
     overflow: auto;
     overscroll-behavior: contain;

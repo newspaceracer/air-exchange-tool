@@ -204,6 +204,7 @@
   var sceneN = 1;
   var sceneTarget = 2;
   var MAX_CLEANERS = 4;
+  var UNIT_MAX_CFM = 700;
   var ringPolys = [];
   for (var rp = 0; hasScene && rp < MAX_CLEANERS; rp++) {
     var found = svg.querySelectorAll(
@@ -329,7 +330,7 @@
       grilleF: q(at + ' [data-unit-face="front"] [data-grille]'),
       grilleS: q(at + ' [data-unit-face="side"] [data-grille]'),
       vent: q(at + ' [data-vent]'),
-      tag: q(at + ' [data-tag]'),
+      label: q('[data-unit-label="' + i + '"]'),
     };
   });
 
@@ -1059,8 +1060,11 @@
       var u = unitEls[i2];
       var on = i2 < n;
       vis(ringGroups[i2], on);
+      var ghost = on && i2 === laneGhost;
       vis(u.g, on);
-      vis(clearEls[i2], on);
+      vis(u.label, on);
+      vis(clearEls[i2], on && !ghost);
+      if (u.g) { if (ghost) u.g.setAttribute('data-ghost', ''); else u.g.removeAttribute('data-ghost'); }
       if (!on) {
         ringDefs[i2] = null;
         var stale = ringPolys[i2] || [];
@@ -1100,10 +1104,12 @@
       if (u.grilleF) u.grilleF.setAttribute('d', grilleD);
       if (u.grilleS) u.grilleS.setAttribute('d', grilleD);
       if (u.vent) u.vent.setAttribute('d', ventD);
-      if (u.tag) {
-        u.tag.setAttribute('x', (cu / 2).toFixed(2));
-        u.tag.setAttribute('y', (0.3 * hu).toFixed(2));
-        u.tag.setAttribute('font-size', Math.max(1, 4.2 * cw).toFixed(2));
+      if (u.label) {
+        var tagText = laneTag[i2] || '';
+        var topY = w(cc.x0, cc.y0, ch)[1];
+        u.label.setAttribute('x', basePt[0].toFixed(1));
+        u.label.setAttribute('y', (topY - 5).toFixed(1));
+        if (u.label.textContent !== tagText) u.label.textContent = tagText;
       }
     }
 
@@ -1146,6 +1152,7 @@
       safe.x, safe.y, safe.w, safe.h, viewW, viewH,
       pauseBox ? pauseBox.x + ',' + pauseBox.y + ',' + pauseBox.w + ',' + pauseBox.h : '',
       labelK.L, labelK.W, labelK.H, laneAch.join('/'), raw('units'),
+      laneTag.join('/'), laneGhost,
     ].join('|');
   };
 
@@ -1160,6 +1167,8 @@
   var capG = svg.querySelector('[data-capg]');
   var capLabel = svg.querySelector('[data-capg-top]');
   var laneAch = [];
+  var laneTag = [];
+  var laneGhost = -1;
   var stateNow = 'idle';
   var running = false;
   var last = 0;
@@ -1705,10 +1714,13 @@
     }
 
     laneAch.length = 0;
+    laneTag.length = 0;
+    laneGhost = -1;
     blocks.forEach(function (b, i) {
       if (i >= MAX_CLEANERS) return;
       var f = cleanerFlow(b.getAttribute('data-cleaner-block'));
       laneAch[i] = hasRoom && f > 0 ? (f / vol) * 60 : 0;
+      laneTag[i] = f > 0 ? fmt(Math.round(f), 0) + ' CFM' : '';
     });
     syncLaneIdle();
 
@@ -1833,9 +1845,22 @@
       setVerdictCard('shop');
       setPrompt(false);
       if (shopPreview) {
-        sceneN = Math.min(Math.max(1, cleanerCount), MAX_CLEANERS);
+        var needUp = Math.ceil(needCadr);
+        var unitsNeeded = Math.max(cleanerCount, Math.ceil(needUp / UNIT_MAX_CFM));
+        var unitCfm = [];
+        laneTag.length = 0;
+        laneGhost = -1;
+        if (unitsNeeded > MAX_CLEANERS) {
+          unitCfm = [UNIT_MAX_CFM, UNIT_MAX_CFM, UNIT_MAX_CFM];
+          laneGhost = MAX_CLEANERS - 1;
+        } else {
+          for (var ui = 0; ui < unitsNeeded; ui++) unitCfm.push(Math.ceil(needUp / unitsNeeded));
+        }
+        sceneN = laneGhost >= 0 ? MAX_CLEANERS : unitCfm.length;
+        for (var ti = 0; ti < unitCfm.length; ti++) laneTag[ti] = fmt(unitCfm[ti], 0) + ' CFM';
+        if (laneGhost >= 0) laneTag[laneGhost] = '+' + fmt(needUp - UNIT_MAX_CFM * (MAX_CLEANERS - 1), 0) + ' CFM';
         laneAch.length = 0;
-        for (var si = 0; si < MAX_CLEANERS; si++) laneAch[si] = si < sceneN ? target / sceneN : 0;
+        for (var si = 0; si < MAX_CLEANERS; si++) laneAch[si] = si < unitCfm.length ? (unitCfm[si] / vol) * 60 : 0;
         syncLaneIdle();
         stateNow = 'shop';
         container.dataset.state = 'shop';
@@ -1933,7 +1958,9 @@
     if (el.hasAttribute && el.hasAttribute('data-numeric')) {
       var clean = sanitizeNumeric(el.value || '');
       if (clean !== el.value) el.value = clean;
-      if (clean) clearFieldError(el);
+      var rf = el.getAttribute('data-field');
+      if (clean && (rf === 'airflow' || rf === 'ach')) clearRatingErrors();
+      else if (clean) clearFieldError(el);
       if (el.getAttribute('data-field') === 'target') {
         targetCommitted = false;
         targetWarnAcked = false;
@@ -2149,14 +2176,27 @@
   var SHEET_EXIT_MS = 200;
   var placeSheet = function (sheet) {
     var anchor = sheet.closest('[data-sheet-anchor]');
-    var r = anchor ? anchor.getBoundingClientRect() : null;
+    var box = anchor ? anchor.getBoundingClientRect() : null;
+    var pad = anchor ? getComputedStyle(anchor) : null;
+    var r = box
+      ? {
+          top: box.top + parseFloat(pad.paddingTop),
+          left: box.left + parseFloat(pad.paddingLeft),
+          width: box.width - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight),
+          height: box.height - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom),
+          bottom: box.bottom - parseFloat(pad.paddingBottom),
+        }
+      : null;
     var onScreen = !!r && r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
+    var full = mqMobile.matches || !onScreen;
     var st = sheet.style;
-    if (onScreen) {
+    if (!full) {
       st.top = r.top + 'px';
       st.left = r.left + 'px';
       st.width = r.width + 'px';
       st.height = r.height + 'px';
+      st.right = 'auto';
+      st.bottom = 'auto';
       sheet.setAttribute('data-fit', 'anchor');
     } else {
       st.top = '0px';
@@ -2171,6 +2211,20 @@
   var lockPage = function (on) {
     document.documentElement.style.overflow = on ? 'hidden' : '';
   };
+  var watchSheet = function (sheet, on) {
+    if (!on) {
+      if (sheet._ro) sheet._ro.disconnect();
+      sheet._ro = null;
+      return;
+    }
+    var anchor = sheet.closest('[data-sheet-anchor]');
+    if (!anchor || sheet._ro || typeof ResizeObserver === 'undefined') return;
+    sheet._ro = new ResizeObserver(function () {
+      if (sheet.open) placeSheet(sheet);
+    });
+    sheet._ro.observe(anchor);
+    sheet._ro.observe(document.documentElement);
+  };
   var openSheet = function (sheet) {
     if (sheet._closeTimer) {
       window.clearTimeout(sheet._closeTimer);
@@ -2178,8 +2232,9 @@
     }
     sheet.removeAttribute('data-closing');
     if (!sheet.open) {
-      placeSheet(sheet);
       lockPage(true);
+      placeSheet(sheet);
+      watchSheet(sheet, true);
       sheet.showModal();
       sheet.scrollTop = 0;
       void sheet.offsetWidth;
@@ -2196,6 +2251,7 @@
       sheet._closeTimer = 0;
       sheet.removeAttribute('data-closing');
       sheet.close();
+      watchSheet(sheet, false);
       if (!document.querySelector('dialog[data-sheet][open]')) lockPage(false);
     }, SHEET_EXIT_MS);
   };
@@ -2248,11 +2304,18 @@
   var noRatingChoice = null;
   var skipNoRating = false;
   var noRatingSheet = root.querySelector('dialog[data-sheet="no-rating"]');
-  var firstRatingField = function () {
-    var b = cleanerBlocks()[0];
-    if (!b) return null;
-    var id = b.getAttribute('data-cleaner-block');
-    return field(raw('unit', id) === 'ach' ? 'ach' : 'airflow', id);
+  var ratingFields = function () {
+    var out = [];
+    cleanerBlocks().forEach(function (b) {
+      var id = b.getAttribute('data-cleaner-block');
+      var f = field(raw('unit', id) === 'ach' ? 'ach' : 'airflow', id);
+      if (f) out.push(f);
+    });
+    return out;
+  };
+  var clearRatingErrors = function () {
+    var all = root.querySelectorAll('[data-cleaners] [data-field="airflow"], [data-cleaners] [data-field="ach"]');
+    for (var ci = 0; ci < all.length; ci++) clearFieldError(all[ci]);
   };
   root.addEventListener('click', function (e) {
     var c = e.target && e.target.closest ? e.target.closest('[data-no-rating]') : null;
@@ -2264,15 +2327,23 @@
         skipNoRating = true;
         goStep(stepIdx + 1);
       } else if (noRatingChoice === 'enter') {
-        var f = firstRatingField();
+        var fields = ratingFields();
+        var f = fields[0];
         if (f) {
           if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-          setFieldError(
-            f,
-            f.getAttribute('data-field') === 'ach'
-              ? 'Enter the air changes per hour from your air cleaner’s label.'
-              : 'Enter the CADR or airflow from your air cleaner’s label.'
-          );
+          var many = fields.length > 1;
+          fields.forEach(function (fld) {
+            setFieldError(
+              fld,
+              fld.getAttribute('data-field') === 'ach'
+                ? many
+                  ? 'Enter the air changes per hour for at least one air cleaner.'
+                  : 'Enter the air changes per hour from your air cleaner’s label.'
+                : many
+                  ? 'Enter the CADR or airflow for at least one air cleaner.'
+                  : 'Enter the CADR or airflow from your air cleaner’s label.'
+            );
+          });
           f.focus();
         }
       }

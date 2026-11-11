@@ -189,7 +189,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        the interior rethink and are deliberately kept: the twin shares them. -->
   <div class="smaqmd-aerb__stage smaqmd-cityview" data-cityview data-state="idle">
     <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img"
-         aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
+         aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. Each air cleaner is labeled with its CFM; when typical air cleaners can’t reach the target, a dashed placeholder shows how much more airflow is still needed. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
       <defs>
         <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width={2 * A} height={2 * B}>
           <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle>
@@ -287,8 +287,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
            data-face "left", right); inside a piece the parts are in their own
            painter order. A unit is three faces, then three face-local detail
            groups (a matrix transform per face, set by JS): grille slats on the
-           front and side, vent lines on top, and the number tag that ties it to
-           the panel's "Air cleaner n" block. Units 2–4 start hidden. -->
+           front and side, and vent lines on top. Each unit's CFM floats above it
+           ([data-unit-label], drawn later so it paints over the room). Units 2–4
+           start hidden. -->
       <g data-furniture>
         <g class="smaqmd-cityview__details" data-piece="bed" style="visibility:hidden">
         <g data-box="headboard">
@@ -447,7 +448,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">1</text></g>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
         </g>
@@ -455,7 +456,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">4</text></g>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
         </g>
@@ -463,7 +464,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">2</text></g>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
         </g>
@@ -471,7 +472,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
           <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">3</text></g>
+          <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
           <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
         </g>
@@ -524,6 +525,17 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         <polygon class="smaqmd-cityview__cap-face" data-cap="top"></polygon>
         <line class="smaqmd-cityview__cap-edge" data-cap-edge></line>
         <text class="smaqmd-cityview__dim smaqmd-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
+      </g>
+
+      <!-- Each unit's CFM, floating just above it at the dimension labels' fixed
+           size. Units are drawn to the room's scale, so text ON a unit shrinks to
+           a few pixels in a large room; these stay readable at any size. Drawn
+           after the furniture, rings and ghost so nothing covers them. -->
+      <g data-unit-labels>
+        <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="1" text-anchor="middle"></text>
+        <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="2" text-anchor="middle" style="visibility:hidden"></text>
+        <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="3" text-anchor="middle" style="visibility:hidden"></text>
+        <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="4" text-anchor="middle" style="visibility:hidden"></text>
       </g>
 
       <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
@@ -682,7 +694,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                (SMAQMD asked for instructions first) without pushing the rating field
                below the card's scroll fold. -->
           <span data-step-lede="1" data-sheet-open="find-rating" hidden>
-            <EsaButton size="sm" variant="ghost" appearance="outline" icon="info" type="button">
+            <EsaButton size="md" variant="ghost" appearance="outline" icon="info" type="button">
               Where to find your air cleaner’s rating
             </EsaButton>
           </span>
@@ -859,7 +871,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                     ([data-r="unitnoun"]) rather than printed as "(s)" — their text
                     used the parenthetical because it was writing about both cases
                     at once, which a live result never has to do. */}
-                <p class="typography-heading-md smaqmd-aerb__action">
+                <p class="typography-title-strong smaqmd-aerb__action">
                   You would need <strong data-r="moreunits">—</strong> additional
                   <span data-r="unitnoun">air cleaners</span> with the same rating
                 </p>
@@ -916,7 +928,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                 <esa-button-toggle
                   class="smaqmd-aerb__rating"
                   data-field="rating"
-                  size={hasIntro ? 'sm' : 'xs'}
+                  size={hasIntro ? 'md' : 'sm'}
                   label="Show the rating as"
                   value="cadr"
                   options={JSON.stringify(ratingToggle)}
@@ -962,7 +974,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
               <EsaCollapsible title="Learn more">
                 <div class="stack" data-gap="sm">
                   <div class="stack" data-gap="2xs">
-                    <p class="typography-title">What does CADR mean?</p>
+                    <p class="typography-title-sm-strong">What does CADR mean?</p>
                     <p class="typography-body-md">
                       CADR stands for Clean Air Delivery Rate. It tells you how much
                       filtered air an air cleaner can provide. A higher number means
@@ -971,7 +983,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                     </p>
                   </div>
                   <div class="stack" data-gap="2xs">
-                    <p class="typography-title">Where do I find the CADR?</p>
+                    <p class="typography-title-sm-strong">Where do I find the CADR?</p>
                     <p class="typography-body-md">
                       Look on the product box, product specifications, user manual, or
                       manufacturer’s website. You may see several CADR numbers. Use the
@@ -1052,7 +1064,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
              equivalent prose-note component). .smaqmd-aerb__cert is the reusable
              home for it. -->
         <div class="smaqmd-aerb__cert stack" data-gap="2xs">
-          <h3 class="typography-title">Air cleaner certification</h3>
+          <h3 class="typography-title-sm-strong">Air cleaner certification</h3>
           <p class="typography-body-md">
             Since 2010, all portable indoor air cleaning devices sold to people or
             businesses in California are required to be certified by the California
@@ -1085,13 +1097,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     </EsaCard>
     <!-- Covers this panel only (data-sheet-anchor above); opened from the rating
          step's header button. -->
-    <SmaqmdSheet name="find-rating" heading="Where to find your air cleaner’s rating">
+    <SmaqmdSheet name="find-rating" heading="Where to find your air cleaner’s rating" fullscreen="(max-width: 68rem)">
       <SmaqmdAerFindRatings inline />
     </SmaqmdSheet>
     <!-- Next with no rating on the check path. A blank rating is allowed (it routes
          to the shop result), so this is a choice, not an error: continue to what to
          shop for, or go back and enter one (which flags the field). -->
-    <SmaqmdSheet name="no-rating" heading="Don’t know the rating?" dismissible={false}>
+    <SmaqmdSheet name="no-rating" heading="Don’t know the rating?" dismissible={false} fullscreen="(max-width: 68rem)">
       <div class="stack" data-gap="lg">
         <p class="typography-body-md">
           We’ll show you what to look for when shopping for an air cleaner.
@@ -1329,10 +1341,30 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      runtime (innerHTML), so it never gets Astro's scope attribute — match it via
      :global() anchored under the (scoped) root. */
   .smaqmd-aerb :global(.smaqmd-aerb__unit) {
-    font-size: 0.5em;
+    /* Half the number, but never under the 13px meta floor (the fail-state
+       stat is smaller, which put the unit at 12px), and without the number's
+       negative display tracking, which only suits large sizes. */
+    font-size: max(0.5em, var(--typography-body-xs-font-size, 0.8125rem));
+    letter-spacing: normal;
     font-weight: var(--typography-font-weight-medium, 500);
     color: var(--color-content-default-secondary);
   }
+  /* Links inside running text: the theme's link colour, UNDERLINED. The hub
+     resets every <a> to colour-only, but against the grey body text the link
+     blue is ~1.2:1 — colour alone can't mark it (WCAG 1.4.1 asks for 3:1 or a
+     non-colour cue). Underline position and thickness come from the font. */
+  .smaqmd-aerb :global(p a) {
+    color: var(--color-content-link, #116194);
+    text-decoration-line: underline;
+    text-decoration-thickness: from-font;
+    text-underline-position: from-font;
+  }
+  /* Inline emphasis at the semibold rung, not the browser's bold (700, or 900
+     inside a 550 heading): emphasis inside a sentence should never outweigh the
+     headings above it. Inside the 550 action line, one rung up (the hero
+     number's bold rung) so the count still stands out. */
+  .smaqmd-aerb :global(strong) { font-weight: var(--typography-font-weight-semibold, 550); }
+  .smaqmd-aerb__action :global(strong) { font-weight: var(--typography-font-weight-bold, 650); }
   /* Caution note under the CADR hero (e.g. the >700 CFM warning). */
   /* Result text is ONE color — the subtle gray-11 (content-default-secondary,
      5.6:1 on the gray-1 ground). Only the band title, the hero number, and the
@@ -1642,19 +1674,37 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: var(--color-background-utility-warning, #d9822b); }
   .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__unit-face[data-unit="right"] { fill: var(--color-orange-10, #c15d10); }
   /* Unit detail, drawn in face-local units under a per-face matrix transform:
-     the stroke stays a 1px hairline at any zoom (non-scaling-stroke). The tag
-     is light on the brand front face and dark on the orange one, the same
-     on-colour pairs the theme sets for those fills. */
+     the stroke stays a 1px hairline at any zoom (non-scaling-stroke). */
   .smaqmd-cityview__grille,
   .smaqmd-cityview__vent { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
   .smaqmd-cityview__grille { stroke: color-mix(in srgb, var(--color-content-on-brand, #fcfcfc) 50%, transparent); }
   .smaqmd-cityview__vent   { stroke: color-mix(in srgb, var(--color-content-on-brand, #fcfcfc) 80%, transparent); }
-  .smaqmd-cityview__tag {
-    fill: var(--color-content-on-brand, #fcfcfc);
+  /* A unit's floating CFM label: the dimension-label type, a step bolder and in
+     the primary text colour, with a paper-coloured halo so it stays legible
+     where it crosses a wall line or a wave. */
+  .smaqmd-cityview__unit-label {
+    fill: var(--color-content-default, #121212);
     font-weight: var(--typography-font-weight-semibold, 600);
-    font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+    stroke: var(--color-background-elevation-raised, #fff);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    paint-order: stroke;
   }
-  .smaqmd-cityview[data-state="fail"] .smaqmd-cityview__tag { fill: var(--color-content-on-utility-warning, #121212); }
+  /* The shop path's placeholder unit — the scene's ellipsis ("…and this much
+     more airflow") when even four typical cleaners fall short. A translucent
+     grey box with a dashed outline: the same shape as a unit, so it reads as
+     "more of these", but greyed out and with no grille or vents, since it is
+     not a product. Three grey steps keep the box's top/left/right shading. */
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__unit-face {
+    stroke: var(--smaqmd-gray-9, #8d8d8d);
+    stroke-dasharray: 3 2;
+    stroke-width: 1;
+  }
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__unit-face[data-unit="top"]   { fill: color-mix(in srgb, var(--smaqmd-gray-4, #e8e8e8) 60%, transparent); }
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__unit-face[data-unit="left"]  { fill: color-mix(in srgb, var(--smaqmd-gray-6, #d9d9d9) 60%, transparent); }
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__unit-face[data-unit="right"] { fill: color-mix(in srgb, var(--smaqmd-gray-7, #cecece) 60%, transparent); }
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__grille,
+  .smaqmd-cityview__unitg[data-ghost] .smaqmd-cityview__vent { display: none; }
 
   .smaqmd-cityview__dim {
     fill: var(--color-content-default-secondary, #555);
@@ -2195,7 +2245,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // consumers below (header placement, and the responsive variant's scene
     // pause) so they can never disagree about which side of 68rem we are on.
     // Must stay identical to the `@media (max-width: 68rem)` query in the style
-    // block above — the CSS hides the scene, this decides whether it animates.
+    // block above, and to the two sheets' `fullscreen` prop in the markup — the CSS hides the scene, this decides whether it animates.
     const mqMobile = window.matchMedia('(max-width: 68rem)');
 
     // ---- responsive header placement ----
@@ -2389,6 +2439,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // reaches the floor area it keeps clean at THIS rate); set in recompute().
     let sceneTarget = 2;
     const MAX_CLEANERS = 4;
+    // Typical ceiling of one consumer air cleaner (CFM); the shop preview splits
+    // the recommendation into units no bigger than this.
+    const UNIT_MAX_CFM = 700;
     // The 4 × 4 ring polygons are static markup, so they're looked up ONCE here
     // rather than re-queried every frame. ringPolys[i][k] is cleaner i's ring k.
     const ringPolys: SVGElement[][] = [];
@@ -2506,7 +2559,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         grilleF: q(`${at} [data-unit-face="front"] [data-grille]`),
         grilleS: q(`${at} [data-unit-face="side"] [data-grille]`),
         vent: q(`${at} [data-vent]`),
-        tag: q(`${at} [data-tag]`),
+        label: q(`[data-unit-label="${i}"]`),
       };
     });
 
@@ -3247,9 +3300,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       for (let i = 0; i < MAX_CLEANERS; i++) {
         const u = unitEls[i];
         const on = i < n;
+        const ghost = on && i === laneGhost;
         vis(ringGroups[i], on);
         vis(u.g, on);
-        vis(clearEls[i], on);
+        vis(u.label, on);
+        // The placeholder stands for airflow, not a product to place, so it
+        // claims no clearance square.
+        vis(clearEls[i], on && !ghost);
+        if (ghost) u.g?.setAttribute('data-ghost', ''); else u.g?.removeAttribute('data-ghost');
         if (!on) {
           ringDefs[i] = null;
           (ringPolys[i] || []).forEach((p) => p.setAttribute('points', ''));
@@ -3287,10 +3345,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         u.grilleF?.setAttribute('d', grilleD);
         u.grilleS?.setAttribute('d', grilleD);
         u.vent?.setAttribute('d', ventD);
-        if (u.tag) {
-          u.tag.setAttribute('x', (cu / 2).toFixed(2));
-          u.tag.setAttribute('y', (0.3 * hu).toFixed(2));
-          u.tag.setAttribute('font-size', Math.max(1, 4.2 * cw).toFixed(2));
+        if (u.label) {
+          // The CFM, centred a few px above the unit's top face (its highest
+          // projected corner is the far one, (x0, y0)).
+          const tag = laneTag[i] ?? '';
+          const [tx] = w(ucx, ucy, ch);
+          const topY = w(c.x0, c.y0, ch)[1];
+          u.label.setAttribute('x', tx.toFixed(1));
+          u.label.setAttribute('y', (topY - 5).toFixed(1));
+          if (u.label.textContent !== tag) u.label.textContent = tag;
         }
       }
 
@@ -3342,6 +3405,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       safe.x, safe.y, safe.w, safe.h, viewW, viewH,
       pauseBox ? `${pauseBox.x},${pauseBox.y},${pauseBox.w},${pauseBox.h}` : '',
       labelK.L, labelK.W, labelK.H, laneAch.join('/'), raw('units'),
+      laneTag.join('/'), laneGhost,
     ].join('|');
 
     // ---- animation loop: room morph + the cleaning pulse on each cleaner ----
@@ -3373,6 +3437,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     // Per-cleaner air-change cadence: laneAch[i] = that cleaner's flow × 60 ÷ room
     // volume. Zero (blank cleaner) → no pulse on that unit.
     const laneAch: number[] = [];
+    // The CFM label floating above each unit ('' = no label: a cleaner with no
+    // rating yet), e.g. "450 CFM". Always CFM — even when the shop stat is phrased
+    // as ACH — because a per-unit ACH would read like the box claim the ACH
+    // equivalence list exists to correct. laneGhost marks the shop path's
+    // placeholder slot (-1 = none), see the shop branch of recompute().
+    const laneTag: string[] = [];
+    let laneGhost = -1;
     // idle | pass | fail | shop (aggregate tint). 'shop' is the preview state: no
     // cleaner entered, but a room + a target are, so the scene shows what buying
     // to the recommended rating would look like. Everything that asks "is the
@@ -4013,10 +4084,13 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // Fill each cleaner's ACH share for the pulse cadence (flow_i × 60 ÷ vol),
       // and mark idle any cleaner with no flow so its rings stay hidden.
       laneAch.length = 0;
+      laneTag.length = 0;
+      laneGhost = -1;
       blocks.forEach((b, i) => {
         if (i >= MAX_CLEANERS) return;
         const f = cleanerFlow(b.dataset.cleanerBlock!);
         laneAch[i] = hasRoom && f > 0 ? (f / vol) * 60 : 0;
+        laneTag[i] = f > 0 ? `${fmt(Math.round(f), 0)} CFM` : '';
       });
       syncLaneIdle();
 
@@ -4182,14 +4256,37 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           // guidance is written against — not blocks.length, so a shopper who
           // entered cleaners and then answered "No" doesn't get a room full of
           // units they said they don't have. Clamped to what the scene can draw.
-          sceneN = Math.min(Math.max(1, cleanerCount), MAX_CLEANERS);
-          // Each planned unit pulses at its SHARE of the target, so the ripples
-          // together read as exactly the target rate — the same cadence the pass
-          // state will show once the recommended cleaners are actually in the
-          // room. Lanes past the planned count get 0 and go idle, which is why
-          // this re-syncs the flags: sceneN just moved under them.
+          // The recommendation is then split into units a shopper can buy: the
+          // fewest that each stay at or under UNIT_MAX_CFM (most consumer cleaners
+          // top out there — the same 700 the caution above names), split evenly
+          // and rounded up, so 900 reads 450 + 450. Never fewer than the cleaners
+          // the user said they have. Past four units' worth the scene runs out of
+          // slots: three solid units at the max, and the fourth becomes a dashed
+          // PLACEHOLDER tagged with the airflow still missing ("+1,000") — an
+          // ellipsis ("…and this much more"), not a claim about one more product.
+          const needUp = Math.ceil(needCadr);
+          const units = Math.max(cleanerCount, Math.ceil(needUp / UNIT_MAX_CFM));
+          laneTag.length = 0;
+          laneGhost = -1;
+          let unitCfm: number[];
+          if (units > MAX_CLEANERS) {
+            unitCfm = [UNIT_MAX_CFM, UNIT_MAX_CFM, UNIT_MAX_CFM];
+            laneGhost = MAX_CLEANERS - 1;
+          } else {
+            unitCfm = Array.from({ length: units }, () => Math.ceil(needUp / units));
+          }
+          sceneN = laneGhost >= 0 ? MAX_CLEANERS : unitCfm.length;
+          unitCfm.forEach((c, i) => { laneTag[i] = `${fmt(c, 0)} CFM`; });
+          if (laneGhost >= 0) laneTag[laneGhost] = `+${fmt(needUp - UNIT_MAX_CFM * (MAX_CLEANERS - 1), 0)} CFM`;
+          // Each planned unit pulses at what ITS CFM delivers in this room, so
+          // the ripples together read as the target rate — the same cadence the
+          // pass state will show once the recommended cleaners are in the room.
+          // With a placeholder the three solid units fall short (their rings stop
+          // early) and the placeholder moves no air, so it gets 0 and goes idle,
+          // as do lanes past the planned count — which is why this re-syncs the
+          // flags: sceneN just moved under them.
           laneAch.length = 0;
-          for (let i = 0; i < MAX_CLEANERS; i++) laneAch[i] = i < sceneN ? target / sceneN : 0;
+          for (let i = 0; i < MAX_CLEANERS; i++) laneAch[i] = i < unitCfm.length ? (unitCfm[i] / vol) * 60 : 0;
           syncLaneIdle();
           stateNow = 'shop';
           container.dataset.state = 'shop';
@@ -4259,7 +4356,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (el && el.tagName === 'ESA-TEXT-FIELD') {
         const clean = sanitizeNumeric(el.value ?? '');
         if (clean !== el.value) el.value = clean;
-        if (el.hasAttribute('error-text') && clean) el.removeAttribute('error-text');
+        if (clean && (el.dataset?.field === 'airflow' || el.dataset?.field === 'ach')) clearRatingErrors();
+        else if (el.hasAttribute('error-text') && clean) el.removeAttribute('error-text');
         if (el.dataset?.field === 'target') { targetCommitted = false; targetWarnAcked = false; }
       }
       // Prefill before the mode's fields are read for the scene box.
@@ -4513,14 +4611,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
 
     let noRatingChoice: string | null = null;
     let skipNoRating = false;
-    // The visible rating field of the first cleaner (CADR, or ACH when swapped).
-    const firstRatingField = () => {
-      const b = cleanerBlocks()[0];
-      return b?.querySelector<HTMLElement & { focus(): void }>(
+    // Each cleaner's visible rating field (CADR, or ACH when swapped), in order.
+    const ratingFields = () => cleanerBlocks().map((b) =>
+      b.querySelector<HTMLElement & { focus(): void }>(
         raw('unit', b.getAttribute('data-cleaner-block')!) === 'ach'
           ? 'esa-text-field[data-field="ach"]'
           : 'esa-text-field[data-field="airflow"]'
-      ) ?? null;
+      )).filter((f): f is HTMLElement & { focus(): void } => !!f);
+    // The rule is "at least one rating", so the error belongs to the GROUP: every
+    // rating field is flagged together and cleared together. Clearing only the
+    // field being typed in would leave the other cleaners red, implying each one
+    // is required when a blank extra cleaner is fine.
+    const clearRatingErrors = () => {
+      root.querySelectorAll('esa-text-field[data-field="airflow"][error-text], esa-text-field[data-field="ach"][error-text]')
+        .forEach((f) => f.removeAttribute('error-text'));
     };
     root.addEventListener('click', (e) => {
       const c = (e.target as Element).closest?.('[data-no-rating]');
@@ -4534,7 +4638,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         skipNoRating = true;
         goStep(stepIdx + 1);
       } else if (noRatingChoice === 'enter') {
-        const f = firstRatingField();
+        const fields = ratingFields();
+        const f = fields[0];
         if (f) {
           // Drop the focus the dialog's close() just restored before focusing the
           // field. When Enter in this same field opened the sheet, close() hands
@@ -4544,9 +4649,19 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           let a = document.activeElement as HTMLElement | null;
           while (a?.shadowRoot?.activeElement) a = a.shadowRoot.activeElement as HTMLElement;
           a?.blur();
-          f.setAttribute('error-text', f.dataset.field === 'ach'
-            ? 'Enter the air changes per hour from your air cleaner’s label.'
-            : 'Enter the CADR or airflow from your air cleaner’s label.');
+          // WCAG 3.3.1/3.3.3: every empty field is identified, in text, with a
+          // message that states the real requirement — with several cleaners,
+          // "at least one", so no field claims to be required on its own. The
+          // lego sets aria-invalid, ties the message to the input via
+          // aria-describedby, and marks it with an icon + "Error:" prefix (not
+          // colour alone, 1.4.1). Focus goes to the first, so the message is
+          // read on arrival without a live region.
+          const many = fields.length > 1;
+          fields.forEach((fld) => fld.setAttribute('error-text', fld.dataset.field === 'ach'
+            ? (many ? 'Enter the air changes per hour for at least one air cleaner.'
+                    : 'Enter the air changes per hour from your air cleaner’s label.')
+            : (many ? 'Enter the CADR or airflow for at least one air cleaner.'
+                    : 'Enter the CADR or airflow from your air cleaner’s label.')));
           f.focus();
         }
       }

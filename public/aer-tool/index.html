@@ -27,7 +27,7 @@
         data-state="idle"
       >
         <svg class="smaqmd-cityview__svg" viewBox="0 0 480 380" role="img"
-             aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
+             aria-label="Isometric cutaway of your room, drawn with windows and a door and furnished as a bedroom when the room is large enough. Each air cleaner stands on the floor along a wall with a foot of clear space around it and away from the corners (the first against the left wall, beside the bed when there is one, the second across the room, the third along the front, the fourth across the room toward the back wall), and once there is a result, rings spread out from each cleaner like radio waves, as far as the floor area it can keep clean at your target. Each air cleaner is labeled with its CFM; when typical air cleaners can’t reach the target, a dashed placeholder shows how much more airflow is still needed. When a result is shown, a dashed outline from the far corner shows the largest room the cleaners could cover.">
           <defs>
             <pattern id="smaqmd-iso-dots" patternUnits="userSpaceOnUse" width="45.034" height="26">
               <circle class="smaqmd-cityview__dot" cx="0" cy="0" r="1.1"></circle>
@@ -231,7 +231,7 @@
               <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">1</text></g>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
             </g>
@@ -239,7 +239,7 @@
               <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">4</text></g>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
             </g>
@@ -247,7 +247,7 @@
               <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">2</text></g>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
             </g>
@@ -255,7 +255,7 @@
               <polygon class="smaqmd-cityview__unit-face" data-unit="left"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="right"></polygon>
               <polygon class="smaqmd-cityview__unit-face" data-unit="top"></polygon>
-              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path><text class="smaqmd-cityview__tag" data-tag text-anchor="middle">3</text></g>
+              <g data-unit-face="front"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="side"><path class="smaqmd-cityview__grille" data-grille></path></g>
               <g data-unit-face="top"><path class="smaqmd-cityview__vent" data-vent></path></g>
             </g>
@@ -288,6 +288,12 @@
             <polygon class="smaqmd-cityview__cap-face" data-cap="top"></polygon>
             <line class="smaqmd-cityview__cap-edge" data-cap-edge></line>
             <text class="smaqmd-cityview__dim smaqmd-cityview__cap-label" data-label="capacity" text-anchor="start">—</text>
+          </g>
+          <g data-unit-labels>
+            <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="1" text-anchor="middle"></text>
+            <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="2" text-anchor="middle" style="visibility: hidden"></text>
+            <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="3" text-anchor="middle" style="visibility: hidden"></text>
+            <text class="smaqmd-cityview__dim smaqmd-cityview__unit-label" data-unit-label="4" text-anchor="middle" style="visibility: hidden"></text>
           </g>
           <text class="smaqmd-cityview__dim" data-label="length" data-grip="length" text-anchor="middle">—</text>
           <text class="smaqmd-cityview__dim" data-label="width" data-grip="width" text-anchor="middle">—</text>
@@ -925,7 +931,7 @@
                         <div data-verdict-card="fail" hidden>
                           <div class="smaqmd-stack" data-gap="xs">
                             <p
-                              class="smaqmd-type-heading-md smaqmd-aerb__action"
+                              class="smaqmd-type-title-strong smaqmd-aerb__action"
                             >
                               You would need
                               <strong data-r="moreunits">—</strong> additional
@@ -1015,22 +1021,24 @@
                               class="smaqmd-toggle smaqmd-aerb__rating"
                               data-field="rating"
                             >
-                              <legend class="smaqmd-visually-hidden">
+                              <legend class="smaqmd-toggle__legend">
                                 Show the rating as
                               </legend>
-                              <label class="smaqmd-toggle__item">
-                                <input
-                                  type="radio"
-                                  name="rating"
-                                  value="cadr"
-                                  checked
-                                />
-                                <span class="smaqmd-toggle__label">CADR</span>
-                              </label>
-                              <label class="smaqmd-toggle__item">
-                                <input type="radio" name="rating" value="ach" />
-                                <span class="smaqmd-toggle__label">ACH</span>
-                              </label>
+                              <div class="smaqmd-toggle__track">
+                                <label class="smaqmd-toggle__item">
+                                  <input
+                                    type="radio"
+                                    name="rating"
+                                    value="cadr"
+                                    checked
+                                  />
+                                  <span class="smaqmd-toggle__label">CADR</span>
+                                </label>
+                                <label class="smaqmd-toggle__item">
+                                  <input type="radio" name="rating" value="ach" />
+                                  <span class="smaqmd-toggle__label">ACH</span>
+                                </label>
+                              </div>
                             </fieldset>
                           </div>
                         </div>
@@ -1091,7 +1099,7 @@
                             <div class="smaqmd-collapsible__body">
                               <div class="smaqmd-stack" data-gap="sm">
                                 <div class="smaqmd-stack" data-gap="2xs">
-                                  <p class="smaqmd-type-title">
+                                  <p class="smaqmd-type-title-sm-strong">
                                     What does CADR mean?
                                   </p>
                                   <p class="smaqmd-type-body-md">
@@ -1103,7 +1111,7 @@
                                   </p>
                                 </div>
                                 <div class="smaqmd-stack" data-gap="2xs">
-                                  <p class="smaqmd-type-title">
+                                  <p class="smaqmd-type-title-sm-strong">
                                     Where do I find the CADR?
                                   </p>
                                   <p class="smaqmd-type-body-md">
@@ -1302,7 +1310,7 @@
                     </details>
 
                     <div class="smaqmd-aerb__cert smaqmd-stack" data-gap="2xs">
-                      <h3 class="smaqmd-type-title">Air cleaner certification</h3>
+                      <h3 class="smaqmd-type-title-sm-strong">Air cleaner certification</h3>
                       <p class="smaqmd-type-body-md">
                         Since 2010, all portable indoor air cleaning devices sold
                         to people or businesses in California are required to be
