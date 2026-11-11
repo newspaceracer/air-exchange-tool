@@ -362,7 +362,7 @@
             </h1>
           </div>
         </div>
-        <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
+        <div class="smaqmd-aerb__panel smaqmd-aerw__panel" data-sheet-anchor>
           <div class="smaqmd-card">
             <div class="smaqmd-card__body smaqmd-type-body-md">
               <div
@@ -429,6 +429,33 @@
                   >
                     What size is your room?
                   </h2>
+                  <span data-step-lede="1" data-sheet-open="find-rating" hidden>
+                    <button
+                      type="button"
+                      class="smaqmd-btn smaqmd-btn--outline smaqmd-btn--sm"
+                    >
+                      <svg
+                        class="smaqmd-btn__icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                      </svg>
+                      <span class="smaqmd-btn__label"
+                        >Where to find your air cleaner’s rating</span
+                      >
+                    </button>
+                  </span>
                   <svg
                     class="smaqmd-wizard__swoop"
                     viewBox="0 0 390 20"
@@ -641,74 +668,7 @@
                     data-step="1"
                     hidden
                   >
-                    <div>
-                        <div class="smaqmd-stack" data-gap="sm">
-                          <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
-                            <li>
-                              Look for the CADR (Clean Air Delivery Rate) on the air
-                              cleaner’s box, manual, or manufacturer’s website.
-                            </li>
-                            <li>
-                              You may see three CADR numbers for smoke, dust, and pollen.
-                              Enter the lowest number.
-                            </li>
-                            <li>
-                              If you don’t see CADR, look for an airflow rating in CFM and
-                              enter that number.
-                            </li>
-                            <li>
-                              If your air cleaner only lists Air Changes per Hour (ACH),
-                              select "Enter Air Changes per Hour instead."
-                            </li>
-                          </ul>
-                          <figure class="smaqmd-aer-find__figure">
-                            <img
-                              src="aham-label.jpg"
-                              alt="An AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR ratings: 189, 196, and 191. The lowest, 189, is the one to enter."
-                              width="1200"
-                              height="645"
-                              loading="lazy"
-                            />
-                            <figcaption class="smaqmd-type-body-md">
-                              This label lists three CADR ratings: 189, 196, and 191. Enter
-                              the lowest number: 189.
-                            </figcaption>
-                          </figure>
-                          <details class="smaqmd-collapsible">
-                            <summary
-                              class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
-                            >
-                              <span class="smaqmd-collapsible__title"
-                                >Need help finding it?</span
-                              >
-                            </summary>
-                            <div class="smaqmd-collapsible__body">
-                              <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
-                                <li>
-                                  Check the front of the box — the AHAM Verifide label is
-                                  usually there.
-                                </li>
-                                <li>
-                                  Check the specifications panel on the side or the back of
-                                  the box.
-                                </li>
-                                <li>Check the manual, in the specifications section.</li>
-                                <li>
-                                  Search the model number on the manufacturer’s website and
-                                  open its specifications page.
-                                </li>
-                                <li>
-                                  If it only lists air changes per hour (ACH), also note the
-                                  room size that rating was measured in — the tool asks for
-                                  both.
-                                </li>
-                              </ul>
-                            </div>
-                          </details>
-                        </div>
-                      </div>
-
-                    <fieldset class="smaqmd-radio" data-field="hasCleaner">
+                                        <fieldset class="smaqmd-radio" data-field="hasCleaner">
                       <legend class="smaqmd-radio__legend smaqmd-type-label-lg">
                         Do you have an air cleaner to check?
                       </legend>
@@ -1425,6 +1385,152 @@
               </div>
             </div>
           </div>
+          <dialog
+            class="smaqmd-sheet"
+            data-sheet="find-rating"
+            aria-label="Where to find your air cleaner’s rating"
+          >
+            <div class="smaqmd-sheet__scrim" data-sheet-close></div>
+            <div class="smaqmd-sheet__panel" tabindex="-1">
+              <div class="smaqmd-sheet__head">
+                <h3 class="smaqmd-type-title smaqmd-sheet__title">
+                  Where to find your air cleaner’s rating
+                </h3>
+                <span data-sheet-close>
+                  <button
+                    type="button"
+                    class="smaqmd-btn smaqmd-btn--chrome smaqmd-btn--icon"
+                    aria-label="Close"
+                  >
+                  <svg
+                    class="smaqmd-btn__icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                  </svg>
+                  </button>
+                </span>
+              </div>
+              <div class="smaqmd-sheet__body">
+                <div class="smaqmd-stack" data-gap="sm">
+                          <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
+                            <li>
+                              Look for the CADR (Clean Air Delivery Rate) on the air
+                              cleaner’s box, manual, or manufacturer’s website.
+                            </li>
+                            <li>
+                              You may see three CADR numbers for smoke, dust, and pollen.
+                              Enter the lowest number.
+                            </li>
+                            <li>
+                              If you don’t see CADR, look for an airflow rating in CFM and
+                              enter that number.
+                            </li>
+                            <li>
+                              If your air cleaner only lists Air Changes per Hour (ACH),
+                              select "Enter Air Changes per Hour instead."
+                            </li>
+                          </ul>
+                          <figure class="smaqmd-aer-find__figure">
+                            <img
+                              src="aham-label.jpg"
+                              alt="An AHAM Verifide label on the front of an air cleaner box. Under the suggested room size, the section titled Clean Air Delivery Rate Tested lists three circled CADR ratings: 189, 196, and 191. The lowest, 189, is the one to enter."
+                              width="1200"
+                              height="645"
+                              loading="lazy"
+                            />
+                            <figcaption class="smaqmd-type-body-md">
+                              This label lists three CADR ratings: 189, 196, and 191. Enter
+                              the lowest number: 189.
+                            </figcaption>
+                          </figure>
+                          <details class="smaqmd-collapsible">
+                            <summary
+                              class="smaqmd-collapsible__summary smaqmd-type-title-sm-strong"
+                            >
+                              <span class="smaqmd-collapsible__title"
+                                >Need help finding it?</span
+                              >
+                            </summary>
+                            <div class="smaqmd-collapsible__body">
+                              <ul class="smaqmd-type-body-md smaqmd-aer-find__list">
+                                <li>
+                                  Check the front of the box — the AHAM Verifide label is
+                                  usually there.
+                                </li>
+                                <li>
+                                  Check the specifications panel on the side or the back of
+                                  the box.
+                                </li>
+                                <li>Check the manual, in the specifications section.</li>
+                                <li>
+                                  Search the model number on the manufacturer’s website and
+                                  open its specifications page.
+                                </li>
+                                <li>
+                                  If it only lists air changes per hour (ACH), also note the
+                                  room size that rating was measured in — the tool asks for
+                                  both.
+                                </li>
+                              </ul>
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+            </div>
+          </dialog>
+          <dialog
+            class="smaqmd-sheet"
+            data-sheet="no-rating"
+            data-sheet-required
+            role="alertdialog"
+            aria-label="Don’t know the rating?"
+          >
+            <div class="smaqmd-sheet__scrim"></div>
+            <div class="smaqmd-sheet__panel" tabindex="-1">
+              <div class="smaqmd-sheet__head">
+                <h3 class="smaqmd-type-title smaqmd-sheet__title">
+                  Don’t know the rating?
+                </h3>
+              </div>
+              <div class="smaqmd-sheet__body">
+                <div class="smaqmd-stack" data-gap="lg">
+                  <p class="smaqmd-type-body-md">
+                    We’ll show you what to look for when shopping for an air
+                    cleaner.
+                  </p>
+                  <div class="smaqmd-cluster" data-gap="sm">
+                    <span data-sheet-close data-no-rating="continue">
+                      <button
+                        type="button"
+                        class="smaqmd-btn smaqmd-btn--primary smaqmd-btn--lg"
+                      >
+                        Show me what to look for
+                      </button>
+                    </span>
+                    <span data-sheet-close data-no-rating="enter">
+                      <button
+                        type="button"
+                        class="smaqmd-btn smaqmd-btn--outline smaqmd-btn--lg"
+                      >
+                        Enter a rating
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </dialog>
         </div>
       </div>
 

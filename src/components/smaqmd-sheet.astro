@@ -1,0 +1,272 @@
+---
+// smaqmd-sheet — a modal bottom sheet that covers ONE surface (a card, a panel)
+// instead of the whole page. It rises from that surface's bottom edge, dims only
+// that surface, and leaves the rest of the page visible.
+//
+// bcn-lego-checked: no esa- lego fits — esa-dialog is a centred page modal and
+// esa-side-dialog a page-edge drawer; neither can be confined to a surface.
+// Checked Beacon: not cloned on this machine. smaqmd-sheet is the reusable home.
+//
+// HOW IT STAYS A REAL MODAL. Per the hub's overlay notes (@esa/ecology overlay.ts),
+// modals use the native <dialog> + showModal(), which supplies inertness, Esc and
+// focus return. A modal dialog lives in the top layer, so it is not clipped by the
+// surface it covers; instead it is SIZED to that surface's on-screen rectangle on
+// open (and on resize), with a transparent ::backdrop so the page outside stays
+// visible. When the surface is not fully on screen (a phone, where the card flows
+// with the page), the sheet covers the viewport instead, so it never opens offscreen.
+//
+// USAGE
+//   <div data-sheet-anchor> …the surface… </div>            the surface to cover
+//   <span data-sheet-open="find-rating"><EsaButton …/></span> any trigger, anywhere
+//   <SmaqmdSheet name="find-rating" heading="…"> body </SmaqmdSheet>
+// Place the sheet INSIDE the anchor (it finds the anchor via closest()), and not
+// inside a hidden element: display:none on an ancestor stops a dialog rendering.
+import EsaIconButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  /** Matches the trigger's data-sheet-open value. */
+  name: string;
+  /** Visible title; also the dialog's accessible name. */
+  heading: string;
+  /**
+   * false: the sheet asks a question that needs an answer, so the only way out is
+   * a [data-sheet-close] control in the body. No ×, and Esc / a tap on the scrim
+   * do nothing. It is then announced as an alertdialog.
+   */
+  dismissible?: boolean;
+}
+const { name, heading, dismissible = true } = Astro.props;
+---
+
+<dialog
+  class="smaqmd-sheet"
+  data-sheet={name}
+  data-sheet-required={dismissible ? undefined : ''}
+  role={dismissible ? undefined : 'alertdialog'}
+  aria-label={heading}
+>
+  <div class="smaqmd-sheet__scrim" data-sheet-close={dismissible ? '' : undefined}></div>
+  <div class="smaqmd-sheet__panel" tabindex="-1">
+    <div class="smaqmd-sheet__head">
+      <h3 class="typography-title smaqmd-sheet__title">{heading}</h3>
+      {dismissible && (
+        <span data-sheet-close>
+          <EsaIconButton variant="chrome" iconOnly icon="x" label="Close" size="md" />
+        </span>
+      )}
+    </div>
+    <div class="smaqmd-sheet__body">
+      <slot />
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // One document-level wiring for every sheet on the page.
+  // Exit runs faster than the enter (enter 280ms in CSS): the user has already
+  // decided to leave. Keep in sync with the [data-closing] transition below.
+  const EXIT_MS = 200;
+  const closeTimers = new WeakMap<HTMLDialogElement, number>();
+
+  const place = (sheet: HTMLDialogElement) => {
+    const anchor = sheet.closest<HTMLElement>('[data-sheet-anchor]');
+    const r = anchor?.getBoundingClientRect();
+    const onScreen = !!r && r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
+    const s = sheet.style;
+    if (onScreen && r) {
+      s.top = `${r.top}px`; s.left = `${r.left}px`;
+      s.width = `${r.width}px`; s.height = `${r.height}px`;
+      sheet.dataset.fit = 'anchor';
+    } else {
+      // All four edges, not width/height 100%: a fixed box pinned to the edges
+      // follows iOS Safari's URL bar as it shows and hides.
+      s.top = '0px'; s.right = '0px'; s.bottom = '0px'; s.left = '0px';
+      s.width = 'auto'; s.height = 'auto';
+      sheet.dataset.fit = 'viewport';
+    }
+  };
+
+  // A modal <dialog> makes the page inert but does NOT stop it scrolling: a drag
+  // on the scrim or the sheet's header scrolls the page behind (and on desktop
+  // would slide the card out from under a sheet fitted to it). Lock the root's
+  // scroll while any sheet is open — honoured for touch since iOS 16.
+  const lockPage = (on: boolean) => {
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+  };
+
+  const open = (sheet: HTMLDialogElement) => {
+    // Reopened mid-close: cancel the pending close() and let the transition
+    // retarget from wherever the panel is, rather than snapping.
+    const pending = closeTimers.get(sheet);
+    if (pending) { window.clearTimeout(pending); closeTimers.delete(sheet); }
+    delete sheet.dataset.closing;
+    if (!sheet.open) {
+      place(sheet);
+      lockPage(true);
+      sheet.showModal();
+      // showModal() focuses the first control, which sits inside the panel while
+      // it is still translated below the box. The browser then SCROLLS the dialog
+      // to reveal it, cancelling the slide (the panel popped in place). overflow:
+      // clip blocks that scroll; reset it anyway in case a browser lacks clip.
+      sheet.scrollTop = 0;
+      void sheet.offsetWidth; // commit the closed pose so the rise transitions
+    }
+    sheet.dataset.open = '';
+    sheet.querySelector<HTMLElement>('.smaqmd-sheet__panel')?.focus({ preventScroll: true });
+  };
+
+  const close = (sheet: HTMLDialogElement) => {
+    if (!sheet.open || !('open' in sheet.dataset)) return;
+    delete sheet.dataset.open;
+    sheet.dataset.closing = '';
+    // close() after the slide-out; native close() restores focus to the trigger.
+    closeTimers.set(sheet, window.setTimeout(() => {
+      closeTimers.delete(sheet);
+      delete sheet.dataset.closing;
+      sheet.close();
+      if (!document.querySelector('dialog[data-sheet][open]')) lockPage(false);
+    }, EXIT_MS));
+  };
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as Element | null;
+    if (!t?.closest) return;
+    const opener = t.closest('[data-sheet-open]');
+    if (opener) {
+      const sheet = document.querySelector<HTMLDialogElement>(
+        `dialog[data-sheet="${opener.getAttribute('data-sheet-open')}"]`
+      );
+      if (sheet) { e.preventDefault(); open(sheet); }
+      return;
+    }
+    // A click on the <dialog> box itself is the ::backdrop (outside the surface).
+    if (t instanceof HTMLDialogElement && t.matches('[data-sheet]')) {
+      if (!t.hasAttribute('data-sheet-required')) close(t);
+      return;
+    }
+    const closer = t.closest('[data-sheet-close]');
+    const sheet = closer?.closest<HTMLDialogElement>('dialog[data-sheet]');
+    if (sheet) close(sheet);
+  });
+
+  // Programmatic open (no trigger click):
+  //   document.dispatchEvent(new CustomEvent('smaqmd-sheet-open', { detail: 'name' }))
+  // Listen for the dialog's native `close` event to act on the outcome.
+  document.addEventListener('smaqmd-sheet-open', (e) => {
+    const name = (e as CustomEvent<string>).detail;
+    const sheet = document.querySelector<HTMLDialogElement>(`dialog[data-sheet="${name}"]`);
+    if (sheet) open(sheet);
+  });
+
+  // Esc / platform close request: animate out instead of vanishing.
+  document.addEventListener('cancel', (e) => {
+    const t = e.target as Element;
+    if (t instanceof HTMLDialogElement && t.matches('[data-sheet]')) {
+      e.preventDefault();
+      if (!t.hasAttribute('data-sheet-required')) close(t);
+    }
+  }, true);
+
+  // A required sheet must swallow Esc at keydown too: Chrome lets a SECOND Esc
+  // close a modal even when its cancel event was prevented (anti-trap rule), so
+  // stopping the key itself is the only way to keep the answer mandatory.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (document.querySelector('dialog[data-sheet-required][open]')) e.preventDefault();
+  }, true);
+
+  window.addEventListener('resize', () => {
+    document.querySelectorAll<HTMLDialogElement>('dialog[data-sheet][open]').forEach(place);
+  });
+</script>
+
+<style>
+  /* The dialog box is the covered surface itself: transparent, edge to edge. */
+  .smaqmd-sheet {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-inline-size: none;
+    max-block-size: none;
+    background: transparent;
+    overflow: hidden;
+    overflow: clip; /* not even programmatically scrollable — see open() */
+    border-radius: var(--radius-md, 0.5rem);
+  }
+  .smaqmd-sheet[data-fit='viewport'] { border-radius: 0; }
+  /* Covering a surface hides its border; redraw it so the sheet's edges read as
+     the surface's edges rather than bleeding into the page. */
+  .smaqmd-sheet[data-fit='anchor']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .smaqmd-sheet[open] { display: flex; flex-direction: column; justify-content: flex-end; }
+  /* The page outside the surface stays visible (it is inert, not hidden). */
+  .smaqmd-sheet::backdrop { background: transparent; }
+
+  /* Nothing in the sheet pans the page; only the body scrolls (pan-y below). */
+  .smaqmd-sheet__scrim,
+  .smaqmd-sheet__head { touch-action: none; }
+
+  .smaqmd-sheet__scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-background-overlay-backdrop, rgb(0 0 0 / 0.4));
+    opacity: 0;
+    /* Paired with the panel: identical duration + easing, so they move as one. */
+    transition: opacity 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .smaqmd-sheet[data-open] .smaqmd-sheet__scrim { opacity: 1; }
+
+  .smaqmd-sheet__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-block-size: 88%;
+    background: var(--color-background-elevation-floating, #fff);
+    border-start-start-radius: var(--radius-lg, 0.75rem);
+    border-start-end-radius: var(--radius-lg, 0.75rem);
+    box-shadow: var(--elevation-5, 0 -8px 24px rgb(0 0 0 / 0.12));
+    transform: translateY(100%);
+    transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    outline: none;
+  }
+  /* Exit: faster (200ms vs 280ms) and ease-in, paired across scrim + panel. */
+  .smaqmd-sheet[data-closing] .smaqmd-sheet__scrim { transition: opacity 200ms ease-in; }
+  .smaqmd-sheet[data-closing] .smaqmd-sheet__panel { transition: transform 200ms ease-in; }
+  .smaqmd-sheet[data-open] .smaqmd-sheet__panel { transform: none; }
+
+  .smaqmd-sheet__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300, 0.75rem);
+    padding: var(--spacing-400, 1rem) var(--spacing-400, 1rem) var(--spacing-300, 0.75rem) var(--spacing-500, 1.5rem);
+    border-block-end: var(--border-width-default, 1px) solid var(--color-border-default-subtle, #d9d9d9);
+  }
+  .smaqmd-sheet__title { margin: 0; }
+  .smaqmd-sheet__body {
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: var(--spacing-500, 1.5rem);
+    /* Clear the iPhone home indicator. 0 unless the host page opts into
+       viewport-fit=cover — the host owns the viewport tag, so this is defensive. */
+    padding-block-end: calc(var(--spacing-500, 1.5rem) + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Reduced, not removed: the panel fades in place instead of rising. */
+    .smaqmd-sheet__panel,
+    .smaqmd-sheet[data-closing] .smaqmd-sheet__panel { transform: none; opacity: 0; transition: opacity 200ms ease-out; }
+    .smaqmd-sheet[data-open] .smaqmd-sheet__panel { opacity: 1; }
+  }
+</style>

@@ -45,6 +45,7 @@ import EsaIconButton from '@esa/ecology/esa-button.astro';
 // "Where can I find this information?" — mounted TWICE below (cleaners step +
 // result step) from ONE component so the two copies cannot drift apart.
 import SmaqmdAerFindRatings from './smaqmd-aer-find-ratings.astro';
+import SmaqmdSheet from './smaqmd-sheet.astro';
 
 const MAX_CLEANERS = 4;
 // The client's Sep 2026 review asked for length × width × height ONLY. Keeping
@@ -593,7 +594,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
        bespoke smaqmd-wizard concern; every CONTROL inside stays an esa-* lego, and
        the fields + [data-result] subtree are byte-for-byte the classic view's, so
        the SAME calc engine drives both — only the chrome differs. -->
-  <div class="smaqmd-aerb__panel smaqmd-aerw__panel">
+  <div class="smaqmd-aerb__panel smaqmd-aerw__panel" data-sheet-anchor>
     <EsaCard>
       <div class="smaqmd-wizard stack" data-gap="lg" data-wizard data-phase={hasIntro ? 'intro' : 'steps'}>
         {/* OPENING SLIDE (mobile + responsive), deliberately outside the step machinery:
@@ -676,6 +677,15 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
           </div>
           <p class="visually-hidden smaqmd-wizard__count" data-step-count>Step 1 of 3</p>
           <h2 class="typography-heading-md smaqmd-wizard__title" data-step-title tabindex="-1">What size is your room?</h2>
+          <!-- Rating step only. The instructions open in a bottom sheet over this card
+               (smaqmd-sheet, mounted at the end of the panel), so they lead the step
+               (SMAQMD asked for instructions first) without pushing the rating field
+               below the card's scroll fold. -->
+          <span data-step-lede="1" data-sheet-open="find-rating" hidden>
+            <EsaButton size="sm" variant="ghost" appearance="outline" icon="info" type="button">
+              Where to find your air cleaner’s rating
+            </EsaButton>
+          </span>
           <!-- The band's bottom EDGE, as the district's swoop rather than a straight
                rule. Two crossing waves, matching the agency's letterhead mark: the
                front one is the band's own colour and IS the band's edge (the flat
@@ -702,16 +712,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
             ></esa-radio-group>
             <div class="smaqmd-aerb__dims grid" data-gap="md">
               <div data-room="dimensions" hidden>
-                <esa-text-field size={ctl} data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
+                <esa-text-field size={ctl} autocomplete="off" data-field="length" type="text" inputmode="decimal" label="Length (ft)" value="12"></esa-text-field>
               </div>
               <div data-room="dimensions" hidden>
-                <esa-text-field size={ctl} data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
+                <esa-text-field size={ctl} autocomplete="off" data-field="width" type="text" inputmode="decimal" label="Width (ft)" value="10"></esa-text-field>
               </div>
               <div data-room="area">
-                <esa-text-field size={ctl} data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
+                <esa-text-field size={ctl} autocomplete="off" data-field="area" type="text" inputmode="decimal" label="Floor area (ft²)" value="120"></esa-text-field>
               </div>
               <div data-room="dimensions area">
-                <esa-text-field size={ctl} data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
+                <esa-text-field size={ctl} autocomplete="off" data-field="height" type="text" inputmode="decimal" label="Ceiling height (ft)" value="8"></esa-text-field>
               </div>
             </div>
             <!-- Soft cap. A room past these bounds is almost always a typo (1200
@@ -736,14 +746,6 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                pre-stamped blank block, which read as "fill this in" to people who
                had nothing to enter. -->
           <section class="stack" data-gap="md" data-step="1" hidden>
-            <!-- "Where to find an air cleaner's ratings" — FIRST in the step, so
-                 the reader knows what to grab off the box before the fields ask
-                 for it, and OUTSIDE [data-cleaner-entry] so it stays available to
-                 the shopper who answered "No" as well. Closed by default: it is
-                 help, not instruction. The SAME component is mounted again on the
-                 result step. UPDATE (SMAQMD review): shown inline here — on this
-                 step it IS the instruction; the result step keeps the disclosure. -->
-            <SmaqmdAerFindRatings inline />
             <esa-radio-group size={ctl}
               data-field="hasCleaner"
               label="Do you have an air cleaner to check?"
@@ -796,7 +798,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
                  this same field while it is hidden, so the engine never needs to
                  know which way the number arrived. -->
             <div data-target-custom hidden>
-              <esa-text-field size={ctl}
+              <esa-text-field size={ctl} autocomplete="off"
                 data-field="target"
                 type="text"
                 inputmode="decimal"
@@ -1081,6 +1083,29 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         </div>
       </div>
     </EsaCard>
+    <!-- Covers this panel only (data-sheet-anchor above); opened from the rating
+         step's header button. -->
+    <SmaqmdSheet name="find-rating" heading="Where to find your air cleaner’s rating">
+      <SmaqmdAerFindRatings inline />
+    </SmaqmdSheet>
+    <!-- Next with no rating on the check path. A blank rating is allowed (it routes
+         to the shop result), so this is a choice, not an error: continue to what to
+         shop for, or go back and enter one (which flags the field). -->
+    <SmaqmdSheet name="no-rating" heading="Don’t know the rating?" dismissible={false}>
+      <div class="stack" data-gap="lg">
+        <p class="typography-body-md">
+          We’ll show you what to look for when shopping for an air cleaner.
+        </p>
+        <div class="cluster" data-gap="sm">
+          <span data-sheet-close data-no-rating="continue">
+            <EsaButton size={ctl} variant="primary" type="button">Show me what to look for</EsaButton>
+          </span>
+          <span data-sheet-close data-no-rating="enter">
+            <EsaButton size={ctl} variant="ghost" appearance="outline" type="button">Enter a rating</EsaButton>
+          </span>
+        </div>
+      </div>
+    </SmaqmdSheet>
   </div>
   </div>
 
@@ -1115,7 +1140,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       </div>
 
       <div class="stack" data-gap="sm" data-unit-mode="airflow">
-        <esa-text-field size={ctl}
+        <esa-text-field size={ctl} autocomplete="off"
           data-field="airflow"
           data-cleaner
           type="text"
@@ -1129,7 +1154,7 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       </div>
 
       <div class="stack" data-gap="md" data-unit-mode="ach" hidden>
-        <esa-text-field size={ctl}
+        <esa-text-field size={ctl} autocomplete="off"
           data-field="ach"
           data-cleaner
           type="text"
@@ -1156,16 +1181,16 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         ></esa-radio-group>
         <div class="smaqmd-aerb__ref grid" data-gap="md">
           <div data-ref="area">
-            <esa-text-field size={ctl} data-field="refArea" data-cleaner type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
+            <esa-text-field size={ctl} autocomplete="off" data-field="refArea" data-cleaner type="text" inputmode="decimal" label="Floor area (ft²)"></esa-text-field>
           </div>
           <div data-ref="dimensions" hidden>
-            <esa-text-field size={ctl} data-field="refLength" data-cleaner type="text" inputmode="decimal" label="Length (ft)"></esa-text-field>
+            <esa-text-field size={ctl} autocomplete="off" data-field="refLength" data-cleaner type="text" inputmode="decimal" label="Length (ft)"></esa-text-field>
           </div>
           <div data-ref="dimensions" hidden>
-            <esa-text-field size={ctl} data-field="refWidth" data-cleaner type="text" inputmode="decimal" label="Width (ft)"></esa-text-field>
+            <esa-text-field size={ctl} autocomplete="off" data-field="refWidth" data-cleaner type="text" inputmode="decimal" label="Width (ft)"></esa-text-field>
           </div>
           <div data-ref="dimensions area">
-            <esa-text-field size={ctl} data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
+            <esa-text-field size={ctl} autocomplete="off" data-field="refHeight" data-cleaner type="text" inputmode="decimal" label="Height (ft)" placeholder="8"></esa-text-field>
           </div>
         </div>
         <span data-unit-swap="airflow">
@@ -1227,6 +1252,20 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      title to the ramp's green. Contrast on the bands (24px semibold = large text,
      AA is 3:1): warning #582d1d on the orange tint 9.29:1; earth-11 green on
      earth-4 5.55:1 — both clear even the 4.5:1 normal-text bar. */
+  /* Touch: no gray tap flash (every control has its own :active press), no
+     double-tap-zoom wait, and no long-press text selection on controls. */
+  .smaqmd-aerb { -webkit-tap-highlight-color: transparent; }
+  .smaqmd-aerb :global(button),
+  .smaqmd-aerb :global(label) {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* The header's "Where to find your rating" button is the hub's sm (38px):
+     lift it to the 44px touch minimum where the pointer is a finger. */
+  @media (pointer: coarse) {
+    [data-sheet-open] :global(.esa-button__native) { min-block-size: 2.75rem; }
+  }
   .smaqmd-wizard { --_warn-band: color-mix(in srgb, var(--color-border-utility-warning) 40%, var(--color-background-utility-warning-subtle)); }
   /* Pass speaks the band's own green (earth-11, 5.55:1 on the earth-4 band) —
      "target met" reads as green, not the neutral brand blue. */
@@ -3864,6 +3903,11 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       }, 600);
     };
 
+    // False while the custom target is mid-edit; see the target messages in recompute().
+    let targetCommitted = true;
+    // True once a forward press has stopped on the below-minimum warning; reset
+    // whenever the target is edited. See goStep.
+    let targetWarnAcked = false;
     const recompute = () => {
       syncVisibility();
 
@@ -3880,9 +3924,14 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       // positive target below the CARB-recommended 2 is allowed but flagged.
       const enteredTarget = num('target');
       const targetIsInvalid = Number.isFinite(enteredTarget) && enteredTarget <= 0;
-      show(targetInvalid, targetIsInvalid);
+      // Reward early, punish late: while the target is being typed ("0" on the way
+      // to "0.5", "1" on the way to "12") a hidden message stays hidden until the
+      // field is left or Next is pressed; a message already showing still clears
+      // the moment the value is fixed.
+      const targetBelow = Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2;
+      show(targetInvalid, targetIsInvalid && (targetCommitted || !targetInvalid?.hidden));
       show(roomWarn, roomOversize());
-      show(targetWarn, Number.isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
+      show(targetWarn, targetBelow && (targetCommitted || !targetWarn?.hidden));
 
       const flow = combinedFlow();
       const vol = roomVolume();
@@ -4210,6 +4259,8 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (el && el.tagName === 'ESA-TEXT-FIELD') {
         const clean = sanitizeNumeric(el.value ?? '');
         if (clean !== el.value) el.value = clean;
+        if (el.hasAttribute('error-text') && clean) el.removeAttribute('error-text');
+        if (el.dataset?.field === 'target') { targetCommitted = false; targetWarnAcked = false; }
       }
       // Prefill before the mode's fields are read for the scene box.
       if (el && el.tagName === 'ESA-RADIO-GROUP' && el.dataset?.field === 'roomMethod') {
@@ -4235,6 +4286,36 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
     };
     root.addEventListener('input', onEdit);
     root.addEventListener('change', onEdit);
+    // Leaving the target field commits it, so its messages may now appear —
+    // EXCEPT when the field is being left by pressing the forward button. That
+    // press blurs the field on pointerdown; showing a message right then grows the
+    // step and (on phones, where the card flows) pushes the button out from under
+    // the pointer, so the click never lands. goStep commits instead.
+    let fwdPressing = false;
+    const FWD = '[data-nav="next"], [data-nav="result"]';
+    root.addEventListener('pointerdown', (e) => {
+      fwdPressing = !!(e.target as Element).closest?.(FWD);
+    });
+    const endFwdPress = () => {
+      if (!fwdPressing) return;
+      fwdPressing = false;
+      // A press that never became a click (dragged off): commit now, after any
+      // click handler has had its turn.
+      setTimeout(() => {
+        if (!targetCommitted && (document.activeElement as HTMLElement | null)?.dataset?.field !== 'target') {
+          targetCommitted = true;
+          recompute();
+        }
+      }, 0);
+    };
+    root.addEventListener('pointerup', endFwdPress);
+    root.addEventListener('pointercancel', endFwdPress);
+    root.addEventListener('focusout', (e) => {
+      if ((e.target as HTMLElement).dataset?.field === 'target' && !targetCommitted && !fwdPressing) {
+        targetCommitted = true;
+        recompute();
+      }
+    });
 
     // Add / remove cleaner (delegated). Add clones the template; remove collapses
     // the clicked block. Both funnel through morphScene()/recompute().
@@ -4404,6 +4485,9 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         const t = isResult ? answerTitle?.textContent?.trim() : null;
         stepTitleEl.textContent = t && t !== '—' ? t : TITLES[section];
       }
+      root.querySelectorAll<HTMLElement>('[data-step-lede]').forEach((el) =>
+        show(el, Number(el.getAttribute('data-step-lede')) === section)
+      );
       const verdict = isResult ? answerG?.getAttribute('data-verdict') : null;
       if (wizardEl) {
         if (verdict) wizardEl.setAttribute('data-verdict', verdict);
@@ -4427,6 +4511,48 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
       if (dir !== 0) (stepTitleEl as HTMLElement | null)?.focus();
     };
 
+    let noRatingChoice: string | null = null;
+    let skipNoRating = false;
+    // The visible rating field of the first cleaner (CADR, or ACH when swapped).
+    const firstRatingField = () => {
+      const b = cleanerBlocks()[0];
+      return b?.querySelector<HTMLElement & { focus(): void }>(
+        raw('unit', b.getAttribute('data-cleaner-block')!) === 'ach'
+          ? 'esa-text-field[data-field="ach"]'
+          : 'esa-text-field[data-field="airflow"]'
+      ) ?? null;
+    };
+    root.addEventListener('click', (e) => {
+      const c = (e.target as Element).closest?.('[data-no-rating]');
+      if (c) noRatingChoice = c.getAttribute('data-no-rating');
+    });
+    const noRatingSheet = root.querySelector<HTMLDialogElement>('dialog[data-sheet="no-rating"]');
+    // Runs after native close() has returned focus to Next, so focusing the field
+    // here wins. × / Esc / scrim leave the step as it was.
+    noRatingSheet?.addEventListener('close', () => {
+      if (noRatingChoice === 'continue') {
+        skipNoRating = true;
+        goStep(stepIdx + 1);
+      } else if (noRatingChoice === 'enter') {
+        const f = firstRatingField();
+        if (f) {
+          // Drop the focus the dialog's close() just restored before focusing the
+          // field. When Enter in this same field opened the sheet, close() hands
+          // focus straight back to its <input>, and in Chrome that restored focus
+          // accepted no typing after a mouse click on "Enter a rating" (the
+          // keystroke reached the input but inserted nothing). A fresh focus fixes it.
+          let a = document.activeElement as HTMLElement | null;
+          while (a?.shadowRoot?.activeElement) a = a.shadowRoot.activeElement as HTMLElement;
+          a?.blur();
+          f.setAttribute('error-text', f.dataset.field === 'ach'
+            ? 'Enter the air changes per hour from your air cleaner’s label.'
+            : 'Enter the CADR or airflow from your air cleaner’s label.');
+          f.focus();
+        }
+      }
+      noRatingChoice = null;
+    });
+
     const goStep = (i: number) => {
       const next = Math.min(Math.max(0, i), plan.length);
       // Forward gate: you can't leave the room step without a valid room size.
@@ -4434,6 +4560,37 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
         if (roomHint) show(roomHint, true);
         return;
       }
+      // Leaving the cleaner step with no usable rating: ask, don't block. The
+      // no-rating sheet's close handler below advances or returns to the field.
+      if (next > stepIdx && plan[stepIdx] === 1 && hasCleaners() && combinedFlow() === 0 && !skipNoRating) {
+        noRatingChoice = null;
+        document.dispatchEvent(new CustomEvent('smaqmd-sheet-open', { detail: 'no-rating' }));
+        return;
+      }
+      skipNoRating = false;
+      // Leaving the conditions step commits a custom target. Its messages are held
+      // back while typing, so this press may be the first time they appear — and
+      // they live on THIS step, so advancing would hide them unread. An invalid
+      // target blocks (like the room gate); a below-recommended one stops the first
+      // press so it is read, and the next press continues (a low target is allowed).
+      if (next > stepIdx && plan[stepIdx] === 2) {
+        if (!targetCommitted) { targetCommitted = true; recompute(); }
+        // Stopping is only useful if the message is in view: it sits at the foot
+        // of the step, often below the card's scroll fold.
+        const stopAt = (el: HTMLElement) => {
+          el.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        };
+        if (targetInvalid && !targetInvalid.hidden) { stopAt(targetInvalid); return; }
+        // "Seen" is tracked per press, not by visibility: clicking Next blurs the
+        // field first, which shows the warning a moment BEFORE the click lands —
+        // so "already visible" let a click sail straight past it unread.
+        if (targetWarn && !targetWarn.hidden && !targetWarnAcked) {
+          targetWarnAcked = true;
+          stopAt(targetWarn);
+          return;
+        }
+      }
+      if (!targetCommitted) { targetCommitted = true; recompute(); }
       const dir = next === stepIdx ? 0 : next > stepIdx ? 1 : -1;
       stepIdx = next;
       renderStep(dir);

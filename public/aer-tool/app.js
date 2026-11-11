@@ -1643,6 +1643,8 @@
     }, 600);
   };
 
+  var targetCommitted = true;
+  var targetWarnAcked = false;
   var recompute = function () {
     syncVisibility();
 
@@ -1654,9 +1656,10 @@
     setReadout('target', fmt(target, 2));
     var enteredTarget = num('target');
     var targetIsInvalid = isFinite(enteredTarget) && enteredTarget <= 0;
-    show(targetInvalid, targetIsInvalid);
+    var targetBelow = isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2;
+    show(targetInvalid, targetIsInvalid && (targetCommitted || (targetInvalid && !targetInvalid.hidden)));
     show(roomWarn, roomOversize());
-    show(targetWarn, isFinite(enteredTarget) && enteredTarget > 0 && enteredTarget < 2);
+    show(targetWarn, targetBelow && (targetCommitted || (targetWarn && !targetWarn.hidden)));
 
     var flow = combinedFlow();
     var vol = roomVolume();
@@ -1883,12 +1886,58 @@
     }
   };
 
+  var ERROR_ICON =
+    '<svg class="smaqmd-field__error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line>' +
+    '<line x1="12" x2="12.01" y1="16" y2="16"></line></svg>';
+  var setFieldError = function (input, msg) {
+    var wrap = input.closest('.smaqmd-field');
+    if (!wrap) return;
+    var id = input.id + '-error';
+    var line = wrap.querySelector('.smaqmd-field__error');
+    if (!line) {
+      line = document.createElement('p');
+      line.className = 'smaqmd-field__error smaqmd-type-body-sm';
+      line.id = id;
+      wrap.insertBefore(line, wrap.querySelector('.smaqmd-field__help'));
+    }
+    line.innerHTML = ERROR_ICON + '<span class="smaqmd-visually-hidden">Error: </span><span></span>';
+    line.lastChild.textContent = msg;
+    wrap.classList.add('smaqmd-field--error');
+    input.setAttribute('aria-invalid', 'true');
+    var ids = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) {
+      return x && x !== id;
+    });
+    ids.unshift(id);
+    input.setAttribute('aria-describedby', ids.join(' '));
+  };
+  var clearFieldError = function (input) {
+    var wrap = input.closest && input.closest('.smaqmd-field');
+    if (!wrap || !wrap.classList.contains('smaqmd-field--error')) return;
+    var id = input.id + '-error';
+    var line = wrap.querySelector('.smaqmd-field__error');
+    if (line) line.parentNode.removeChild(line);
+    wrap.classList.remove('smaqmd-field--error');
+    input.removeAttribute('aria-invalid');
+    var ids = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) {
+      return x && x !== id;
+    });
+    if (ids.length) input.setAttribute('aria-describedby', ids.join(' '));
+    else input.removeAttribute('aria-describedby');
+  };
+
   var onEdit = function (e) {
     var el = e.target;
     if (!el || !el.tagName) return;
     if (el.hasAttribute && el.hasAttribute('data-numeric')) {
       var clean = sanitizeNumeric(el.value || '');
       if (clean !== el.value) el.value = clean;
+      if (clean) clearFieldError(el);
+      if (el.getAttribute('data-field') === 'target') {
+        targetCommitted = false;
+        targetWarnAcked = false;
+      }
     }
     if (el.type === 'radio' && el.closest) {
       var group = el.closest('[data-field]');
@@ -1914,6 +1963,30 @@
   };
   root.addEventListener('input', onEdit);
   root.addEventListener('change', onEdit);
+  var fwdPressing = false;
+  root.addEventListener('pointerdown', function (e) {
+    fwdPressing = !!(e.target && e.target.closest && e.target.closest('[data-nav="next"], [data-nav="result"]'));
+  });
+  var endFwdPress = function () {
+    if (!fwdPressing) return;
+    fwdPressing = false;
+    window.setTimeout(function () {
+      var a = document.activeElement;
+      if (!targetCommitted && !(a && a.getAttribute && a.getAttribute('data-field') === 'target')) {
+        targetCommitted = true;
+        recompute();
+      }
+    }, 0);
+  };
+  root.addEventListener('pointerup', endFwdPress);
+  root.addEventListener('pointercancel', endFwdPress);
+  root.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-field') === 'target' && !targetCommitted && !fwdPressing) {
+      targetCommitted = true;
+      recompute();
+    }
+  });
 
   root.addEventListener('click', function (e) {
     var t = e.target;
@@ -2055,6 +2128,10 @@
       var answerText = isResult && answerTitle ? (answerTitle.textContent || '').trim() : '';
       stepTitleEl.textContent = answerText && answerText !== '—' ? answerText : TITLES[section];
     }
+    var ledes = root.querySelectorAll('[data-step-lede]');
+    for (var li = 0; li < ledes.length; li++) {
+      show(ledes[li], Number(ledes[li].getAttribute('data-step-lede')) === section);
+    }
     var verdict = isResult && answerG ? answerG.getAttribute('data-verdict') : null;
     if (wizardEl) {
       if (verdict) wizardEl.setAttribute('data-verdict', verdict);
@@ -2069,11 +2146,176 @@
     if (dir !== 0 && stepTitleEl) stepTitleEl.focus();
   };
 
+  var SHEET_EXIT_MS = 200;
+  var placeSheet = function (sheet) {
+    var anchor = sheet.closest('[data-sheet-anchor]');
+    var r = anchor ? anchor.getBoundingClientRect() : null;
+    var onScreen = !!r && r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0;
+    var st = sheet.style;
+    if (onScreen) {
+      st.top = r.top + 'px';
+      st.left = r.left + 'px';
+      st.width = r.width + 'px';
+      st.height = r.height + 'px';
+      sheet.setAttribute('data-fit', 'anchor');
+    } else {
+      st.top = '0px';
+      st.right = '0px';
+      st.bottom = '0px';
+      st.left = '0px';
+      st.width = 'auto';
+      st.height = 'auto';
+      sheet.setAttribute('data-fit', 'viewport');
+    }
+  };
+  var lockPage = function (on) {
+    document.documentElement.style.overflow = on ? 'hidden' : '';
+  };
+  var openSheet = function (sheet) {
+    if (sheet._closeTimer) {
+      window.clearTimeout(sheet._closeTimer);
+      sheet._closeTimer = 0;
+    }
+    sheet.removeAttribute('data-closing');
+    if (!sheet.open) {
+      placeSheet(sheet);
+      lockPage(true);
+      sheet.showModal();
+      sheet.scrollTop = 0;
+      void sheet.offsetWidth;
+    }
+    sheet.setAttribute('data-open', '');
+    var panel = sheet.querySelector('.smaqmd-sheet__panel');
+    if (panel) panel.focus({ preventScroll: true });
+  };
+  var closeSheet = function (sheet) {
+    if (!sheet.open || !sheet.hasAttribute('data-open')) return;
+    sheet.removeAttribute('data-open');
+    sheet.setAttribute('data-closing', '');
+    sheet._closeTimer = window.setTimeout(function () {
+      sheet._closeTimer = 0;
+      sheet.removeAttribute('data-closing');
+      sheet.close();
+      if (!document.querySelector('dialog[data-sheet][open]')) lockPage(false);
+    }, SHEET_EXIT_MS);
+  };
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var opener = t.closest('[data-sheet-open]');
+    if (opener) {
+      var target = document.querySelector(
+        'dialog[data-sheet="' + opener.getAttribute('data-sheet-open') + '"]'
+      );
+      if (target) {
+        e.preventDefault();
+        openSheet(target);
+      }
+      return;
+    }
+    if (t.tagName === 'DIALOG' && t.hasAttribute('data-sheet')) {
+      if (!t.hasAttribute('data-sheet-required')) closeSheet(t);
+      return;
+    }
+    var closer = t.closest('[data-sheet-close]');
+    var sheet = closer ? closer.closest('dialog[data-sheet]') : null;
+    if (sheet) closeSheet(sheet);
+  });
+  document.addEventListener(
+    'cancel',
+    function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'DIALOG' && t.hasAttribute('data-sheet')) {
+        e.preventDefault();
+        if (!t.hasAttribute('data-sheet-required')) closeSheet(t);
+      }
+    },
+    true
+  );
+  document.addEventListener(
+    'keydown',
+    function (e) {
+      if (e.key !== 'Escape') return;
+      if (document.querySelector('dialog[data-sheet-required][open]')) e.preventDefault();
+    },
+    true
+  );
+  window.addEventListener('resize', function () {
+    var open = document.querySelectorAll('dialog[data-sheet][open]');
+    for (var si = 0; si < open.length; si++) placeSheet(open[si]);
+  });
+
+  var noRatingChoice = null;
+  var skipNoRating = false;
+  var noRatingSheet = root.querySelector('dialog[data-sheet="no-rating"]');
+  var firstRatingField = function () {
+    var b = cleanerBlocks()[0];
+    if (!b) return null;
+    var id = b.getAttribute('data-cleaner-block');
+    return field(raw('unit', id) === 'ach' ? 'ach' : 'airflow', id);
+  };
+  root.addEventListener('click', function (e) {
+    var c = e.target && e.target.closest ? e.target.closest('[data-no-rating]') : null;
+    if (c) noRatingChoice = c.getAttribute('data-no-rating');
+  });
+  if (noRatingSheet) {
+    noRatingSheet.addEventListener('close', function () {
+      if (noRatingChoice === 'continue') {
+        skipNoRating = true;
+        goStep(stepIdx + 1);
+      } else if (noRatingChoice === 'enter') {
+        var f = firstRatingField();
+        if (f) {
+          if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+          setFieldError(
+            f,
+            f.getAttribute('data-field') === 'ach'
+              ? 'Enter the air changes per hour from your air cleaner’s label.'
+              : 'Enter the CADR or airflow from your air cleaner’s label.'
+          );
+          f.focus();
+        }
+      }
+      noRatingChoice = null;
+    });
+  }
+
   var goStep = function (i) {
     var next = Math.min(Math.max(0, i), plan.length);
     if (next > stepIdx && plan[stepIdx] === 0 && !roomValid()) {
       if (roomHint) show(roomHint, true);
       return;
+    }
+    if (next > stepIdx && plan[stepIdx] === 1 && hasCleaners() && combinedFlow() === 0 && !skipNoRating) {
+      noRatingChoice = null;
+      if (noRatingSheet) openSheet(noRatingSheet);
+      return;
+    }
+    skipNoRating = false;
+    if (next > stepIdx && plan[stepIdx] === 2) {
+      if (!targetCommitted) {
+        targetCommitted = true;
+        recompute();
+      }
+      var stopAt = function (el) {
+        el.scrollIntoView({
+          block: 'nearest',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+        });
+      };
+      if (targetInvalid && !targetInvalid.hidden) {
+        stopAt(targetInvalid);
+        return;
+      }
+      if (targetWarn && !targetWarn.hidden && !targetWarnAcked) {
+        targetWarnAcked = true;
+        stopAt(targetWarn);
+        return;
+      }
+    }
+    if (!targetCommitted) {
+      targetCommitted = true;
+      recompute();
     }
     var dir = next === stepIdx ? 0 : next > stepIdx ? 1 : -1;
     stepIdx = next;
