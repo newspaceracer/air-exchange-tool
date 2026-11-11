@@ -9,7 +9,7 @@ The user provides a room size, describes their air cleaner (or confirms they hav
 
 ## What you get
 
-**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. The page loads about 310 KB (the label photo only when its help section scrolls into view), 29 KB of it the font.
+**There is no build step.** No npm, no bundler, no framework, no external requests. Double-click `index.html` and it runs; drop the folder on any web server and it runs there too. The page loads about 270 KB, 29 KB of it the font; the 73 KB label photo loads only when a "Where to find…" help section is opened.
 
 Everything is namespaced: every CSS class and `id` is prefixed `smaqmd-`, and the JavaScript defines no globals. Nothing in the folder can collide with names on an existing site.
 
@@ -76,6 +76,7 @@ Copy the `aer-tool/` folder onto the server. Then, in the page that will host th
 
 - **Fully scoped stylesheet:** Every rule is confined to the tool's own region. No `html`, `body`, `:root`, `*`, or bare element selectors; every class is prefixed `smaqmd-`, and design tokens are declared on the region root. Verified by loading a host page with and without the stylesheet and diffing all computed properties: zero changed. The tool equally defends against host styles, pinning its typography, box-sizing, and colour to prevent resets, serif fonts, `content-box` rules, or conflicting `--color-*` or `--spacing-*` variables from affecting it.
 - **Font paths are relative to `styles.css`**, not the host page. Keep `fonts/` next to it.
+- **One deliberate touch on the host page:** while one of the tool's two bottom sheets is open, the script sets `overflow: hidden` inline on `<html>` so the page behind can't scroll, and clears it when the sheet closes. If the host page sets its own inline `overflow` on `<html>`, that value is cleared too. Above 68rem a sheet covers only the tool's card; at 68rem and below, the breakpoint where the layout stacks, it covers the viewport.
 - **The tool fills the viewport** with a fixed full-height diagram behind a fixed card column. Use this option for a full-page route. For a tool inside an existing header, sidebar, and footer, use Option C.
 
 ### Option C: Embed in an iframe
@@ -99,15 +100,15 @@ Built to **WCAG 2.2 Level AA**.
 
 **Structure:** `lang="en"`, a page `<title>`, a `<main>` landmark, and a heading outline with no skipped levels. The page `<h1>` sits in `.smaqmd-aerb__header` and is visible on every screen; every other heading starts at `<h2>` and nests beneath it. Beneath that always-visible `<h1>`, exactly one section heading is visible at a time: the opening slide's title, the step title, or — on the result screen, where the step title is replaced — the verdict headline.
 
-**Forms:** Every field has a real programmatic label; placeholders are never used as labels. Hints are wired with `aria-describedby`. Option groups use native `<fieldset>`/`<legend>` with native radios for browser-provided arrow-key selection and group naming. Numeric fields carry `inputmode="decimal"` and render at 18px, above the 16px threshold that prevents mobile Safari from zooming on input.
+**Forms:** Every field has a real programmatic label; placeholders are never used as labels. Hints are wired with `aria-describedby`. Option groups use native `<fieldset>`/`<legend>` with native radios for browser-provided arrow-key selection and group naming. Numeric fields carry `inputmode="decimal"` and render at 18px, above the 16px threshold that prevents mobile Safari from zooming on input. Errors are identified in text beside the field: it is marked `aria-invalid`, the message is linked through `aria-describedby` with an "Error:" prefix and an icon (never colour alone), and focus moves to the first flagged field.
 
-**Keyboard navigation:** Everything is operable without a mouse, in reading order, with a visible 2px brand focus ring (drawn with `outline` to stay visible in Windows Contrast Themes). No overlays or focus traps. Moving between steps sends focus to the new heading so screen-reader users hear where they landed.
+**Keyboard navigation:** Everything is operable without a mouse, in reading order, with a visible 2px brand focus ring (drawn with `outline` to stay visible in Windows Contrast Themes). The two bottom sheets ("Where to find your air cleaner's rating" and "Don't know the rating?") use the native modal `<dialog>`: while one is open, focus stays inside it and the page behind is inert. Each closes from the keyboard: the first with Esc or its close button, the second with either of its two answer buttons (it asks a question, so Esc doesn't dismiss it). There are no keyboard traps (WCAG 2.1.2). Moving between steps sends focus to the new heading so screen-reader users hear where they landed.
 
-**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. The two DISPLAY toggles on the result screen — the ft²/ft³ units switch and the CADR/ACH rating switch — are 36px: they only restate a number already on screen, and at 36px they clear SC 2.5.8's 24px floor with room to spare. The target step is a native radio group of air-quality choices; "Enter my own target" reveals a labelled number field. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
+**Touch and pointer targets:** Buttons and option rows are at least 44px, past both WCAG 2.5.8's 24px minimum and standard touch conventions. Two smaller controls stay well above that floor: the "Where to find your air cleaner's rating" button (38px with a mouse, 44px on touch screens) and the CADR/ACH switch on the result screen (39px), which only restates a number already on screen. The target step is a native radio group of air-quality choices; "Enter my own target" reveals a labelled number field. The diagram's drag handles are pointer-only (WCAG 2.5.7); the equivalent path is typing the number into the field, so handles are not tab stops.
 
 **Live regions and status:** One polite and one assertive live region, mounted at load, are the only live regions on the page (WCAG 4.1.3). Result summaries are announced politely after 600ms to prevent diagram dragging from creating chatter.
 
-**Diagram:** Carries `role="img"` and a short `aria-label` describing the furnished room, where each air cleaner stands, the waves and the coverage outline; every number it shows also appears as text in the result.
+**Diagram:** Carries `role="img"` and a short `aria-label` describing the furnished room, where each air cleaner stands, the waves, the coverage outline and the CFM labels. The labels show the result's combined CADR split evenly across the air cleaners; the combined figure itself appears as text in the result.
 
 **Color:** Every foreground/background pair meets AA, including the two pairs that required a darker palette step: orange warning text and dark text on solid orange fill. No state is conveyed by colour alone—each verdict carries an icon shape and a sentence.
 

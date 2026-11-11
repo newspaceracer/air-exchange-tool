@@ -1226,7 +1226,12 @@ const B = +(0.5 * DOT_SPACING).toFixed(3); // 13
      `color-scheme: light dark`. */
   .smaqmd-aerb { color-scheme: light; }
   .smaqmd-aerb :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
-  .smaqmd-aerb__dims { --grid-min: 6.5rem; }
+  /* Wide enough for the longest label, "Ceiling height (ft)" (136px at 18px),
+     on one line. At 6.5rem a phone fit three columns and that label wrapped,
+     dropping its input below the other two. 8.75rem (140px) still fits three
+     across the desktop card (454px) and two across a phone (about 300px):
+     Length | Width, then Ceiling height below. */
+  .smaqmd-aerb__dims { --grid-min: 8.75rem; }
   .smaqmd-aerb__ref { --grid-min: 6.5rem; }
   /* Prompt labelling the reference-room fields (ACH mode). A question the user
      must answer → a real label: body-md (16px, the reading baseline) + secondary
